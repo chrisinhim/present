@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentation Controller</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .hidden {
+            display: none !important;
+        }
+        h1, h3 {
+            color: #333;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        #presentButton {
+            background-color: #007bff;
+            color: white;
+        }
+        #presentButton:hover {
+            background-color: #0056b3;
+        }
+        #toggleWindowButton {
+            background-color: #28a745;
+            color: white;
+        }
+        #toggleWindowButton:hover {
+            background-color: #1e7e34;
+        }
+        .control-group {
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+        }
+        .control-group label {
+            display: inline-block;
+            margin-right: 10px;
+            font-weight: 500;
+        }
+        #windowStatus {
+            margin-left: 10px;
+            font-style: italic;
+            color: #666;
+        }
+        .alignment-group, .formatting-group {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .alignment-button, .format-button, #toggleBgButton {
+            background-color: #f8f9fa;
+            color: #333;
+            border: 1px solid #ced4da;
+            padding: 8px 12px;
+            margin-right: 0;
+            font-weight: normal;
+        }
+        .alignment-button.active, .format-button.active, #toggleBgButton.active {
+            background-color: #dc3545; /* Changed active color for better contrast */
+            color: white;
+        }
+        select, input[type="number"], input[type="color"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 15px;
+            margin-top: 5px;
+        }
+        .slider-control {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .slider-control input[type="range"] {
+            flex-grow: 1;
+            margin: 0 10px;
+        }
+        #autocomplete-suggestions {
+            position: absolute;
+            border: 1px solid #ccc;
+            background-color: white;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .suggestion-item:hover {
+            background-color: #f0f0f0;
+        }
+        .suggestion-item.active {
+            background-color: #e0e0e0;
+        }
+        .delete-history-btn {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            line-height: 22px;
+            padding: 0;
+            font-weight: bold;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        /* Animation Keyframes */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideInTop {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes zoomIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* Animation Classes */
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .animate-slide-in-top {
+            animation: slideInTop 0.5s ease-out forwards;
+        }
+        .animate-zoom-in {
+            animation: zoomIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Presentation Controller</h1>
+
+    <div style="position: relative;">
+        <label for="presentationText">Enter Text to Present:</label>
+        <textarea id="presentationText" rows="5" placeholder="Type a book of the Bible, e.g., 'John 3:16'"></textarea>
+        <div id="autocomplete-suggestions" class="hidden"></div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+        <button id="presentButton">PRESENT</button>
+        <button id="hideButton" style="background-color: #6c757d; color: white;">HIDE</button>
+        <label for="presentationDuration" style="font-weight: normal; margin-left: 10px;">for</label>
+        <input type="number" id="presentationDuration" min="0" value="0" style="width: 70px;">
+        <span style="font-weight: normal;">seconds</span>
+    </div>
+    
+    <hr>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="text-align: left; margin: 0;">Presentation History</h3>
+        <button id="clearHistoryButton" style="background-color: #dc3545; color: white; margin-right: 0;">Clear All</button>
+    </div>
+    <div id="historyContainer" style="margin-top: 10px;"></div>
+    
+    <hr>
+    
+    <div class="control-group">
+        <button id="toggleWindowButton" onclick="togglePresentationWindow()">Open Presentation Window</button>
+        <span id="windowStatus">Closed</span>
+    </div>
+
+    <div class="control-group">
+        <h3>Text Background Options (Single Line)</h3>
+
+        <button id="toggleBgButton" onclick="toggleTextBackground()">Enable Text Background</button>
+
+        <div id="bgOptions" style="display:none; margin-top: 15px;">
+            <label for="textBgColor">Color:</label>
+            <input type="color" id="textBgColor" value="#808080" onchange="changeTextBackgroundStyle('color', this.value)">
+
+            <label for="textBgPadding">Size (Padding):</label>
+            <input type="number" id="textBgPadding" min="0" max="50" value="20" onchange="changeTextBackgroundStyle('padding', this.value)">
+            
+            <label for="textBgRadius">Decoration (Radius):</label>
+            <input type="number" id="textBgRadius" min="0" max="50" value="40" onchange="changeTextBackgroundStyle('radius', this.value)">
+            
+            <br><br>
+            <label for="textBgImageFile">Picture:</label>
+            <input type="file" id="textBgImageFile" accept="image/*">
+            <button onclick="changeTextBackgroundImage(document.getElementById('textBgImageFile').files[0])">Apply Picture</button>
+
+        </div>
+    </div>
+
+    <div class="control-group">
+        <h3>Font Formatting</h3>
+        <label for="fontFamily">Family:</label>
+        <select id="fontFamily" onchange="changeFont('family', this.value)">
+            <option value="Arial, sans-serif" selected>Arial</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Courier New', monospace">Courier New</option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+        </select>
+
+        <label for="fontSize">Size (vw):</label>
+        <input type="number" id="fontSize" min="1" max="10" value="4" onchange="changeFont('size', this.value + 'vw')">
+
+        <label for="textColor">Color:</label>
+        <input type="color" id="textColor" value="#ffffff" onchange="changeFont('color', this.value)">
+
+        <label style="margin-top: 10px; display: block;">Style:</label>
+        <div class="formatting-group">
+            <button class="format-button" id="boldToggle" onclick="toggleFormat('fontWeight', 'bold', 'normal', this)">
+                <b>Bold</b>
+            </button>
+            <button class="format-button" id="italicToggle" onclick="toggleFormat('fontStyle', 'italic', 'normal', this)">
+                <i>Italic</i>
+            </button>
+            <button class="format-button active" id="allCapsToggle" onclick="toggleFormat('textTransform', 'uppercase', 'none', this)">
+                ALL CAPS
+            </button>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <h3>Animation Effects</h3>
+        <label for="animationEffect">On Display:</label>
+        <select id="animationEffect" onchange="saveSettings()">
+            <option value="none" selected>None</option>
+            <option value="fade-in">Fade In</option>
+            <option value="slide-in-top">Slide In from Top</option>
+            <option value="zoom-in">Zoom In</option>
+        </select>
+    </div>
+
+
+    <div class="control-group">
+        <h3>Text Alignment Controls</h3>
+        <label>Horizontal:</label>
+        <div class="alignment-group">
+            <button class="alignment-button" data-align-h="flex-start" onclick="changeAlignment('horizontal', 'flex-start', this)">Left</button>
+            <button class="alignment-button active" data-align-h="center" onclick="changeAlignment('horizontal', 'center', this)">Center</button>
+            <button class="alignment-button" data-align-h="flex-end" onclick="changeAlignment('horizontal', 'flex-end', this)">Right</button>
+        </div>
+
+        <label>Vertical:</label>
+        <div class="alignment-group">
+            <button class="alignment-button" data-align-v="flex-start" onclick="changeAlignment('vertical', 'flex-start', this)">Top</button>
+            <button class="alignment-button" data-align-v="center" onclick="changeAlignment('vertical', 'center', this)">Middle</button>
+            <button class="alignment-button active" data-align-v="flex-end" onclick="changeAlignment('vertical', 'flex-end', this)">Bottom</button>
+        </div>
+    </div>
+    
+    <div class="control-group">
+        <h3>Fine Position Adjustments (px)</h3>
+        <div class="slider-control">
+            <label>Horizontal:</label>
+            <input type="range" id="adjustX" min="-50" max="50" value="0" step="1" 
+                   oninput="adjustPosition('x', this.value)">
+            <span id="adjustXValue">0 px</span>
+        </div>
+
+        <div class="slider-control">
+            <label>Vertical:</label>
+            <input type="range" id="adjustY" min="-50" max="50" value="-50" step="1" 
+                   oninput="adjustPosition('y', this.value)">
+            <span id="adjustYValue">-50 px</span>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <h3>Presentation Background Options</h3>
+        <label for="colorPicker">Solid Color:</label>
+        <input type="color" id="colorPicker" value="#008000" onchange="changeBackground('color', this.value)">
+        <button onclick="changeBackground('color', document.getElementById('colorPicker').value)">Apply Color</button>
+        <br><br>
+        
+        <label for="imageFile">Picture:</label>
+        <input type="file" id="imageFile" accept="image/*">
+        <button onclick="changeBackground('image', document.getElementById('imageFile').files[0])">Apply Picture</button>
+        <br><br>
+
+        <label for="videoFile">Video:</label>
+        <input type="file" id="videoFile" accept="video/*">
+        <button onclick="changeBackground('video', document.getElementById('videoFile').files[0])">Apply Video</button>
+    </div>
+
+</div>
+
+<script>
+    let presentationWindow = null;
+    let currentFormatting = {
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        textTransform: 'uppercase'
+    };
+    let currentAdjustment = {
+        x: 0,
+        y: -50
+    };
+    let isTextBgActive = false;
+    let saveTimeout;
+    let presentationHistory = [];
+    let autoHideTimer = null;
+    const bibleBooks = [
+        "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth",
+        "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra",
+        "Nehemiah", "Esther", "Job", "Psalm", "Proverbs", "Ecclesiastes", "Song of Solomon",
+        "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos",
+        "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah",
+        "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians",
+        "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians",
+        "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James",
+        "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"
+    ];
+    let suggestionIndex = -1;
+
+    // --- DOM Elements ---
+    const presentationText = document.getElementById('presentationText');
+    const suggestionsContainer = document.getElementById('autocomplete-suggestions');
+
+    // --- Event Listeners ---
+    window.addEventListener('DOMContentLoaded', loadSettings);
+    presentationText.addEventListener('input', handleAutocomplete);
+    presentationText.addEventListener('keydown', handleAutocompleteKeyDown);
+    document.addEventListener('click', (e) => {
+        if (e.target !== presentationText) {
+            suggestionsContainer.classList.add('hidden');
+        }
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+        const clearButton = document.getElementById('clearHistoryButton');
+        if(clearButton) clearButton.addEventListener('click', clearHistory);
+    });
+
+
+    // --- Auto-Save and Load ---
+
+    /**
+     * Saves all current settings to localStorage.
+     */
+    function saveSettings() {
+        // Debounce saving to avoid rapid writes
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            const horizontalAlign = document.querySelector('.alignment-button[data-align-h].active')?.dataset.alignH || 'center';
+            const verticalAlign = document.querySelector('.alignment-button[data-align-v].active')?.dataset.alignV || 'flex-end';
+
+            const settings = {
+                presentationText: presentationText.value,
+                presentationDuration: document.getElementById('presentationDuration').value,
+                isTextBgActive: isTextBgActive,
+                textBgColor: document.getElementById('textBgColor').value, // #808080
+                textBgPadding: document.getElementById('textBgPadding').value, // 20
+                textBgRadius: document.getElementById('textBgRadius').value, // 40
+                textBgImage: presentationWindow?.document.getElementById('content').style.backgroundImage || 'none',
+                animationEffect: document.getElementById('animationEffect').value,
+                fontFamily: document.getElementById('fontFamily').value,
+                fontSize: document.getElementById('fontSize').value,
+                textColor: document.getElementById('textColor').value,
+                formatting: { ...currentFormatting },
+                alignment: { horizontal: horizontalAlign, vertical: verticalAlign },
+                adjustment: { ...currentAdjustment },
+                backgroundColor: document.getElementById('colorPicker').value, // #008000
+                history: presentationHistory
+            };
+            localStorage.setItem('presentationSettings', JSON.stringify(settings));
+            console.log("Settings saved.");
+        }, 500);
+    }
+
+    /**
+     * Loads settings from localStorage and applies them to the controls.
+     */
+    function loadSettings() {
+        const settings = JSON.parse(localStorage.getItem('presentationSettings'));
+        if (!settings) {
+            console.log("No saved settings found.");
+            return;
+        }
+
+        // Restore text and duration
+        presentationText.value = settings.presentationText || '';
+        document.getElementById('presentationDuration').value = settings.presentationDuration || '0';
+        
+        // Restore font settings
+        document.getElementById('fontFamily').value = settings.fontFamily || 'Arial, sans-serif';
+        document.getElementById('fontSize').value = settings.fontSize || '4';
+        document.getElementById('textColor').value = settings.textColor || '#ffffff';
+
+        // Restore formatting and update buttons
+        if (settings.formatting) {
+            currentFormatting = settings.formatting;
+            // BOLD
+            if (currentFormatting.fontWeight === 'bold') document.getElementById('boldToggle').classList.add('active');
+            else document.getElementById('boldToggle').classList.remove('active');
+            // ITALIC
+            if (currentFormatting.fontStyle === 'italic') document.getElementById('italicToggle').classList.add('active');
+            else document.getElementById('italicToggle').classList.remove('active');
+            // ALL CAPS
+            if (currentFormatting.textTransform === 'uppercase') document.getElementById('allCapsToggle').classList.add('active');
+             else document.getElementById('allCapsToggle').classList.remove('active');
+        }
+
+        // Restore alignment and update buttons
+        if (settings.alignment) {
+            document.querySelectorAll('.alignment-button').forEach(b => b.classList.remove('active'));
+            const hButton = document.querySelector(`.alignment-button[data-align-h="${settings.alignment.horizontal}"]`);
+            const vButton = document.querySelector(`.alignment-button[data-align-v="${settings.alignment.vertical}"]`);
+            if (hButton) hButton.classList.add('active');
+            if (vButton) vButton.classList.add('active');
+        }
+
+        // Restore position adjustments
+        if (settings.adjustment) {
+            currentAdjustment = settings.adjustment;
+            document.getElementById('adjustX').value = currentAdjustment.x;
+            document.getElementById('adjustY').value = currentAdjustment.y;
+            document.getElementById('adjustXValue').textContent = `${currentAdjustment.x} px`;
+            document.getElementById('adjustYValue').textContent = `${currentAdjustment.y} px`;
+        }
+
+        // Restore background color
+        document.getElementById('colorPicker').value = settings.backgroundColor || '#008000';
+
+        // Restore text background settings
+        document.getElementById('textBgColor').value = settings.textBgColor || '#808080';
+        document.getElementById('textBgPadding').value = settings.textBgPadding || '20';
+        document.getElementById('textBgRadius').value = settings.textBgRadius || '40';
+        if (settings.isTextBgActive) {
+            isTextBgActive = true;
+            const toggleButton = document.getElementById('toggleBgButton');
+            const optionsDiv = document.getElementById('bgOptions');
+            toggleButton.textContent = 'Disable Text Background';
+            toggleButton.classList.add('active');
+            optionsDiv.style.display = 'block';
+            if (settings.textBgImage && settings.textBgImage !== 'none') {
+                if (presentationWindow && !presentationWindow.closed) {
+                    const contentDiv = presentationWindow.document.getElementById('content');
+                    if (contentDiv) contentDiv.style.backgroundImage = settings.textBgImage;
+                }
+            }
+        } else {
+            isTextBgActive = false;
+            // No need to do anything, the default state is hidden.
+        }
+        
+        // Restore history
+        if (settings.history) {
+            presentationHistory = settings.history;
+            renderHistory();
+        }
+        
+        // Restore animation effect
+        document.getElementById('animationEffect').value = settings.animationEffect || 'none';
+
+        console.log("Settings loaded.");
+    }
+    
+    // --- Core Functions (Modified for Auto-Save) ---
+
+    function togglePresentationWindow() {
+        const toggleButton = document.getElementById('toggleWindowButton');
+        const statusSpan = document.getElementById('windowStatus');
+
+        if (presentationWindow && !presentationWindow.closed) {
+            presentationWindow.close();
+            presentationWindow = null;
+            toggleButton.textContent = 'Open Presentation Window';
+            statusSpan.textContent = 'Closed';
+            toggleButton.style.backgroundColor = '#28a745';
+        } else {
+            presentationWindow = window.open("", "PresentationWindow", "width=800,height=600,resizable=yes");
+            if (presentationWindow) {
+                const initialContent = presentationText.value || 'Welcome to your Presentation!';
+                presentationWindow.document.write(`
+                    <!DOCTYPE html><html lang="en"><head><title>Presentation</title><style>
+                        body{margin:0;display:flex;height:100vh;background-color:black;transition:background-color .5s;overflow:hidden;font-family:'Arial',sans-serif;}
+                        #content-wrapper{transform:translate(0,0);}
+                        #content{color:#fff;font-size:4vw;text-align:center;padding:20px;max-width:90%;word-wrap:break-word;z-index:2;text-shadow:2px 2px 4px #000;transition: background-color .3s, padding .3s, border-radius .3s;background-color:transparent;border-radius:0}
+                        #media-bg-container{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1}
+                        #media-bg{width:100%;height:100%;object-fit:cover}
+                    </style></head><body><div id="media-bg-container"></div><div id="content-wrapper"><div id="animation-wrapper"><div id="content">${initialContent}</div></div></div>
+                    </body></html>`);
+                presentationWindow.document.close();
+                
+                // Apply all settings to the new window
+                applyAllSettingsToWindow();
+
+                // Monitor for window closure
+                const checkInterval = setInterval(() => {
+                    if (presentationWindow.closed) {
+                        clearInterval(checkInterval);
+                        presentationWindow = null;
+                        toggleButton.textContent = 'Open Presentation Window';
+                        statusSpan.textContent = 'Closed';
+                        toggleButton.style.backgroundColor = '#28a745';
+                    }
+                }, 500);
+
+                toggleButton.textContent = 'Close Presentation Window';
+                statusSpan.textContent = 'Open';
+                toggleButton.style.backgroundColor = '#dc3545';
+            } else {
+                alert("Pop-up blocked. Please allow pop-ups for this site.");
+            }
+        }
+    }
+
+    function applyAllSettingsToWindow() {
+        if (!presentationWindow || presentationWindow.closed) return;
+
+        const text = presentationText.value;
+        const wrapper = presentationWindow.document.getElementById('content-wrapper');
+        const contentDiv = presentationWindow.document.getElementById('content');
+        if(!contentDiv) return;
+
+        contentDiv.textContent = text;
+        
+        // Apply styles from controls
+        changeFont('family', document.getElementById('fontFamily').value);
+        changeFont('size', document.getElementById('fontSize').value + 'vw');
+        changeFont('color', document.getElementById('textColor').value);
+        
+        toggleFormat('fontWeight', currentFormatting.fontWeight, 'normal', document.getElementById('boldToggle'), true);
+        toggleFormat('fontStyle', currentFormatting.fontStyle, 'normal', document.getElementById('italicToggle'), true);
+        toggleFormat('textTransform', currentFormatting.textTransform, 'none', document.getElementById('allCapsToggle'), true);
+
+        const hAlign = document.querySelector('.alignment-button[data-align-h].active')?.dataset.alignH || 'center';
+        const vAlign = document.querySelector('.alignment-button[data-align-v].active')?.dataset.alignV || 'flex-end';
+        changeAlignment('horizontal', hAlign, document.querySelector(`[data-align-h="${hAlign}"]`), true);
+        changeAlignment('vertical', vAlign, document.querySelector(`[data-align-v="${vAlign}"]`), true);
+
+        adjustPosition('x', currentAdjustment.x, true);
+        adjustPosition('y', currentAdjustment.y, true);
+
+        changeBackground('color', document.getElementById('colorPicker').value, true);
+
+        // Apply text background if active
+        if (isTextBgActive) {
+            changeTextBackgroundStyle('color', document.getElementById('textBgColor').value, true);
+            changeTextBackgroundStyle('padding', document.getElementById('textBgPadding').value, true);
+            changeTextBackgroundStyle('radius', document.getElementById('textBgRadius').value, true);
+            const savedSettings = JSON.parse(localStorage.getItem('presentationSettings'));
+            if (savedSettings?.textBgImage && savedSettings.textBgImage !== 'none') {
+                contentDiv.style.backgroundImage = savedSettings.textBgImage;
+            }
+        }
+    }
+    
+    function toggleTextBackground() {
+        const contentDiv = presentationWindow?.document.getElementById('content');
+        const toggleButton = document.getElementById('toggleBgButton');
+        const optionsDiv = document.getElementById('bgOptions');
+
+        isTextBgActive = !isTextBgActive;
+        
+        if (isTextBgActive) {
+            toggleButton.textContent = 'Disable Text Background';
+            toggleButton.classList.add('active');
+            optionsDiv.style.display = 'block';
+            if (contentDiv) {
+                changeTextBackgroundStyle('color', document.getElementById('textBgColor').value);
+                changeTextBackgroundStyle('padding', document.getElementById('textBgPadding').value);
+                changeTextBackgroundStyle('radius', document.getElementById('textBgRadius').value);
+            }
+        } else {
+            toggleButton.textContent = 'Enable Text Background';
+            toggleButton.classList.remove('active');
+            optionsDiv.style.display = 'none';
+            if (contentDiv) {
+                contentDiv.style.backgroundColor = 'transparent';
+                contentDiv.style.padding = '20px';
+                contentDiv.style.backgroundImage = 'none';
+                contentDiv.style.borderRadius = '0px';
+            }
+        }
+        saveSettings();
+    }
+
+    function changeTextBackgroundStyle(property, value, force) {
+        if ((!isTextBgActive || !presentationWindow || presentationWindow.closed) && !force) return;
+        const contentDiv = presentationWindow?.document.getElementById('content');
+        if (!contentDiv) return;
+
+        switch (property) {
+            case 'color': 
+                contentDiv.style.backgroundColor = value; 
+                // Applying a color should remove the background image.
+                if (contentDiv.style.backgroundImage !== 'none') {
+                    contentDiv.style.backgroundImage = 'none';
+                }
+                break;
+            case 'padding': contentDiv.style.padding = `${value}px 20px`; break;
+            case 'radius': contentDiv.style.borderRadius = `${value}px`; break;
+        }
+        if(!force) saveSettings();
+    }
+
+    /**
+     * Applies the selected animation to the content element.
+     * @param {HTMLElement} element The element to animate.
+     */
+    function applyAnimation() {
+        const animationWrapper = presentationWindow?.document.getElementById('animation-wrapper');
+        const animation = document.getElementById('animationEffect').value;
+        if (!animationWrapper || animation === 'none') return;
+
+        // Remove old animation classes
+        animationWrapper.classList.remove('animate-fade-in', 'animate-slide-in-top', 'animate-zoom-in');
+
+        // We need to trigger a reflow for the animation to restart.
+        void animationWrapper.offsetWidth;
+
+        // We must wait for the next frame for the browser to apply the animation class
+        // after the element has been made visible.
+        requestAnimationFrame(() => {
+            animationWrapper.classList.add(`animate-${animation}`);
+        });
+    }
+
+    function changeTextBackgroundImage(file, force) {
+        if (!isTextBgActive || (!presentationWindow || presentationWindow.closed)) return;
+        if (!file) return;
+
+        const url = URL.createObjectURL(file);
+        const contentDiv = presentationWindow.document.getElementById('content');
+        if (contentDiv) {
+            contentDiv.style.backgroundImage = `url('${url}')`;
+            contentDiv.style.backgroundSize = 'cover';
+            contentDiv.style.backgroundPosition = 'center';
+            // When applying an image, make the color transparent to see through PNGs.
+            contentDiv.style.backgroundColor = 'transparent';
+        }
+
+        if (!force) saveSettings();
+    }
+
+    document.getElementById('presentButton').addEventListener('click', () => {
+        const text = presentationText.value.trim();
+        const duration = parseInt(document.getElementById('presentationDuration').value, 10);
+
+        // First, check if there is any text to present.
+        if (!text) {
+            alert("Please enter some text to present.");
+            return; // Stop execution if there's no text.
+        }
+
+        // Function to handle the auto-hide timer
+        const applyAutoHide = () => {
+            // Clear any existing timer before setting a new one.
+            clearTimeout(autoHideTimer);
+
+            if (duration && duration > 0) {
+                autoHideTimer = setTimeout(() => {
+                    const wrapper = presentationWindow?.document.getElementById('content-wrapper');
+                    if (wrapper) {
+                        wrapper.style.display = 'none';
+                    }
+                }, duration * 1000);
+            }
+        };
+
+        if (presentationWindow && !presentationWindow.closed) {
+            const wrapper = presentationWindow.document.getElementById('content-wrapper');
+            const contentDiv = presentationWindow.document.getElementById('content');
+            if (contentDiv && wrapper) {
+                wrapper.style.display = 'block'; // Make it visible again as a block element for animations
+                contentDiv.textContent = text;
+                applyAnimation();
+                // Re-apply alignment as it depends on text content
+                const hAlign = document.querySelector('.alignment-button[data-align-h].active')?.dataset.alignH || 'center';
+                contentDiv.style.textAlign = (hAlign === 'flex-start' ? 'left' : (hAlign === 'flex-end' ? 'right' : 'center'));
+                applyAutoHide();
+            }
+        } else {
+            // If window is not open, open it. The text will be applied by applyAllSettingsToWindow().
+            togglePresentationWindow();
+            // We need a slight delay to ensure the window is ready before setting the timer
+            setTimeout(applyAutoHide, 100);
+        }
+
+        if (text && !presentationHistory.includes(text)) {
+            presentationHistory.unshift(text);
+            renderHistory();
+            saveSettings();
+        }
+    });
+
+    document.getElementById('hideButton').addEventListener('click', () => {
+        if (presentationWindow && !presentationWindow.closed) {
+            const wrapper = presentationWindow.document.getElementById('content-wrapper');
+            if (wrapper) {
+                wrapper.style.display = 'none';
+            }
+        }
+    });
+
+    function renderHistory() {
+        const historyContainer = document.getElementById('historyContainer');
+        historyContainer.innerHTML = '';
+        document.getElementById('clearHistoryButton').style.display = presentationHistory.length > 0 ? 'block' : 'none';
+
+        presentationHistory.forEach((text, index) => {
+            const historyItem = document.createElement('div');
+            historyItem.style = 'display: flex; align-items: center; margin-bottom: 5px; gap: 5px;';
+            
+            const historyText = document.createElement('span');
+            historyText.textContent = text;
+            historyText.style = 'flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0 5px;';
+            
+            const presentButton = document.createElement('button');
+            presentButton.textContent = 'Present';
+            presentButton.onclick = () => presentFromHistory(index);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = '×'; // Using the multiplication sign for a cleaner 'X'
+            deleteButton.className = 'delete-history-btn';
+            deleteButton.onclick = () => deleteFromHistory(index);
+
+            historyItem.appendChild(deleteButton);
+            historyItem.appendChild(historyText);
+            historyItem.appendChild(presentButton);
+            historyContainer.appendChild(historyItem);
+        });
+    }
+
+    function deleteFromHistory(index) {
+        presentationHistory.splice(index, 1);
+        renderHistory();
+        saveSettings();
+    }
+
+    function clearHistory() {
+        if (confirm('Are you sure you want to clear all history items?')) {
+            presentationHistory = [];
+            renderHistory();
+            saveSettings();
+        }
+    }
+
+    function presentFromHistory(index) {
+        const text = presentationHistory[index];
+        presentationText.value = text;
+        document.getElementById('presentButton').click();
+    }
+
+    function adjustPosition(axis, value, force) {
+        document.getElementById(`adjust${axis.toUpperCase()}Value`).textContent = `${value} px`;
+        currentAdjustment[axis] = value;
+        const wrapper = presentationWindow?.document.getElementById('content-wrapper');
+        if (wrapper) {
+            // Apply position adjustments to the wrapper to avoid conflicts with animation transforms
+            wrapper.style.transform = `translate(${currentAdjustment.x}px, ${currentAdjustment.y}px)`;
+        }
+        if(!force) saveSettings();
+    }
+
+    function changeFont(property, value, force) {
+        const contentDiv = presentationWindow?.document.getElementById('content');
+        if(contentDiv){
+            switch (property) {
+                case 'family': contentDiv.style.fontFamily = value; break;
+                case 'size': contentDiv.style.fontSize = value; break;
+                case 'color': contentDiv.style.color = value; break;
+            }
+        }
+        if(!force) saveSettings();
+    }
+
+    function toggleFormat(cssProperty, onValue, offValue, clickedButton, force) {
+        const isCurrentlyOn = currentFormatting[cssProperty] === onValue;
+        
+        if (isCurrentlyOn) {
+            currentFormatting[cssProperty] = offValue;
+            clickedButton.classList.remove('active');
+        } else {
+            currentFormatting[cssProperty] = onValue;
+            clickedButton.classList.add('active');
+        }
+
+        const contentDiv = presentationWindow?.document.getElementById('content');
+        if (contentDiv) {
+            contentDiv.style[cssProperty] = currentFormatting[cssProperty];
+        }
+        
+        if(!force) saveSettings();
+    }
+
+    function changeAlignment(direction, value, clickedButton, force) {
+        const body = presentationWindow?.document.body;
+        const contentDiv = presentationWindow?.document.getElementById('content');
+        
+        if (body && contentDiv) {
+            if (direction === 'horizontal') {
+                body.style.justifyContent = value;
+                contentDiv.style.textAlign = (value === 'flex-start' ? 'left' : (value === 'flex-end' ? 'right' : 'center'));
+            } else if (direction === 'vertical') {
+                body.style.alignItems = value;
+            }
+        }
+
+        document.querySelectorAll(`.alignment-button[data-align-${direction[0]}]`).forEach(btn => btn.classList.remove('active'));
+        clickedButton.classList.add('active');
+        
+        if(!force) saveSettings();
+    }
+
+    function changeBackground(type, value, force) {
+        if ((!presentationWindow || presentationWindow.closed) && !force) {
+            if (type === 'color') saveSettings(); // still save color choice
+            return;
+        }
+
+        if (type === 'color') {
+            if(presentationWindow) presentationWindow.document.body.style.backgroundColor = value;
+            if(!force) saveSettings();
+        } else if (type === 'image' || type === 'video') {
+            const file = value;
+            if (!file) { return; }
+            const url = URL.createObjectURL(file);
+            const presDoc = presentationWindow.document;
+            const mediaContainer = presDoc.getElementById('media-bg-container');
+            mediaContainer.innerHTML = ''; 
+            
+            const mediaElement = type === 'image' ? presDoc.createElement('img') : presDoc.createElement('video');
+            mediaElement.id = 'media-bg';
+            mediaElement.src = url;
+            if (type === 'video') {
+                mediaElement.autoplay = true;
+                mediaElement.loop = true;
+                mediaElement.muted = true;
+            }
+            mediaContainer.appendChild(mediaElement);
+        }
+    }
+
+    // --- Autocomplete Functions ---
+
+    function handleAutocomplete(e) {
+        const inputText = e.target.value;
+        if (inputText.length === 0) {
+            suggestionsContainer.classList.add('hidden');
+            return;
+        }
+
+        const suggestions = bibleBooks.filter(book => book.toLowerCase().startsWith(inputText.toLowerCase()));
+        
+        if (suggestions.length > 0) {
+            renderSuggestions(suggestions);
+            suggestionsContainer.classList.remove('hidden');
+        } else {
+            suggestionsContainer.classList.add('hidden');
+        }
+        saveSettings();
+    }
+
+    function renderSuggestions(suggestions) {
+        suggestionsContainer.innerHTML = '';
+        suggestions.forEach((book, index) => {
+            const item = document.createElement('div');
+            item.classList.add('suggestion-item');
+            item.textContent = book;
+            item.addEventListener('click', () => {
+                presentationText.value = book + ' ';
+                suggestionsContainer.classList.add('hidden');
+                presentationText.focus();
+                saveSettings();
+            });
+            suggestionsContainer.appendChild(item);
+        });
+        suggestionIndex = -1; // Reset selection
+    }
+
+    function handleAutocompleteKeyDown(e) {
+        const items = suggestionsContainer.querySelectorAll('.suggestion-item');
+        if (suggestionsContainer.classList.contains('hidden') || items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            suggestionIndex = (suggestionIndex + 1) % items.length;
+            updateSuggestionHighlight(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            suggestionIndex = (suggestionIndex - 1 + items.length) % items.length;
+            updateSuggestionHighlight(items);
+        } else if ((e.key === 'Enter' || e.key === 'Tab' || e.key === ' ') && suggestionIndex > -1) {
+            e.preventDefault();
+            items[suggestionIndex].click();
+        } else if ((e.key === 'Tab' || e.key === ' ') && suggestionIndex === -1 && items.length > 0) {
+            e.preventDefault();
+            items[0].click(); // Select the first suggestion
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            suggestionsContainer.classList.add('hidden');
+        }
+    }
+
+    function updateSuggestionHighlight(items) {
+        items.forEach((item, index) => {
+            item.classList.toggle('active', index === suggestionIndex);
+        });
+    }
+    
+    // --- Global Key Listeners ---
+    document.getElementById('presentationDuration').addEventListener('input', saveSettings);
+
+    document.getElementById('presentationText').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault(); // Stop newline from being inserted
+            document.getElementById('presentButton').click(); // Trigger the present button's click event
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            document.getElementById('hideButton').click();
+        }
+    });
+    
+</script>
+
+</body>
+</html>

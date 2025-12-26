@@ -1,0 +1,2251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentation Controller</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px-8px rgba(0, 0, 0, 0.1);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h1,
+        h3 {
+            color: #333;
+            text-align: center;
+        }
+
+        textarea,
+        select,
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input[type="color"] {
+            width: 60px;
+            height: 35px;
+            padding: 2px;
+            vertical-align: middle;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .tab-nav {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 16px;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-button.active {
+            border-bottom-color: #007bff;
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .icon-button {
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .format-button.active {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .align-button.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        /* Preview Section */
+        #preview-section {
+            background-color: #000;
+            color: #fff;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #preview-content {
+            font-size: 2.5vw;
+            text-align: center;
+            padding: 10px;
+            white-space: nowrap;
+            z-index: 2;
+        }
+
+        #preview-media-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        /* Seek Bar */
+        #seek-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        #seek-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #dc3545;
+            transition: width 0.1s linear;
+        }
+
+        /* Groupings */
+        .flex-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .grid-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        /* Autocomplete */
+        #autocomplete-suggestions {
+            position: absolute;
+            border: 1px solid #ccc;
+            background-color: white;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .suggestion-item.active {
+            background-color: #e0e0e0;
+        }
+
+        /* Custom group for main controls */
+        .main-controls {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+            /* Make all items same height */
+        }
+
+        .main-controls>* {
+            margin-bottom: 0 !important;
+            /* Override default margin */
+        }
+
+        .main-controls button {
+            flex-shrink: 0;
+            /* Prevent buttons from shrinking */
+        }
+
+        .duration-group {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 4px 8px;
+            justify-content: center;
+            text-align: center;
+        }
+
+        /* History */
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-text {
+            flex-grow: 1;
+            margin: 0 10px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        @keyframes slideInTop {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutTop {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes slideInBottom {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutBottom {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutLeft {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(50px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes zoomOut {
+            from {
+                transform: scale(1);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .animate-fade-out {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+
+        .animate-slide-in-top {
+            animation: slideInTop 0.5s ease-out forwards;
+        }
+
+        .animate-slide-out-top {
+            animation: slideOutTop 0.5s ease-out forwards;
+        }
+
+        .animate-slide-in-bottom {
+            animation: slideInBottom 0.5s ease-out forwards;
+        }
+
+        .animate-slide-out-bottom {
+            animation: slideOutBottom 0.5s ease-out forwards;
+        }
+
+        .animate-slide-in-left {
+            animation: slideInLeft 0.5s ease-out forwards;
+        }
+
+        .animate-slide-out-left {
+            animation: slideOutLeft 0.5s ease-out forwards;
+        }
+
+        .animate-slide-in-right {
+            animation: slideInRight 0.5s ease-out forwards;
+        }
+
+        .animate-slide-out-right {
+            animation: slideOutRight 0.5s ease-out forwards;
+        }
+
+
+        .animate-zoom-in {
+            animation: zoomIn 0.4s ease-out forwards;
+        }
+
+        .animate-zoom-out {
+            animation: zoomOut 0.4s ease-out forwards;
+        }
+
+        /* Compact Layout Helpers */
+        .compact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .compact-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .compact-row label {
+            margin-bottom: 0;
+            white-space: nowrap;
+            font-size: 0.9em;
+        }
+
+        .compact-section {
+            border: 1px solid #eee;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .compact-section h4 {
+            margin: 0 0 5px 0;
+            font-size: 1em;
+            background: #f8f9fa;
+            padding: 2px 5px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .mini-input {
+            padding: 2px 4px;
+            height: 24px;
+        }
+
+        /* Expand / Contract Animations */
+        @keyframes expandX {
+            from {
+                transform: scaleX(0);
+                opacity: 0;
+            }
+
+            to {
+                transform: scaleX(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes expandY {
+            from {
+                transform: scaleY(0);
+                opacity: 0;
+            }
+
+            to {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes contractX {
+            from {
+                transform: scaleX(1);
+                opacity: 1;
+            }
+
+            to {
+                transform: scaleX(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes contractY {
+            from {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+
+            to {
+                transform: scaleY(0);
+                opacity: 0;
+            }
+        }
+
+        .animate-expand-horizontally {
+            animation: expandX 0.5s ease-out forwards;
+        }
+
+        .animate-expand-vertically {
+            animation: expandY 0.5s ease-out forwards;
+        }
+
+        .animate-expand-left {
+            animation: expandX 0.5s ease-out forwards;
+            transform-origin: right;
+        }
+
+        .animate-expand-right {
+            animation: expandX 0.5s ease-out forwards;
+            transform-origin: left;
+        }
+
+        .animate-expand-up {
+            animation: expandY 0.5s ease-out forwards;
+            transform-origin: bottom;
+        }
+
+        .animate-expand-down {
+            animation: expandY 0.5s ease-out forwards;
+            transform-origin: top;
+        }
+
+        .animate-contract-horizontally {
+            animation: contractX 0.5s ease-out forwards;
+        }
+
+        .animate-contract-vertically {
+            animation: contractY 0.5s ease-out forwards;
+        }
+
+        .animate-contract-left {
+            animation: contractX 0.5s ease-out forwards;
+            transform-origin: left;
+        }
+
+        .animate-contract-right {
+            animation: contractX 0.5s ease-out forwards;
+            transform-origin: right;
+        }
+
+        .animate-contract-up {
+            animation: contractY 0.5s ease-out forwards;
+            transform-origin: top;
+        }
+
+        .animate-contract-down {
+            animation: contractY 0.5s ease-out forwards;
+            transform-origin: bottom;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Presentation Controller</h1>
+
+        <div id="preview-section">
+            <div id="preview-content-wrapper">
+                <!-- This wrapper helps separate alignment from text-specific styles -->
+                <div id="preview-content">Preview Text</div>
+            </div>
+            <div id="preview-media-bg-container"></div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tab-nav">
+            <button class="tab-button active" onclick="openTab(event, 'mainTab')">Main</button>
+            <button class="tab-button" onclick="openTab(event, 'styleTab')">Style</button>
+            <button class="tab-button" onclick="openTab(event, 'backgroundTab')">Background</button>
+            <button class="tab-button" onclick="openTab(event, 'positionTab')">Position</button>
+            <button class="tab-button" onclick="openTab(event, 'fileTab')">File</button>
+        </div>
+
+        <!-- MAIN TAB -->
+        <div id="mainTab" class="tab-content active">
+            <div class="control-group">
+                <label for="presentationText">Enter Text to Present:</label>
+                <div id="autocomplete-container" style="position: relative;">
+
+                    <div class="main-controls">
+                        <div style="flex-grow: 1;">
+                            <textarea id="presentationText" rows="3"
+                                placeholder="Type a book of the Bible, e.g., 'John 3:16'"></textarea>
+                        </div>
+                        <button id="presentButton"
+                            style="background-color: #28a745; color: white; width: 90px;">PRESENT</button>
+                        <button id="hideButton" style="background-color: #6c757d; color: white;">HIDE</button>
+                        <div class="duration-group">
+                            <label for="presentationDuration"
+                                style="margin-bottom: 2px; font-weight: normal; font-size: 0.8em;">Duration</label>
+                            <input type="number" id="presentationDuration" min="0" value="0"
+                                style="width: 60px; padding: 2px; text-align: center;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+
+                <div class="flex-group">
+                    <button id="timerToggleBtn"
+                        style="width: 40px; height: 30px; padding: 0; display: none; align-items: center; justify-content: center; background-color: #ffc107; color: black; border: 1px solid #ccc; visibility: hidden;">
+                        <span>||</span>
+                    </button>
+                    <div id="seek-bar-container" style="flex-grow: 1;">
+                        <div id="seek-bar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Presentation History</h3>
+                    <button id="clearHistoryButton" style="background-color: #dc3545; color: white;">Clear All</button>
+                </div>
+                <div id="historyContainer" style="margin-top: 10px;"></div>
+            </div>
+        </div>
+
+        <!-- STYLE TAB (Compact) -->
+        <div id="styleTab" class="tab-content">
+            <div class="compact-grid">
+
+                <!-- Left Column -->
+                <div>
+                    <!-- Font & Style -->
+                    <div class="compact-section">
+                        <h4>Font & Style</h4>
+                        <div class="compact-row">
+                            <select id="fontFamily" class="mini-input" style="flex-grow: 1;">
+                                <option value="Arial, sans-serif" selected>Arial</option>
+                                <option value="Georgia, serif">Georgia</option>
+                                <option value="'Courier New', monospace">Courier New</option>
+                                <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+                            </select>
+                            <input type="number" id="fontSize" min="1" max="10" value="4" class="mini-input"
+                                style="width: 40px;" title="Size (vw)">
+                            <span>vw</span>
+                        </div>
+                        <div class="compact-row">
+                            <input type="text" id="googleFontInput" placeholder="Add Google Font" class="mini-input"
+                                style="flex-grow: 1;">
+                            <button id="addGoogleFontButton" style="padding: 2px 6px; font-size: 0.8em;">+</button>
+                        </div>
+                        <div class="compact-row" style="justify-content: space-between;">
+                            <div class="flex-group" style="gap:2px;">
+                                <button class="format-button icon-button" data-style="fontWeight" data-on="bold"
+                                    data-off="normal" title="Bold" style="width: 28px; height: 28px;"><b
+                                        style="pointer-events: none;">B</b></button>
+                                <button class="format-button icon-button" data-style="fontStyle" data-on="italic"
+                                    data-off="normal" title="Italic" style="width: 28px; height: 28px;"><i
+                                        style="pointer-events: none;">I</i></button>
+                                <button class="format-button icon-button" data-style="textDecoration"
+                                    data-on="underline" data-off="none" title="Underline"
+                                    style="width: 28px; height: 28px;"><u style="pointer-events: none;">U</u></button>
+                                <button class="format-button icon-button" data-style="textTransform" data-on="uppercase"
+                                    data-off="none" title="Uppercase"
+                                    style="width: 28px; height: 28px; font-size:0.8em;">AA</button>
+                                <button class="format-button icon-button" data-style="textTransform" data-on="lowercase"
+                                    data-off="none" title="Lowercase"
+                                    style="width: 28px; height: 28px; font-size:0.8em;">aa</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Color -->
+                    <div class="compact-section">
+                        <h4>Color</h4>
+                        <div class="compact-row">
+                            <label>Solid:</label>
+                            <input type="color" id="textColor" value="#ffffff" style="height: 24px; width: 40px;">
+                            <button id="applySolidColor" style="padding: 2px 5px; font-size: 0.8em;">Apply</button>
+                        </div>
+                        <hr style="margin: 4px 0; border: 0; border-top: 1px solid #eee;">
+                        <div class="compact-row">
+                            <label>Grad:</label>
+                            <input type="color" id="gradientColor1" value="#ffffff" style="height: 24px; width: 30px;">
+                            <input type="color" id="gradientColor2" value="#007bff" style="height: 24px; width: 30px;">
+                            <select id="gradientDirection" class="mini-input" style="width: 80px;">
+                                <option value="to right">Right</option>
+                                <option value="to left">Left</option>
+                                <option value="to bottom">Down</option>
+                                <option value="to top">Up</option>
+                            </select>
+                            <button id="applyGradient" style="padding: 2px 5px; font-size: 0.8em;">Apply</button>
+                        </div>
+                        <input type="hidden" id="colorMode" value="solid">
+                    </div>
+
+                    <!-- Animation -->
+                    <div class="compact-section">
+                        <h4>Animation (ms)</h4>
+                        <div class="compact-row">
+                            <label style="width: 30px;">In:</label>
+                            <select id="entryAnimation" class="mini-input" style="flex-grow: 1;">
+                                <option value="none">None</option>
+                                <optgroup label="Fade">
+                                    <option value="fade-in">Fade In</option>
+                                </optgroup>
+                                <optgroup label="Slide">
+                                    <option value="slide-in-top">Top</option>
+                                    <option value="slide-in-bottom">Bottom</option>
+                                    <option value="slide-in-left">Left</option>
+                                    <option value="slide-in-right">Right</option>
+                                </optgroup>
+                                <optgroup label="Zoom">
+                                    <option value="zoom-in">Zoom In</option>
+                                </optgroup>
+                                <optgroup label="Expand">
+                                    <option value="expand-horizontally">Exp H</option>
+                                    <option value="expand-vertically">Exp V</option>
+                                    <option value="expand-left">Exp L</option>
+                                    <option value="expand-right">Exp R</option>
+                                </optgroup>
+                            </select>
+                            <input type="number" id="entryAnimationDuration" value="500" step="100" class="mini-input"
+                                style="width: 50px;">
+                        </div>
+                        <div class="compact-row">
+                            <label style="width: 30px;">Out:</label>
+                            <select id="exitAnimation" class="mini-input" style="flex-grow: 1;">
+                                <option value="none">None</option>
+                                <optgroup label="Fade">
+                                    <option value="fade-out">Fade Out</option>
+                                </optgroup>
+                                <optgroup label="Slide">
+                                    <option value="slide-out-top">Top</option>
+                                    <option value="slide-out-bottom">Bottom</option>
+                                    <option value="slide-out-left">Left</option>
+                                    <option value="slide-out-right">Right</option>
+                                </optgroup>
+                                <optgroup label="Zoom">
+                                    <option value="zoom-out">Zoom Out</option>
+                                </optgroup>
+                                <optgroup label="Contract">
+                                    <option value="contract-horizontally">Con H</option>
+                                    <option value="contract-vertically">Con V</option>
+                                    <option value="contract-left">Con L</option>
+                                    <option value="contract-right">Con R</option>
+                                </optgroup>
+                            </select>
+                            <input type="number" id="exitAnimationDuration" value="500" step="100" class="mini-input"
+                                style="width: 50px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div>
+                    <!-- Effects -->
+                    <div class="compact-section">
+                        <h4>Effects</h4>
+
+                        <!-- Outline -->
+                        <div class="compact-row">
+                            <input type="checkbox" id="outlineToggle"> <label for="outlineToggle">Outline</label>
+                            <input type="color" id="outlineColor" value="#000000" style="height: 20px; width: 30px;">
+                            <input type="number" id="outlineWidth" value="1" min="0" step="0.5" class="mini-input"
+                                style="width: 40px;"> px
+                        </div>
+
+                        <!-- Glow -->
+                        <div class="compact-row">
+                            <input type="checkbox" id="glowToggle"> <label for="glowToggle">Glow</label>
+                            <input type="color" id="glowColor" value="#ffff00" style="height: 20px; width: 30px;">
+                            <input type="number" id="glowSize" value="10" min="0" class="mini-input"
+                                style="width: 40px;"> px
+                        </div>
+
+                        <!-- Drop Shadow -->
+                        <div class="compact-row">
+                            <input type="checkbox" id="shadowToggle"> <label for="shadowToggle">Shadow</label>
+                            <input type="color" id="shadowColor" value="#000000" style="height: 20px; width: 30px;">
+                        </div>
+                        <div class="compact-row" style="padding-left: 20px;">
+                            <label>Blur:</label>
+                            <input type="number" id="shadowBlur" value="4" class="mini-input" style="width: 40px;">
+                            <label>Dist:</label>
+                            <input type="number" id="shadowDistance" value="4" class="mini-input" style="width: 40px;">
+                        </div>
+                        <div class="compact-row" style="padding-left: 20px;">
+                            <label>Angle:</label>
+                            <input type="range" id="shadowAngle" value="45" min="0" max="360"
+                                style="flex-grow:1; height: 10px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BACKGROUND TAB -->
+        <div id="backgroundTab" class="tab-content">
+            <div class="control-group">
+                <h3>Presentation Window Background</h3>
+                <label for="presentationBgColor">Solid Color:</label>
+                <input type="color" id="presentationBgColor" value="#000000">
+                <label for="presentationBgImage">Image File:</label>
+                <input type="file" id="presentationBgImage" accept="image/*">
+                <label for="presentationBgVideo">Looping Video File:</label>
+                <input type="file" id="presentationBgVideo" accept="video/*">
+            </div>
+            <div class="control-group">
+                <h3>Text Content Background</h3>
+                <label for="textBackgroundToggle">Enable Text Background:</label>
+                <input type="checkbox" id="textBackgroundToggle" style="width: auto;">
+                <label for="textBackgroundType">Type:</label>
+                <select id="textBackgroundType">
+                    <option value="box">Box</option>
+                    <option value="text line">Text Line</option>
+                    <option value="picture">Picture</option>
+                </select>
+                <label for="textBackgroundColor">Color (for Box/Line):</label>
+                <input type="color" id="textBackgroundColor" value="#333333">
+                <label for="textBackgroundPicture">Picture File:</label>
+                <input type="file" id="textBackgroundPicture" accept="image/*">
+                <label for="textBackgroundWidth">Width (%):</label>
+                <input type="number" id="textBackgroundWidth" min="1" max="100" value="100">
+                <label for="textBackgroundHeight">Height (%):</label>
+                <input type="number" id="textBackgroundHeight" min="1" max="100" value="100" disabled>
+                <label for="textBackgroundRadius">Corner Radius (px):</label>
+                <input type="number" id="textBackgroundRadius" min="0" value="8">
+            </div>
+        </div>
+
+        <!-- POSITION TAB -->
+        <div id="positionTab" class="tab-content">
+            <div class="control-group">
+                <h3>Main Alignment</h3>
+                <div class="flex-group">
+                    <div>
+                        <label>Horizontal:</label>
+                        <button class="align-button icon-button" data-align-group="h" data-align="left"
+                            title="Align Left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path fill-rule="evenodd"
+                                    d="M2 12.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z" />
+                            </svg>
+                        </button>
+                        <button class="align-button icon-button active" data-align-group="h" data-align="center"
+                            title="Align Center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path fill-rule="evenodd"
+                                    d="M4 12.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z" />
+                            </svg>
+                        </button>
+                        <button class="align-button icon-button" data-align-group="h" data-align="right"
+                            title="Align Right">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path fill-rule="evenodd"
+                                    d="M6 12.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-4-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-4-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div>
+                        <label>Vertical:</label>
+                        <button class="align-button icon-button" data-align-group="v" data-align="top"
+                            title="Align Top">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16" transform="rotate(90)">
+                                <path fill-rule="evenodd"
+                                    d="M2 12.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z" />
+                            </svg>
+                        </button>
+                        <button class="align-button icon-button active" data-align-group="v" data-align="middle"
+                            title="Align Middle">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0zM7.247 4.86l4.796 5.481c.566.646.106 1.659-.753 1.659H3.204a1 1 0 0 1-.753-1.659L7.247 4.86z" />
+                            </svg>
+                        </button>
+                        <button class="align-button icon-button" data-align-group="v" data-align="bottom"
+                            title="Align Bottom">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16" transform="rotate(-90)">
+                                <path fill-rule="evenodd"
+                                    d="M2 12.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <h3>Fine Position Adjustment</h3>
+                <label for="horizontalAdjustment">Horizontal Adjustment:</label>
+                <input type="range" id="horizontalAdjustment" min="-50" max="50" value="0">
+                <label for="verticalAdjustment">Vertical Adjustment:</label>
+                <input type="range" id="verticalAdjustment" min="-50" max="50" value="0">
+            </div>
+        </div>
+
+        <!-- FILE TAB -->
+        <div id="fileTab" class="tab-content">
+            <div class="control-group">
+                <h3>Design Management</h3>
+                <p>Save your current style, background, and position settings to a file, or load them back in.</p>
+                <div class="flex-group">
+                    <button id="saveDesignButton" style="background-color: #17a2b8; color: white;">Save Design</button>
+                    <label for="loadDesignInput" class="button"
+                        style="background-color: #28a745; color: white; display: inline-block; padding: 10px 15px;">Load
+                        Design</label>
+                    <input type="file" id="loadDesignInput" class="hidden" accept=".json">
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <button id="toggleWindowButton" style="background-color: #17a2b8; color: white;">Open Presentation
+                Window</button>
+            <button id="fullscreenButton" style="background-color: #6c757d; color: white;">Go Fullscreen</button>
+            <span id="windowStatus" style="margin-left: 10px;">Closed</span>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Global State & Elements ---
+        let presentationWindow = null;
+        let autoHideTimer = null;
+        let seekTimer = null;
+        let isTimerPaused = false;
+        let timeRemaining = 0;
+        let lastTickTime = 0;
+
+        // Blobs for file inputs (session only)
+        let presentationBgImageBlob = null;
+        let presentationBgVideoBlob = null;
+        let textBackgroundPictureBlob = null;
+
+        const ALL_SETTINGS_KEY = 'presentationSettings_v3';
+
+        // --- DOM Elements (lazy loaded in DOMContentLoaded) ---
+        let presentButton, hideButton;
+        let presentationText, presentationDuration;
+        let playPauseSeek, seekBar, timerToggleBtn;
+        let historyContainer, clearHistoryButton;
+        let toggleWindowButton, windowStatus;
+        let previewContent, previewSection;
+        let saveDesignButton, loadDesignInput;
+        let formatButtons;
+        let alignButtons;
+        let addGoogleFontButton, googleFontInput, fontFamilySelect;
+        let autocompleteContainer;
+        let fullscreenButton;
+        let suggestionsDiv;
+        let activeSuggestionIndex = -1;
+
+        // State for the merged button
+        let presentationState = 'READY'; // READY, PLAYING, PAUSED
+
+        // --- Initialization ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // Cache DOM elements
+            presentButton = document.getElementById('presentButton');
+            timerToggleBtn = document.getElementById('timerToggleBtn');
+            hideButton = document.getElementById('hideButton');
+            presentationText = document.getElementById('presentationText');
+            presentationDuration = document.getElementById('presentationDuration');
+            seekBar = document.getElementById('seek-bar');
+            historyContainer = document.getElementById('historyContainer');
+            clearHistoryButton = document.getElementById('clearHistoryButton');
+            toggleWindowButton = document.getElementById('toggleWindowButton');
+            windowStatus = document.getElementById('windowStatus');
+            previewContent = document.getElementById('preview-content');
+            previewSection = document.getElementById('preview-section');
+            saveDesignButton = document.getElementById('saveDesignButton');
+            loadDesignInput = document.getElementById('loadDesignInput');
+            formatButtons = document.querySelectorAll('.format-button');
+            alignButtons = document.querySelectorAll('.align-button');
+            autocompleteContainer = document.getElementById('autocomplete-container');
+            addGoogleFontButton = document.getElementById('addGoogleFontButton');
+            fullscreenButton = document.getElementById('fullscreenButton');
+            googleFontInput = document.getElementById('googleFontInput');
+            fontFamilySelect = document.getElementById('fontFamily');
+
+            // Attach listeners
+            presentButton.addEventListener('click', handlePresent);
+            timerToggleBtn.addEventListener('click', handleHold);
+            hideButton.addEventListener('click', handleHide);
+            fullscreenButton.disabled = true; // Initially disabled
+            toggleWindowButton.addEventListener('click', togglePresentationWindow);
+            clearHistoryButton.addEventListener('click', clearAllHistory);
+
+            saveDesignButton.addEventListener('click', saveDesignToFile);
+            loadDesignInput.addEventListener('change', loadDesignFromFile);
+
+            addGoogleFontButton.addEventListener('click', handleAddGoogleFont);
+            googleFontInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    handleAddGoogleFont();
+                }
+            });
+
+            presentationText.addEventListener('input', handleAutocomplete);
+            presentationText.addEventListener('focus', function () {
+                this.select();
+            });
+            presentationText.addEventListener('keydown', (e) => {
+                // Give autocomplete priority for Enter/Space
+                if (!suggestionsDiv || (e.key !== 'Enter' && e.key !== 'Tab')) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault(); // Prevent form submission/new line
+                        handlePresent(); // This will now handle context-aware Present/Pause
+                        presentationText.blur(); // Blur to allow Spacebar shortcut immediately
+                    }
+                }
+                handleAutocompleteKeydown(e); // Always run for arrow keys etc.
+            });
+
+            // Watch for changes to reset button to "PRESENT"
+            presentationText.addEventListener('input', (e) => {
+                handleAutocomplete(e);
+                resetToPresentState();
+            });
+            presentationDuration.addEventListener('input', resetToPresentState);
+
+            // Global Shortcut: Spacebar to Toggle Timer OR Present if focused
+            // Logic: If we are focused on input, space types space.
+            // If we are NOT focused, space triggers the main button action (Pause/Resume likely).
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    // Check if focus is NOT on an input/textarea (to allow typing spaces)
+                    const activeTag = document.activeElement.tagName.toLowerCase();
+                    const isInput = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+
+                    if (!isInput) {
+                        e.preventDefault(); // Prevent scrolling
+
+                        // If button state is playing/paused, toggle it.
+                        // If button state is READY (Present), we could technically present, 
+                        // but sticking to "Pause/Resume" for spacebar is safer unless we want Space to Present too.
+                        // Current requirement: Spacebar -> Pause/Resume.
+                        // So we map Spacebar to handleHold() directly?
+                        // OR: We map Spacebar to click the main button?
+                        // Let's map to Main Button Click for consistency IF it is in Pause/Resume state.
+
+                        if (presentationState === 'PLAYING' || presentationState === 'PAUSED') {
+                            handlePresent(); // This toggles now
+                        }
+                    }
+                }
+            });
+
+            document.querySelectorAll('input, select, textarea').forEach(el => {
+                // Exclude text and duration from this specific listener as they have their own handlers
+                if (el.id !== 'presentationText' && el.id !== 'presentationDuration') {
+                    el.addEventListener('change', saveAndApplySettings);
+                }
+                if (el.id === 'presentationDuration') {
+                    el.addEventListener('change', saveAndApplySettings);
+                }
+                if (el.type === 'range' || el.type === 'number') {
+                    el.addEventListener('input', saveAndApplySettings);
+                }
+            });
+
+            formatButtons.forEach(button => {
+                button.addEventListener('click', handleFormatButtonClick);
+            });
+
+            alignButtons.forEach(button => {
+                button.addEventListener('click', handleAlignButtonClick);
+            });
+
+            // Setup color mode buttons
+            document.getElementById('applySolidColor').addEventListener('click', () => setColorMode('solid'));
+            document.getElementById('applyGradient').addEventListener('click', () => setColorMode('gradient'));
+
+
+            // Close autocomplete if user clicks elsewhere
+            document.addEventListener('click', (e) => {
+                if (!autocompleteContainer.contains(e.target)) {
+                    clearAutocomplete();
+                }
+            });
+
+            // File input listeners
+            const handleFileSelect = (e, type) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const url = URL.createObjectURL(file);
+                if (type === 'bgImage') presentationBgImageBlob = url;
+                if (type === 'bgVideo') presentationBgVideoBlob = url;
+                if (type === 'textBg') textBackgroundPictureBlob = url;
+                saveAndApplySettings();
+            };
+
+            document.getElementById('presentationBgImage').addEventListener('change', (e) => handleFileSelect(e, 'bgImage'));
+            document.getElementById('presentationBgVideo').addEventListener('change', (e) => handleFileSelect(e, 'bgVideo'));
+            document.getElementById('textBackgroundPicture').addEventListener('change', (e) => handleFileSelect(e, 'textBg'));
+
+            // Text Background Type Listener to toggle Height input
+            document.getElementById('textBackgroundType').addEventListener('change', (e) => {
+                document.getElementById('textBackgroundHeight').disabled = (e.target.value !== 'box');
+                saveAndApplySettings();
+            });
+
+            // Global shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    handleHide();
+                }
+            });
+
+            loadSettings();
+            // Hide the old timer toggle button
+            timerToggleBtn.style.display = 'none';
+        });
+
+        function updateTimerButtonState(paused) {
+            // This function is now largely vestigial as the main presentButton handles state.
+            // Keeping it for handleHold's internal logic, but it won't affect visible UI.
+            // timerToggleBtn.innerHTML = paused ? '<span>&#9658;</span>' : '<span>||</span>'; // Play triangle : Pause bars
+            // timerToggleBtn.style.backgroundColor = paused ? '#28a745' : '#ffc107'; // Green : Yellow
+            // timerToggleBtn.title = paused ? "Resume" : "Pause";
+        }
+
+        function setTimerButtonVisible(visible) {
+            // This function is now vestigial as the main presentButton handles state.
+            // timerToggleBtn.style.visibility = visible ? 'visible' : 'hidden';
+        }
+
+        // --- Core Logic ---
+        function resetToPresentState() {
+            presentationState = 'READY';
+            if (presentButton) {
+                presentButton.textContent = 'PRESENT';
+                presentButton.style.backgroundColor = '#28a745'; // Green
+                presentButton.style.color = 'white';
+            }
+        }
+
+        function handlePresent() {
+            const text = presentationText.value;
+            const duration = parseInt(presentationDuration.value, 10);
+
+            if (!text) {
+                alert("Please enter some text to present.");
+                return;
+            }
+
+            // STATE MACHINE
+            if (presentationState === 'READY') {
+                // ACTION: PRESENT
+                if (!presentationWindow || presentationWindow.closed) {
+                    togglePresentationWindow();
+                    // Wait briefly for window
+                    setTimeout(() => doPresent(text, duration), 500);
+                    return;
+                }
+                doPresent(text, duration);
+
+            } else if (presentationState === 'PLAYING') {
+                // ACTION: PAUSE
+                handleHold(); // Toggles isTimerPaused internally
+                presentationState = 'PAUSED';
+                presentButton.textContent = 'RESUME ▶';
+                presentButton.style.backgroundColor = '#28a745'; // Green for Resume action
+
+                // Visual feedback that we are paused? Maybe Button should be Green but say Resume. 
+                // Wait, User might want Pause button to be distinct.
+                // Standard: Pause button is usually visible WHILE playing.
+                // So if state is PLAYING, Button says "PAUSE".
+                // We just clicked "PAUSE", so now we are PAUSED.
+                // Button should now say "RESUME".
+
+            } else if (presentationState === 'PAUSED') {
+                // ACTION: RESUME
+                handleHold();
+                presentationState = 'PLAYING';
+                presentButton.textContent = 'PAUSE ||';
+                presentButton.style.backgroundColor = '#ffc107'; // Yellow/Warning for Pause action
+                presentButton.style.color = 'black';
+            }
+        }
+
+        function doPresent(text, duration) {
+            // Logic moved from old handlePresent
+            addHistoryItem(text);
+
+            // update styles
+            saveAndApplySettings();
+
+            // Use a timeout to ensure window is ready
+            setTimeout(() => {
+                // FORCE update styles to ensure "current" settings are applied
+                updatePresentationWindowStyles();
+
+                const contentDiv = presentationWindow?.document.getElementById('content');
+                if (contentDiv) {
+                    const entryAnimation = document.getElementById('entryAnimation').value;
+                    const entryDuration = document.getElementById('entryAnimationDuration').value;
+
+                    contentDiv.className = 'content'; // Reset classes
+                    contentDiv.style.display = 'block'; // Make visible FIRST
+
+                    // Reflow to restart animation
+                    void contentDiv.offsetWidth;
+
+                    contentDiv.textContent = text;
+                    contentDiv.style.animationDuration = `${entryDuration}ms`; // Apply duration
+
+                    if (entryAnimation !== 'none') {
+                        contentDiv.classList.add(`animate-${entryAnimation}`);
+                    }
+                }
+                startAutoHideTimer();
+
+                // Update Button State AFTER starting timer
+                if (duration > 0) {
+                    presentationState = 'PLAYING';
+                    presentButton.textContent = 'PAUSE ||';
+                    presentButton.style.backgroundColor = '#ffc107'; // Yellow
+                    presentButton.style.color = 'black';
+                } else {
+                    // Stay READY if no timer
+                    resetToPresentState();
+                }
+
+            }, 100);
+        }
+
+        function handleHide() {
+            if (presentationWindow && !presentationWindow.closed) {
+                const contentDiv = presentationWindow.document.getElementById('content');
+                if (contentDiv) {
+                    const exitAnimation = document.getElementById('exitAnimation').value;
+                    const exitDuration = document.getElementById('exitAnimationDuration').value;
+
+                    if (exitAnimation !== 'none') {
+                        contentDiv.classList.add(`animate-${exitAnimation}`);
+                        contentDiv.style.animationDuration = `${exitDuration}ms`;
+
+                        setTimeout(() => {
+                            contentDiv.style.display = 'none';
+                            contentDiv.classList.remove(`animate-${exitAnimation}`);
+                        }, exitDuration);
+                    } else {
+                        contentDiv.style.display = 'none';
+                    }
+                }
+            }
+            resetToPresentState();
+
+            // Reset Seek Bar Logic
+            clearTimeout(autoHideTimer);
+            clearInterval(seekTimer);
+            autoHideTimer = null;
+            seekTimer = null;
+            if (seekBar) seekBar.style.width = '0%';
+            setTimerButtonVisible(false);
+        }
+
+        function handleHold() {
+            isTimerPaused = !isTimerPaused;
+
+            if (isTimerPaused) {
+                updateTimerButtonState(true);
+                clearTimeout(autoHideTimer);
+                clearInterval(seekTimer);
+                // Record remaining time
+                const elapsed = performance.now() - lastTickTime;
+                timeRemaining = Math.max(0, timeRemaining - elapsed);
+            } else {
+                // Resume timer
+                updateTimerButtonState(false);
+                lastTickTime = performance.now();
+                autoHideTimer = setTimeout(handleHide, timeRemaining);
+                startSeeker(timeRemaining, parseInt(presentationDuration.value, 10) * 1000);
+            }
+        }
+
+        // --- Timers & Seek Bar ---
+        function startAutoHideTimer() {
+            clearTimeout(autoHideTimer);
+            clearInterval(seekTimer);
+            autoHideTimer = null;
+            seekTimer = null;
+            isTimerPaused = false;
+
+            const duration = parseInt(presentationDuration.value, 10);
+            if (duration > 0) {
+                setTimerButtonVisible(true);
+                updateTimerButtonState(false); // Valid active timer -> Show Pause option
+
+                timeRemaining = duration * 1000;
+                lastTickTime = performance.now();
+                autoHideTimer = setTimeout(handleHide, timeRemaining);
+                startSeeker(timeRemaining, timeRemaining);
+            } else {
+                setTimerButtonVisible(false); // No timer -> no pause/play on seek bar
+                seekBar.style.width = '0%';
+            }
+        }
+
+        function startSeeker(duration, totalDuration) {
+            const startTime = performance.now();
+            seekTimer = setInterval(() => {
+                if (!isTimerPaused) {
+                    const elapsed = performance.now() - startTime;
+                    const progress = ((totalDuration - (duration - elapsed)) / totalDuration) * 100;
+                    seekBar.style.width = `${Math.min(100, progress)}%`;
+                }
+            }, 100);
+        }
+
+        // --- History ---
+        function addHistoryItem(text) {
+            let history = getHistory();
+            // Avoid adding duplicates
+            if (history.includes(text)) return;
+            history.unshift(text); // Add to the top
+            if (history.length > 50) history.pop(); // Limit history size
+            saveHistory(history);
+            renderHistory();
+        }
+
+        function getHistory() {
+            const settings = getSettings();
+            return settings.history || [];
+        }
+
+        function saveHistory(history) {
+            const settings = getSettings();
+            settings.history = history;
+            localStorage.setItem(ALL_SETTINGS_KEY, JSON.stringify(settings));
+        }
+
+        function renderHistory() {
+            const history = getHistory();
+            historyContainer.innerHTML = '';
+            if (history.length === 0) {
+                clearHistoryButton.disabled = true;
+                historyContainer.innerHTML = '<p style="text-align:center; color:#888;">No history yet.</p>';
+                return;
+            }
+
+            clearHistoryButton.disabled = false;
+            history.forEach((text, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'history-item';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '❌';
+                deleteBtn.onclick = () => deleteHistoryItem(index);
+
+                const textSpan = document.createElement('span');
+                textSpan.className = 'history-text';
+                textSpan.textContent = text;
+
+                const presentBtn = document.createElement('button');
+                presentBtn.textContent = 'Present';
+                presentBtn.onclick = () => {
+                    presentationText.value = text;
+                    handlePresent();
+                };
+
+                itemDiv.appendChild(deleteBtn);
+                itemDiv.appendChild(textSpan);
+                itemDiv.appendChild(presentBtn);
+                historyContainer.appendChild(itemDiv);
+            });
+        }
+
+        function deleteHistoryItem(index) {
+            let history = getHistory();
+            history.splice(index, 1);
+            saveHistory(history);
+            renderHistory();
+        }
+
+        function clearAllHistory() {
+            if (confirm('Are you sure you want to clear all history?')) {
+                saveHistory([]);
+                renderHistory();
+            }
+        }
+
+        // --- Settings & Persistence ---
+        function getSettings() {
+            const settings = {};
+            document.querySelectorAll('input, select, textarea').forEach(el => {
+                if (el.id) {
+                    if (el.type === 'checkbox') {
+                        settings[el.id] = el.checked;
+                    } else if (el.type === 'radio') {
+                        if (el.checked) settings[el.name] = el.value;
+                    } else {
+                        settings[el.id] = el.value;
+                    }
+                }
+            });
+            document.querySelectorAll('.format-button.active').forEach(btn => {
+                settings[btn.dataset.style] = btn.dataset.on;
+            });
+            // Manually get history from storage as it's not a direct input element
+            const storedSettings = JSON.parse(localStorage.getItem(ALL_SETTINGS_KEY) || '{}');
+            settings.history = storedSettings.history || [];
+
+            // FR-GoogleFonts: Save custom fonts
+            settings.customFonts = getCustomFontsFromState();
+
+            // FR-Autosave: Capture window geometry if it's open
+            if (presentationWindow && !presentationWindow.closed) {
+                settings.windowGeom = {
+                    x: presentationWindow.screenX,
+                    y: presentationWindow.screenY,
+                    w: presentationWindow.outerWidth,
+                    h: presentationWindow.outerHeight
+                };
+            }
+            return settings;
+        }
+
+        function applySettings(settings) {
+            if (!settings) return;
+            Object.keys(settings).forEach(key => {
+                const el = document.getElementById(key);
+                if (el) {
+                    if (el.type === 'checkbox') {
+                        el.checked = settings[key];
+                    } else {
+                        el.value = settings[key];
+                    }
+                }
+                // Apply format button states
+                const activeBtn = document.querySelector(`.format-button[data-style="${key}"][data-on="${settings[key]}"]`);
+                if (activeBtn) {
+                    document.querySelectorAll(`.format-button[data-style="${key}"]`).forEach(b => b.classList.remove('active'));
+                    activeBtn.classList.add('active');
+                }
+            });
+
+            // FR-GoogleFonts: Load custom fonts
+            if (settings.customFonts && Array.isArray(settings.customFonts)) {
+                settings.customFonts.forEach(font => loadAndAddFont(font.name, false)); // Don't re-save
+            }
+
+            renderHistory();
+            updatePreview();
+        }
+
+        function saveAndApplySettings() {
+            const settings = getSettings();
+            localStorage.setItem(ALL_SETTINGS_KEY, JSON.stringify(settings));
+            updatePreview();
+            // Also apply to presentation window if open
+            if (presentationWindow && !presentationWindow.closed) {
+                updatePresentationWindowStyles();
+            }
+        }
+
+        function loadSettings() {
+            const settingsStr = localStorage.getItem(ALL_SETTINGS_KEY);
+            if (settingsStr) {
+                applySettings(JSON.parse(settingsStr));
+                // After applying, re-select the correct font in the dropdown
+                const savedSettings = JSON.parse(settingsStr);
+                if (savedSettings.fontFamily)
+                    document.getElementById('fontFamily').value = savedSettings.fontFamily;
+            } else {
+                renderHistory(); // Ensure initial state is correct
+            }
+        }
+
+        function saveDesignToFile() {
+            const settings = getSettings();
+            const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `presentation-design-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadDesignFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const settings = JSON.parse(e.target.result);
+                    applySettings(settings);
+                    saveAndApplySettings(); // Save loaded settings to local storage
+                } catch (err) {
+                    alert('Error: Could not parse the design file.');
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function updatePresentationWindowStyles() {
+            if (!presentationWindow || presentationWindow.closed) return;
+
+            const settings = getSettings();
+            const body = presentationWindow.document.body;
+            const content = presentationWindow.document.getElementById('content');
+
+            if (!body || !content) return;
+
+            // 1. Presentation Window Background
+            body.style.backgroundColor = settings.presentationBgColor || '#000000';
+            body.style.backgroundImage = '';
+
+            // Remove any existing video element if present
+            const existingVideo = body.querySelector('#bg-video-element');
+            if (existingVideo) existingVideo.remove();
+
+            if (presentationBgVideoBlob) {
+                const video = document.createElement('video');
+                video.id = 'bg-video-element';
+                video.src = presentationBgVideoBlob;
+                video.autoplay = true;
+                video.loop = true;
+                video.muted = true;
+                video.style.position = 'absolute';
+                video.style.top = '0';
+                video.style.left = '0';
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.objectFit = 'cover';
+                video.style.zIndex = '-1';
+                body.insertBefore(video, body.firstChild);
+            } else if (presentationBgImageBlob) {
+                body.style.backgroundImage = `url(${presentationBgImageBlob})`;
+                body.style.backgroundSize = 'cover';
+                body.style.backgroundPosition = 'center';
+            }
+
+            // 1B. Effects (Outline, Shadow, Glow)
+            // Outline
+            if (settings.outlineToggle) {
+                content.style.webkitTextStroke = `${settings.outlineWidth}px ${settings.outlineColor}`;
+            } else {
+                content.style.webkitTextStroke = '0';
+            }
+
+            // Shadow & Glow (Both use text-shadow)
+            const shadows = [];
+
+            if (settings.shadowToggle) {
+                const angleRad = (settings.shadowAngle * Math.PI) / 180;
+                const dist = settings.shadowDistance;
+                const x = Math.round(dist * Math.cos(angleRad));
+                const y = Math.round(dist * Math.sin(angleRad));
+                // x y blur color
+                shadows.push(`${x}px ${y}px ${settings.shadowBlur}px ${settings.shadowColor}`);
+            }
+
+            if (settings.glowToggle) {
+                // 0 0 size color
+                shadows.push(`0 0 ${settings.glowSize}px ${settings.glowColor}`);
+            }
+
+            content.style.textShadow = shadows.length > 0 ? shadows.join(', ') : 'none';
+
+            // 2. Font and Text Styling
+            content.style.fontFamily = settings.fontFamily;
+            content.style.fontSize = settings.fontSize + 'vw';
+
+            // Gradient
+            if (settings.colorMode === 'gradient') {
+                content.style.backgroundImage = `linear-gradient(${settings.gradientDirection}, ${settings.gradientColor1}, ${settings.gradientColor2})`;
+                content.style.webkitBackgroundClip = 'text'; // for Safari/Chrome
+                content.style.backgroundClip = 'text';
+                content.style.color = 'transparent';
+            } else {
+                content.style.backgroundImage = '';
+                content.style.color = settings.textColor;
+            }
+
+            // Format buttons
+            content.style.fontWeight = settings.fontWeight || 'normal';
+            content.style.fontStyle = settings.fontStyle || 'normal';
+            content.style.textDecoration = settings.textDecoration || 'none';
+
+            // textTransform is tricky as two buttons control it.
+            if (settings.textTransform === 'uppercase' || settings.textTransform === 'lowercase') {
+                content.style.textTransform = settings.textTransform;
+            } else {
+                content.style.textTransform = 'none';
+            }
+
+            // 3. Text Background
+            if (settings.textBackgroundToggle) {
+                // Background Color / Image
+                if (settings.textBackgroundType === 'picture' && textBackgroundPictureBlob) {
+                    content.style.backgroundImage = `url(${textBackgroundPictureBlob})`;
+                    content.style.backgroundSize = 'cover';
+                    content.style.backgroundPosition = 'center';
+                    content.style.backgroundColor = 'transparent';
+                } else {
+                    content.style.backgroundImage = 'none';
+                    content.style.backgroundColor = settings.textBackgroundColor;
+                }
+
+                content.style.padding = '0.2em 0.5em';
+                const radius = settings.textBackgroundRadius || 0;
+                content.style.borderRadius = `${radius}px`;
+
+                // Sizing
+                const widthVal = settings.textBackgroundWidth || 100;
+                content.style.width = settings.textBackgroundType === 'text line' ? `${widthVal}%` : (settings.textBackgroundType === 'box' || settings.textBackgroundType === 'picture' ? `${widthVal}%` : 'auto');
+
+                if (settings.textBackgroundType === 'box') {
+                    const heightVal = settings.textBackgroundHeight || 100;
+                    content.style.height = `${heightVal}%`;
+                    content.style.display = 'flex';
+                    content.style.alignItems = 'center'; // Center text in box
+                    content.style.justifyContent = 'center';
+                } else {
+                    content.style.height = 'auto';
+                    content.style.display = 'block'; // Reset
+                }
+            } else {
+                content.style.backgroundColor = 'transparent';
+                content.style.backgroundImage = 'none';
+                content.style.padding = '0';
+                content.style.borderRadius = '0';
+                content.style.width = 'auto'; // Reset
+                content.style.height = 'auto';
+            }
+
+            // 4. Alignment and Positioning
+            const hAlign = document.querySelector('.align-button[data-align-group="h"].active')?.dataset.align || 'center';
+            const vAlign = document.querySelector('.align-button[data-align-group="v"].active')?.dataset.align || 'middle';
+            const hMap = { left: 'flex-start', center: 'center', right: 'flex-end' };
+            const vMap = { top: 'flex-start', middle: 'center', bottom: 'flex-end' };
+
+            body.style.justifyContent = hMap[hAlign];
+            body.style.alignItems = vMap[vAlign];
+            content.style.textAlign = hAlign;
+
+            // Fine adjustments
+            const hAdjustValue = parseFloat(settings.horizontalAdjustment) || 0;
+            const vAdjustValue = parseFloat(settings.verticalAdjustment) || 0;
+
+            // Calculate constrained transform values
+            const { x: finalH, y: finalV } = calculateConstrainedTransform(
+                body,
+                content,
+                hAlign,
+                vAlign,
+                hAdjustValue,
+                vAdjustValue
+            );
+
+            // Use relative positioning instead of transform to avoid conflict with CSS animations
+            content.style.position = 'relative';
+            content.style.left = `${finalH}px`;
+            content.style.top = `${finalV}px`;
+
+            // Clear inline transform so it doesn't override animation classes
+            content.style.transform = '';
+        }
+
+        function applyAllStylesToPresentationWindow() {
+            if (!presentationWindow || presentationWindow.closed) return;
+            updatePresentationWindowStyles();
+            //handlePresent(); // Re-present text to apply animations correctly
+        }
+
+        // --- Preview ---
+        function updatePreview() {
+            if (!previewContent) return;
+
+            const settings = getSettings();
+            previewContent.textContent = presentationText.value || 'Preview Text';
+
+            // 1. Font Styling
+            previewContent.style.fontFamily = settings.fontFamily;
+            previewContent.style.fontSize = settings.fontSize + 'vw';
+
+            // 2. Color & Gradient
+            if (settings.colorMode === 'gradient') {
+                const gradient1 = settings.gradientColor1;
+                const gradient2 = settings.gradientColor2;
+                previewContent.style.backgroundImage = `linear-gradient(${settings.gradientDirection}, ${gradient1}, ${gradient2})`;
+                previewContent.style.webkitBackgroundClip = 'text';
+                previewContent.style.backgroundClip = 'text';
+                previewContent.style.color = 'transparent';
+            } else {
+                previewContent.style.color = settings.textColor;
+                previewContent.style.backgroundImage = '';
+            }
+
+            // 2B. Effects for Preview
+            // Outline
+            if (settings.outlineToggle) {
+                previewContent.style.webkitTextStroke = `${settings.outlineWidth}px ${settings.outlineColor}`;
+            } else {
+                previewContent.style.webkitTextStroke = '0';
+            }
+
+            // Shadow & Glow
+            const shadows = [];
+            if (settings.shadowToggle) {
+                const angleRad = (settings.shadowAngle * Math.PI) / 180;
+                const dist = settings.shadowDistance;
+                const x = Math.round(dist * Math.cos(angleRad));
+                const y = Math.round(dist * Math.sin(angleRad));
+                shadows.push(`${x}px ${y}px ${settings.shadowBlur}px ${settings.shadowColor}`);
+            }
+            if (settings.glowToggle) {
+                shadows.push(`0 0 ${settings.glowSize}px ${settings.glowColor}`);
+            }
+            previewContent.style.textShadow = shadows.length > 0 ? shadows.join(', ') : 'none';
+
+            // 3. Format Buttons (Bold, Italic, etc.)
+            previewContent.style.fontWeight = 'normal';
+            previewContent.style.fontStyle = 'normal';
+            previewContent.style.textDecoration = 'none';
+            previewContent.style.textTransform = 'none';
+            formatButtons.forEach(btn => {
+                if (btn.classList.contains('active')) {
+                    previewContent.style[btn.dataset.style] = btn.dataset.on;
+                }
+            });
+
+            // 4. Backgrounds
+            previewSection.style.backgroundColor = settings.presentationBgColor;
+
+            // 5. Text Background
+            if (settings.textBackgroundToggle) {
+                if (settings.textBackgroundType === 'picture' && textBackgroundPictureBlob) {
+                    previewContent.style.backgroundImage = `url(${textBackgroundPictureBlob})`;
+                    previewContent.style.backgroundSize = 'cover';
+                    previewContent.style.backgroundColor = 'transparent';
+                } else {
+                    previewContent.style.backgroundImage = 'none';
+                    previewContent.style.backgroundColor = settings.textBackgroundColor;
+                }
+
+                previewContent.style.padding = '0.2em 0.5em';
+                const radius = settings.textBackgroundRadius || 0;
+                previewContent.style.borderRadius = `${radius}px`;
+
+                // For preview, we might just use the width/height % directly
+                const widthVal = settings.textBackgroundWidth || 100;
+                // For preview, '100%' is relative to the preview content wrapper usually
+                previewContent.style.width = settings.textBackgroundType === 'text line' || settings.textBackgroundType === 'box' || settings.textBackgroundType === 'picture' ? `${widthVal}%` : 'auto';
+
+                if (settings.textBackgroundType === 'box') {
+                    const heightVal = settings.textBackgroundHeight || 100;
+                    previewContent.style.height = `${heightVal}%`;
+                    // Flex behavior for box text centering
+                    previewContent.style.display = 'flex';
+                    previewContent.style.alignItems = 'center';
+                    previewContent.style.justifyContent = 'center';
+                } else {
+                    previewContent.style.height = 'auto';
+                    previewContent.style.display = 'block';
+                }
+
+            } else {
+                previewContent.style.backgroundColor = 'transparent';
+                previewContent.style.backgroundImage = 'none';
+                previewContent.style.padding = '0';
+                previewContent.style.borderRadius = '0';
+                previewContent.style.width = 'auto';
+                previewContent.style.height = 'auto';
+                previewContent.style.display = 'block';
+            }
+
+            // 6. Alignment (SKIPPED for Preview as per user request)
+            previewSection.style.justifyContent = 'center';
+            previewSection.style.alignItems = 'center';
+            previewContent.style.textAlign = 'center';
+
+            // 7. Fine Position Adjustment (SKIPPED for Preview as per user request)
+            previewContent.style.transform = 'translate(0px, 0px)';
+            // Handle file backgrounds (Preview)
+            if (presentationBgVideoBlob) {
+                // Show a video thumbnail or just the video? For preview, let's use the video if possible or just color.
+                // It's complex to put a video in the preview-section as background easily without structure change.
+                // Simple fallback:
+                // Create/Update a video element in preview-media-bg-container
+                let vid = document.getElementById('preview-video-bg');
+                if (!vid) {
+                    vid = document.createElement('video');
+                    vid.id = 'preview-video-bg';
+                    vid.autoplay = true;
+                    vid.loop = true;
+                    vid.muted = true;
+                    vid.style.width = '100%'; vid.style.height = '100%'; vid.style.objectFit = 'cover'; vid.style.position = 'absolute'; vid.style.top = 0; vid.style.left = 0; vid.style.zIndex = 1;
+                    // Ensure content is above
+                    document.getElementById('preview-content-wrapper').style.zIndex = 2;
+                    bgMediaContainer.appendChild(vid);
+                }
+                vid.src = presentationBgVideoBlob;
+                vid.style.display = 'block';
+                previewSection.style.backgroundImage = 'none';
+
+            } else if (presentationBgImageBlob) {
+                previewSection.style.backgroundImage = `url(${presentationBgImageBlob})`;
+                previewSection.style.backgroundSize = 'cover';
+                const vid = document.getElementById('preview-video-bg');
+                if (vid) vid.style.display = 'none';
+            } else {
+                previewSection.style.backgroundImage = 'none';
+                const vid = document.getElementById('preview-video-bg');
+                if (vid) vid.style.display = 'none';
+            }
+        }
+
+        function calculateConstrainedTransform(container, element, hAlign, vAlign, hAdjust, vAdjust) {
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+            const elementWidth = element.offsetWidth;
+            const elementHeight = element.offsetHeight;
+
+            // Ensure the element has a measurable width for calculation
+            element.style.width = 'max-content';
+
+            let x = hAdjust;
+            let y = vAdjust;
+
+            // Horizontal constraints based on requirements
+            const hMidPoint = (containerWidth - elementWidth) / 2;
+            // Vertical constraints based on requirements
+            const vMidPoint = (containerHeight - elementHeight) / 2;
+
+            // The slider value (-50 to 50) should represent a percentage of the available movement space.
+            return { x: (x / 50) * hMidPoint, y: (y / 50) * vMidPoint };
+        }
+
+        // --- Autocomplete ---
+        const BIBLE_BOOKS = [
+            "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel",
+            "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs",
+            "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel",
+            "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi",
+            "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians",
+            "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon",
+            "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"
+        ];
+
+        function handleAutocomplete(e) {
+            const input = e.target.value;
+            // Find the text after the last comma to handle multiple references
+            const parts = input.split(',');
+            const currentPart = parts[parts.length - 1].trimStart();
+
+            // Don't autocomplete if the current part is empty
+            if (currentPart.length < 1) {
+                clearAutocomplete();
+                return;
+            }
+
+            const matches = BIBLE_BOOKS.filter(book => book.toLowerCase().includes(currentPart.toLowerCase()));
+            const isSingleExactMatch = matches.length === 1 && matches[0].toLowerCase() === currentPart.toLowerCase();
+
+            if (matches.length > 0 && !isSingleExactMatch) {
+                showAutocomplete(matches);
+            } else {
+                clearAutocomplete();
+            }
+        }
+
+        function showAutocomplete(matches) {
+            clearAutocomplete(); // Clear previous suggestions
+            suggestionsDiv = document.createElement('div');
+            suggestionsDiv.id = 'autocomplete-suggestions';
+
+            matches.forEach((match, index) => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.textContent = match;
+                item.addEventListener('click', () => {
+                    selectAutocomplete(match);
+                });
+                suggestionsDiv.appendChild(item);
+            });
+
+            autocompleteContainer.appendChild(suggestionsDiv);
+            activeSuggestionIndex = -1; // Reset selection
+        }
+
+        function clearAutocomplete() {
+            if (suggestionsDiv) {
+                suggestionsDiv.remove();
+                suggestionsDiv = null;
+            }
+        }
+
+        function selectAutocomplete(selectedValue) {
+            const text = presentationText.value;
+            const lastCommaIndex = text.lastIndexOf(',');
+
+            // Get the part of the string before the current book name attempt
+            const baseText = lastCommaIndex === -1 ? "" : text.substring(0, lastCommaIndex + 1);
+
+            // Append the selected book name and a space
+            let newText = baseText.trim() + (baseText ? ' ' : '') + selectedValue + ' ';
+
+            presentationText.value = newText;
+            clearAutocomplete();
+            presentationText.focus();
+        }
+
+        function handleAutocompleteKeydown(e) {
+            if (!suggestionsDiv) return;
+
+            const items = suggestionsDiv.querySelectorAll('.suggestion-item');
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeSuggestionIndex = (activeSuggestionIndex + 1) % items.length;
+                updateActiveSuggestion(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeSuggestionIndex = (activeSuggestionIndex - 1 + items.length) % items.length;
+                updateActiveSuggestion(items);
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                if (activeSuggestionIndex > -1) {
+                    e.preventDefault();
+                    selectAutocomplete(items[activeSuggestionIndex].textContent);
+                } else if (e.key === 'Tab') { // FR-18.2
+                    e.preventDefault();
+                    selectAutocomplete(items[0].textContent);
+                }
+            } else if (e.key === 'Escape') {
+                clearAutocomplete();
+            }
+        }
+
+        function updateActiveSuggestion(items) {
+            items.forEach(item => item.classList.remove('active'));
+            if (activeSuggestionIndex > -1) {
+                items[activeSuggestionIndex].classList.add('active');
+                items[activeSuggestionIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        // --- Misc ---
+        function handleFormatButtonClick(e) {
+            const button = e.currentTarget;
+            const style = button.dataset.style;
+            const onValue = button.dataset.on;
+
+            const isCurrentlyActive = button.classList.contains('active');
+
+            // For properties that are not mutually exclusive (like text-transform)
+            document.querySelectorAll(`.format-button[data-style="${style}"]`).forEach(b => b.classList.remove('active'));
+
+            if (!isCurrentlyActive) {
+                button.classList.add('active');
+            }
+            // if it was active, it's now off.
+
+            saveAndApplySettings();
+        }
+
+        function setColorMode(mode) {
+            document.getElementById('colorMode').value = mode;
+            saveAndApplySettings();
+        }
+        function handleAlignButtonClick(e) {
+            const button = e.currentTarget;
+            const group = button.dataset.alignGroup;
+            const align = button.dataset.align;
+
+            // Deselect others in the same group
+            document.querySelectorAll(`.align-button[data-align-group="${group}"]`).forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+
+            // Adjust slider range and reset value for horizontal alignment
+            if (group === 'h') {
+                const hSlider = document.getElementById('horizontalAdjustment');
+                hSlider.value = 0; // Reset slider value
+
+                switch (align) {
+                    case 'left':
+                        hSlider.min = 0;
+                        hSlider.max = 50;
+                        break;
+                    case 'right':
+                        hSlider.min = -50;
+                        hSlider.max = 0;
+                        break;
+                    case 'center':
+                        hSlider.min = -50;
+                        hSlider.max = 50;
+                        break;
+                }
+            }
+
+            // Adjust slider range and reset value for vertical alignment
+            if (group === 'v') {
+                const vSlider = document.getElementById('verticalAdjustment');
+                vSlider.value = 0; // Reset slider value
+
+                switch (align) {
+                    case 'top':
+                        vSlider.min = 0;
+                        vSlider.max = 50;
+                        break;
+                    case 'bottom':
+                        vSlider.min = -50;
+                        vSlider.max = 0;
+                        break;
+                    case 'middle':
+                        vSlider.min = -50;
+                        vSlider.max = 50;
+                        break;
+                }
+            }
+
+            saveAndApplySettings();
+        }
+
+        function openTab(evt, tabName) {
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(tb => tb.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        function togglePresentationWindow() {
+            if (presentationWindow && !presentationWindow.closed) {
+                presentationWindow.close();
+                windowStatus.textContent = 'Closed';
+                toggleWindowButton.textContent = 'Open Presentation Window';
+                fullscreenButton.disabled = true;
+                toggleWindowButton.style.backgroundColor = '#17a2b8';
+            } else {
+                const settings = getSettings();
+                const geom = settings.windowGeom || { w: 800, h: 600 };
+                const features = `width=${geom.w},height=${geom.h},left=${geom.x},top=${geom.y}`;
+                presentationWindow = window.open("", "PresentationWindow", features);
+
+                // FR-Animation-Fix: Dynamically get animation styles
+                let animationStyles = '';
+                for (const sheet of document.styleSheets) {
+                    try {
+                        for (const rule of sheet.cssRules) {
+                            if (rule.cssText.startsWith('@keyframes') || rule.selectorText?.startsWith('.animate-')) {
+                                animationStyles += rule.cssText + '\n';
+                            }
+                        }
+                    } catch (e) {
+                        console.warn("Could not read CSS rules from stylesheet:", e);
+                    }
+                }
+
+                if (presentationWindow) {
+                    presentationWindow.document.write(`
+                    <!DOCTYPE html><html lang="en">
+                    <head>
+                        <title>Presentation</title>
+                        <style>
+                            body { margin:0; display:flex; height:100vh; background-color:black; overflow:hidden; transition: all 0.3s; } 
+                            #content { color: white; font-size: 4vw; transition: all 0.3s; display: none; }
+                            ${animationStyles}
+                        </style>
+                    </head>
+                    <body><div id="content"></div></body>
+                    </html>
+                 `);
+                    presentationWindow.document.close(); // Important to finalize document writing
+                    windowStatus.textContent = 'Open';
+                    toggleWindowButton.textContent = 'Close Presentation Window';
+                    toggleWindowButton.style.backgroundColor = '#dc3545'; // Red for 'close' action
+
+                    // Update the fullscreen button to be instructional
+                    fullscreenButton.textContent = 'Double-click window to toggle fullscreen';
+
+                    // Add a double-click listener to the new window to handle fullscreen
+                    presentationWindow.document.body.addEventListener('dblclick', () => {
+                        if (!presentationWindow.document.fullscreenElement) {
+                            presentationWindow.document.documentElement.requestFullscreen().catch(err => console.error(err));
+                        } else {
+                            presentationWindow.document.exitFullscreen();
+                        }
+                    });
+                    fullscreenButton.disabled = false;
+                    setTimeout(updatePresentationWindowStyles, 100); // Apply styles after window is ready
+                    applyAllStylesToPresentationWindow();
+
+                    const checkClose = setInterval(() => {
+                        if (presentationWindow.closed) {
+                            clearInterval(checkClose);
+                            windowStatus.textContent = 'Closed';
+                            toggleWindowButton.textContent = 'Open Presentation Window';
+                            toggleWindowButton.style.backgroundColor = '#17a2b8';
+                            fullscreenButton.textContent = 'Go Fullscreen';
+                            fullscreenButton.disabled = true;
+                        }
+                    }, 500);
+                } else {
+                    alert('Popup blocked!');
+                    windowStatus.textContent = 'Blocked';
+                }
+            }
+        }
+
+        // --- Google Fonts ---
+        function handleAddGoogleFont() {
+            const fontName = googleFontInput.value.trim();
+            if (!fontName) {
+                alert("Please enter a font name.");
+                return;
+            }
+
+            // Check if font already exists
+            const existingOption = fontFamilySelect.querySelector(`option[value="${fontName}"]`);
+            if (existingOption) {
+                fontFamilySelect.value = fontName;
+                saveAndApplySettings();
+                googleFontInput.value = '';
+                return; // Don't re-add
+            }
+
+            loadAndAddFont(fontName, true);
+            googleFontInput.value = '';
+        }
+
+        function loadAndAddFont(fontName, shouldSave = true) {
+            const fontUrl = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, '+')}&display=swap`;
+
+            // 1. Load font into the controller window
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = fontUrl;
+            document.head.appendChild(link);
+
+            // 2. Load font into the presentation window if it's open
+            if (presentationWindow && !presentationWindow.closed) {
+                const presLink = presentationWindow.document.createElement('link');
+                presLink.rel = 'stylesheet';
+                presLink.href = fontUrl;
+                presentationWindow.document.head.appendChild(presLink);
+            }
+
+            // 3. Add to dropdown
+            const option = document.createElement('option');
+            option.value = fontName;
+            option.textContent = fontName;
+            fontFamilySelect.appendChild(option);
+
+            // 4. Select the new font and apply
+            fontFamilySelect.value = fontName;
+            if (shouldSave) {
+                saveAndApplySettings();
+            }
+        }
+
+        function getCustomFontsFromState() {
+            const customFonts = [];
+            const defaultFonts = ['Arial, sans-serif', 'Georgia, serif', "'Courier New', monospace", "'Trebuchet MS', sans-serif"];
+            for (const option of fontFamilySelect.options) {
+                if (!defaultFonts.includes(option.value)) {
+                    customFonts.push({
+                        name: option.value
+                    });
+                }
+            }
+            return customFonts;
+        }
+
+        // Helper for constrained movement
+        function calculateConstrainedTransform(container, content, hAlign, vAlign, hAdjust, vAdjust) {
+            // Get dimensions
+            const contRect = container === document.body ? { width: window.innerWidth, height: window.innerHeight } : container.getBoundingClientRect();
+            // For the presentation window body, we use window inner dimensions. 
+            // However, the container passed is 'body' from the new window.
+
+            // If container is the body of the popup
+            let cWidth, cHeight;
+            if (container.tagName === 'BODY') {
+                cWidth = container.ownerDocument.defaultView.innerWidth;
+                cHeight = container.ownerDocument.defaultView.innerHeight;
+            } else {
+                cWidth = contRect.width;
+                cHeight = contRect.height;
+            }
+
+            const contentRect = content.getBoundingClientRect();
+            const elWidth = contentRect.width;
+            const elHeight = contentRect.height;
+
+            // Calculate limits based on alignment
+            // The adjustments are in Percentage of Screen Size, mapped to pixels? 
+            // OR pixels directly?
+            // The sliders are -50 to +50.
+            // Let's treat them as Viewport Width/Height Percentage (vw/vh) for responsiveness? 
+            // Or just generic units. Let's start with % of viewport.
+
+            const xPixels = (hAdjust / 100) * cWidth;
+            const yPixels = (vAdjust / 100) * cHeight;
+
+            return { x: xPixels, y: yPixels };
+        }
+
+
+    </script>
+
+</body>
+
+</html>
