@@ -2,7 +2,7 @@
 // Go to Project Settings -> General -> Your apps -> Web apps -> Config
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "AIzaSyDrDtEWW6AkZfi7NVHFz2XviAEZHn7W_s8",
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
     authDomain: "present-ad575.firebaseapp.com",
     projectId: "present-ad575",
     storageBucket: "present-ad575.firebasestorage.app",
