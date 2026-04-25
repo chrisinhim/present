@@ -920,6 +920,45 @@ input:checked+.slider:before {
     outline: none;
     line-height: 1.4;
     transition: border-color 0.2s;
+    width: 100%;
+}
+
+.autocomplete-container {
+    flex: 3;
+    position: relative;
+    display: flex;
+}
+
+.autocomplete-suggestions {
+    position: absolute;
+    bottom: calc(100% + 5px);
+    left: 0;
+    width: 100%;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1001;
+    display: none;
+    box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.autocomplete-suggestion {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.autocomplete-suggestion:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-suggestion:hover,
+.autocomplete-suggestion.selected {
+    background: var(--primary-color);
+    color: white;
 }
 
 .bible-controls-horizontal textarea:focus {

@@ -181,21 +181,92 @@ function handleBibleAutocomplete(e) {
         state.bible.selectedBook = null;
         state.bible.selectedChapter = null;
         state.bible.selectedVerses = [];
+        
+        const suggestions = state.bible.books.filter(book => 
+            book.name.toLowerCase().includes(text.toLowerCase()) || 
+            book.code.toLowerCase().includes(text.toLowerCase())
+        );
+        renderSuggestions(suggestions);
+    } else {
+        dom.bibleSuggestions.style.display = 'none';
     }
     updateBibleUI();
 }
 
+function renderSuggestions(suggestions) {
+    if (!dom.bibleSuggestions) return;
+    dom.bibleSuggestions.innerHTML = '';
+    if (suggestions.length > 0) {
+        suggestions.forEach((book, index) => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-suggestion';
+            div.textContent = book.name;
+            div.onclick = () => selectSuggestion(book);
+            dom.bibleSuggestions.appendChild(div);
+        });
+        dom.bibleSuggestions.style.display = 'block';
+    } else {
+        dom.bibleSuggestions.style.display = 'none';
+    }
+}
+
+function selectSuggestion(book) {
+    dom.bibleText.value = book.name + ' ';
+    dom.bibleSuggestions.style.display = 'none';
+    dom.bibleText.focus();
+    updateBibleUI();
+}
+
 function handleBibleHotkey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    const suggestions = dom.bibleSuggestions.querySelectorAll('.autocomplete-suggestion');
+    const selected = dom.bibleSuggestions.querySelector('.autocomplete-suggestion.selected');
+    let selectedIndex = Array.from(suggestions).indexOf(selected);
+
+    if (e.key === 'ArrowDown' && dom.bibleSuggestions.style.display === 'block') {
+        e.preventDefault();
+        moveSuggestionSelection(1);
+    } else if (e.key === 'ArrowUp' && dom.bibleSuggestions.style.display === 'block') {
+        e.preventDefault();
+        moveSuggestionSelection(-1);
+    } else if ((e.key === 'Enter' || e.key === 'Tab' || e.key === ' ') && dom.bibleSuggestions.style.display === 'block') {
+        if (selected) {
+            e.preventDefault();
+            selectSuggestion(state.bible.books.find(b => b.name === selected.textContent));
+        } else if (e.key === 'Tab' || e.key === ' ') {
+            e.preventDefault();
+            if (suggestions.length > 0) {
+                selectSuggestion(state.bible.books.find(b => b.name === suggestions[0].textContent));
+            }
+        }
+    } else if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handlePresentBible();
     }
 }
 
+function moveSuggestionSelection(direction) {
+    const suggestions = dom.bibleSuggestions.querySelectorAll('.autocomplete-suggestion');
+    if (suggestions.length === 0) return;
+    let selected = dom.bibleSuggestions.querySelector('.autocomplete-suggestion.selected');
+    let index = Array.from(suggestions).indexOf(selected);
+    
+    if (selected) selected.classList.remove('selected');
+    
+    index += direction;
+    if (index >= suggestions.length) index = 0;
+    if (index < 0) index = suggestions.length - 1;
+    
+    suggestions[index].classList.add('selected');
+    suggestions[index].scrollIntoView({ block: 'nearest' });
+}
+
 function handlePresentBible() {
     const p = state.presentation;
-    const text = dom.bibleText.value || getBibleReferenceString();
-    if (!text) return;
+    const text = dom.bibleText.value.trim() || getBibleReferenceString();
+    if (!text) {
+        alert("Please enter some text to show on the screen");
+        return;
+    }
     if (p.timerId && p.currentText === text) {
         pubsub.publish('timer-toggle');
         return;
@@ -204,6 +275,7 @@ function handlePresentBible() {
     dom.btnPresentBible.textContent = 'Pause';
     pubsub.publish('present-text', { text, duration: dur });
     pubsub.publish('add-to-history', text);
+    dom.bibleSuggestions.style.display = 'none';
 }
 
 function handleRemoveBible() {

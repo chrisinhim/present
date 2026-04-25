@@ -315,7 +315,10 @@
                     <!-- Output & Custom Area -->
                     <div class="bible-footer">
                         <div class="bible-controls-horizontal">
-                            <textarea id="bible-text" placeholder="Or enter custom text..." rows="1"></textarea>
+                            <div class="autocomplete-container">
+                                <textarea id="bible-text" placeholder="Or enter custom text..." rows="1"></textarea>
+                                <div id="bible-autocomplete-suggestions" class="autocomplete-suggestions"></div>
+                            </div>
 
                             <div class="control-group">
                                 <label>Dur (s)</label>

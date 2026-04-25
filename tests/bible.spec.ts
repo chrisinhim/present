@@ -22,12 +22,12 @@ test.describe('Bible Department', () => {
     test('Selecting a specific verse grid', async ({ page }) => {
         await page.click('button.book-btn:has-text("GEN")');
         // Select chapter 3
-        await page.click('#bible-chapters-grid button:has-text("3")');
+        await page.getByRole('button', { name: '3', exact: true }).click();
         
         // Assert we see verses for Genesis 3
         const versesGrid = page.locator('#bible-verses-grid');
         await expect(versesGrid).toBeVisible();
-        await expect(versesGrid.locator('button.verse-btn:has-text("3")')).toBeVisible();
+        await expect(versesGrid.getByRole('button', { name: '3', exact: true })).toBeVisible();
     });
 
     test('Presenting a single verse (Reference vs Verse Text)', async ({ page }) => {
@@ -39,8 +39,8 @@ test.describe('Bible Department', () => {
 
         // Select GEN 3:3
         await page.click('button.book-btn:has-text("GEN")');
-        await page.click('#bible-chapters-grid button:has-text("3")');
-        await page.click('#bible-verses-grid button.verse-btn:has-text("3")');
+        await page.getByRole('button', { name: '3', exact: true }).click();
+        await page.locator('#bible-verses-grid').getByRole('button', { name: '3', exact: true }).click();
 
         // Note: The UI for "Present Reference Only" vs "Present Verse Text" 
         // implies a separate button, but we currently just use "Present"
@@ -59,11 +59,11 @@ test.describe('Bible Department', () => {
         await popup.waitForLoadState();
 
         await page.click('button.book-btn:has-text("GEN")');
-        await page.click('#bible-chapters-grid button:has-text("3")');
+        await page.getByRole('button', { name: '3', exact: true }).click();
         
         // Range select (click 3, shift click 8)
-        await page.click('#bible-verses-grid button.verse-btn:has-text("3")');
-        await page.click('#bible-verses-grid button.verse-btn:has-text("8")', { modifiers: ['Shift'] });
+        await page.locator('#bible-verses-grid').getByRole('button', { name: '3', exact: true }).click();
+        await page.locator('#bible-verses-grid').getByRole('button', { name: '8', exact: true }).click({ modifiers: ['Shift'] });
         
         await page.click('#btn-present-bible');
 

@@ -106,6 +106,7 @@ export const dom = {
         this.bibleVersesGrid = document.getElementById('bible-verses-grid');
         this.bibleSelectionDisplay = document.getElementById('bible-selection-display');
         this.bibleText = document.getElementById('bible-text');
+        this.bibleSuggestions = document.getElementById('bible-autocomplete-suggestions');
         this.btnPresentBible = document.getElementById('btn-present-bible');
         this.btnRemoveBible = document.getElementById('btn-remove-bible');
         this.inputBibleDuration = document.getElementById('bible-duration');
