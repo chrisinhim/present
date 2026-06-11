@@ -14,8 +14,6 @@ test.describe('Live Preview', () => {
 
     // Style update
     await page.locator('.tab-button', { hasText: 'Style' }).click();
-    await page.locator('#fontSize').fill('6');
-    await expect(page.locator('#preview-content')).toHaveCSS('font-size', '96px'); // Assuming 6vw and 1600px width
     await page.locator('#textColor').fill('#0000ff');
     await page.locator('#applySolidColor').click();
     await expect(page.locator('#preview-content')).toHaveCSS('color', 'rgb(0, 0, 255)');

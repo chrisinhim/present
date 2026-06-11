@@ -38,10 +38,8 @@ test.describe('Input Assistance & History', () => {
       await expect(page.locator('.history-text')).toHaveText('History item 1');
       
       // Clear all history
-      page.on('dialog', async (dialog) => {
-        await dialog.accept();
-      });
       await page.locator('#clearHistoryButton').click();
+      await page.locator('#customConfirmYes').click();
       await expect(page.locator('#historyContainer')).toContainText('No history yet.');
     });
   });
