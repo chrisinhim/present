@@ -134,20 +134,11 @@
             overflow: hidden;
         }
 
-        #preview-content-wrapper {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2;
-        }
-
         #preview-content {
-            font-size: 16px;
+            font-size: 24px;
             text-align: center;
             padding: 10px;
-            white-space: pre-wrap;
+            white-space: nowrap;
             z-index: 2;
         }
 
@@ -610,15 +601,12 @@
                 <!-- This wrapper helps separate alignment from text-specific styles -->
                 <div id="preview-content">Preview Text</div>
             </div>
-            <div id="preview-media-bg-container">
-                <video id="preview-media-bg" autoplay loop muted style="display: none;"></video>
-            </div>
+            <div id="preview-media-bg-container"></div>
         </div>
 
         <!-- TABS -->
         <div class="tab-nav">
             <button class="tab-button active" onclick="openTab(event, 'mainTab')">Main</button>
-            <button class="tab-button" onclick="openTab(event, 'timerTab')">Timer</button>
             <button class="tab-button" onclick="openTab(event, 'styleTab')">Style</button>
             <button class="tab-button" onclick="openTab(event, 'backgroundTab')">Background</button>
             <button class="tab-button" onclick="openTab(event, 'positionTab')">Position</button>
@@ -636,7 +624,7 @@
                             <textarea id="presentationText" rows="3"
                                 placeholder="Type a book of the Bible, e.g., 'John 3:16'"></textarea>
                         </div>
-                        <button id="playPauseButton"
+                        <button id="presentButton"
                             style="background-color: #28a745; color: white; width: 90px;">PRESENT</button>
                         <button id="hideButton" style="background-color: #6c757d; color: white;">HIDE</button>
                         <div class="duration-group">
@@ -668,75 +656,6 @@
                     <button id="clearHistoryButton" style="background-color: #dc3545; color: white;">Clear All</button>
                 </div>
                 <div id="historyContainer" style="margin-top: 10px;"></div>
-            </div>
-        </div>
-
-        <!-- TIMER TAB -->
-        <div id="timerTab" class="tab-content">
-            <div class="control-group">
-                <h3>Timer Feature</h3>
-                <p style="font-size: 0.9em; color: #555; margin-bottom: 15px;">
-                    Select and configure one of the 3 timer types. The active timer will inherit all font styling, background, position, and entry/exit animations when presented!
-                </p>
-
-                <div class="compact-section" style="margin-bottom: 15px;">
-                    <h4>1. Timer Type Selection</h4>
-                    <div class="compact-row" style="gap: 15px; margin-top: 8px;">
-                        <label style="cursor: pointer;"><input type="radio" name="timerMode" value="clock" id="timerModeClock" checked style="width: auto;"> 1) Current Time</label>
-                        <label style="cursor: pointer;"><input type="radio" name="timerMode" value="countdown" id="timerModeCountdown" style="width: auto;"> 2) Countdown Timer</label>
-                        <label style="cursor: pointer;"><input type="radio" name="timerMode" value="stopwatch" id="timerModeStopwatch" style="width: auto;"> 3) Period/Duration Timer</label>
-                    </div>
-                </div>
-
-                <!-- Mode 1: Current Time Settings -->
-                <div id="timerSettingsClock" class="compact-section">
-                    <h4>Current Time Settings</h4>
-                    <div class="compact-row" style="gap: 10px;">
-                        <label for="clockFormat">Format:</label>
-                        <select id="clockFormat" class="mini-input" style="width: 150px;">
-                            <option value="12" selected>12-Hour (hh:mm:ss AM/PM)</option>
-                            <option value="24">24-Hour (HH:mm:ss)</option>
-                        </select>
-                        <label style="margin-left: 10px; cursor: pointer;">
-                            <input type="checkbox" id="clockShowSeconds" checked style="width: auto;"> Show Seconds
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Mode 2: Countdown Timer Settings -->
-                <div id="timerSettingsCountdown" class="compact-section" style="display: none;">
-                    <h4>Countdown Timer Settings (Target Time Today)</h4>
-                    <p style="font-size: 0.85em; color: #666; margin-bottom: 8px;">Countdown to target time on today:</p>
-                    <div class="compact-row" style="gap: 10px; flex-wrap: wrap;">
-                        <label for="countdownTargetHour">Hour (0-23):</label>
-                        <input type="number" id="countdownTargetHour" min="0" max="23" value="18" class="mini-input" style="width: 65px;">
-                        <label for="countdownTargetMinute">Minute (0-59):</label>
-                        <input type="number" id="countdownTargetMinute" min="0" max="59" value="0" class="mini-input" style="width: 65px;">
-                    </div>
-                </div>
-
-                <!-- Mode 3: Period/Duration Timer Settings -->
-                <div id="timerSettingsStopwatch" class="compact-section" style="display: none;">
-                    <h4>Period/Duration Timer Settings</h4>
-                    <p style="font-size: 0.85em; color: #666; margin-bottom: 8px;">Counts up elapsed duration toward target period:</p>
-                    <div class="compact-row" style="gap: 10px; flex-wrap: wrap;">
-                        <label for="periodTargetMinutes">Minutes:</label>
-                        <input type="number" id="periodTargetMinutes" min="0" max="999" value="5" class="mini-input" style="width: 65px;">
-                        <label for="periodTargetSeconds">Seconds:</label>
-                        <input type="number" id="periodTargetSeconds" min="0" max="59" value="0" class="mini-input" style="width: 65px;">
-                    </div>
-                </div>
-
-                <!-- Timer Controls & Actions -->
-                <div class="compact-section" style="margin-top: 15px;">
-                    <h4>Timer Controls</h4>
-                    <div class="compact-row" style="gap: 10px; margin-top: 5px;">
-                        <button id="presentTimerBtn" style="background-color: #28a745; color: white;">PRESENT TIMER</button>
-                        <button id="pauseTimerBtn" style="background-color: #ffc107; color: black; display: none;">PAUSE TIMER</button>
-                        <button id="resetTimerBtn" style="background-color: #17a2b8; color: white; display: none;">RESET TIMER</button>
-                        <button id="hideTimerBtn" style="background-color: #6c757d; color: white;">HIDE TIMER</button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -962,7 +881,7 @@
                         </div>
 
                         <div style="display: flex; gap: 10px; align-items: flex-end;">
-                            <div style="flex: 1;">
+                            <div id="textBgWidthControl" style="flex: 1;">
                                 <label for="textBackgroundWidth" style="font-size: 0.9em;">Width (%):</label>
                                 <input type="number" id="textBackgroundWidth" min="1" max="100" value="100">
                             </div>
@@ -972,7 +891,7 @@
                                 <input type="number" id="textBackgroundHeight" min="1" max="100" value="100">
                             </div>
 
-                            <div style="flex: 1;">
+                            <div id="textBgRadiusControl" style="flex: 1;">
                                 <label for="textBackgroundRadius" style="font-size: 0.9em;">Corner Radius (px):</label>
                                 <input type="number" id="textBackgroundRadius" min="0" value="8">
                             </div>
@@ -1110,314 +1029,7 @@
         let presentationBgVideoBlob = null;
         let textBackgroundPictureBlob = null;
 
-        // --- Timer Feature State ---
-        let activeTimerType = null; // null, 'clock', 'countdown', 'stopwatch'
-        let activeTimerState = 'STOPPED'; // 'STOPPED', 'RUNNING', 'PAUSED'
-        let activeTimerInterval = null;
-        let timerCountdownMs = 0;
-        let timerStopwatchMs = 0;
-        let timerLastTimestamp = 0;
-        let presentedAsTimer = false;
-
         const ALL_SETTINGS_KEY = 'presentationSettings_v3';
-
-        function getTargetCountdownMs() {
-            const now = new Date();
-            const targetHour = parseInt(document.getElementById('countdownTargetHour')?.value || '0', 10);
-            const targetMinute = parseInt(document.getElementById('countdownTargetMinute')?.value || '0', 10);
-
-            const targetTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), targetHour, targetMinute, 0, 0);
-            let diffMs = targetTime.getTime() - now.getTime();
-            if (diffMs < 0) {
-                diffMs = 0; // Past time today shows 00:00:00 or 00:00
-            }
-            return diffMs;
-        }
-
-        // --- Timer Formatting Utility ---
-        function getFormattedTimerText() {
-            const modeRadio = document.querySelector('input[name="timerMode"]:checked');
-            const mode = modeRadio ? modeRadio.value : 'clock';
-
-            if (mode === 'clock') {
-                const now = new Date();
-                const format = document.getElementById('clockFormat')?.value || '12';
-                const showSec = document.getElementById('clockShowSeconds')?.checked !== false;
-
-                let hours = now.getHours();
-                let minutes = now.getMinutes();
-                let seconds = now.getSeconds();
-
-                minutes = minutes < 10 ? '0' + minutes : minutes;
-                seconds = seconds < 10 ? '0' + seconds : seconds;
-
-                if (format === '12') {
-                    const ampm = hours >= 12 ? 'PM' : 'AM';
-                    hours = hours % 12;
-                    hours = hours ? hours : 12; // 0 becomes 12
-                    const hStr = hours < 10 ? '0' + hours : hours;
-                    return showSec ? `${hStr}:${minutes}:${seconds} ${ampm}` : `${hStr}:${minutes} ${ampm}`;
-                } else {
-                    const hStr = hours < 10 ? '0' + hours : hours;
-                    return showSec ? `${hStr}:${minutes}:${seconds}` : `${hStr}:${minutes}`;
-                }
-            } else if (mode === 'countdown') {
-                let msRemaining = 0;
-                if (activeTimerType === 'countdown' && activeTimerState === 'RUNNING') {
-                    msRemaining = getTargetCountdownMs();
-                } else if (activeTimerType === 'countdown' && activeTimerState === 'PAUSED') {
-                    msRemaining = timerCountdownMs;
-                } else {
-                    msRemaining = getTargetCountdownMs();
-                }
-
-                const totalSec = Math.ceil(msRemaining / 1000);
-                const hours = Math.floor(totalSec / 3600);
-                const mins = Math.floor((totalSec % 3600) / 60);
-                const secs = totalSec % 60;
-
-                const mStr = mins < 10 ? '0' + mins : mins;
-                const sStr = secs < 10 ? '0' + secs : secs;
-
-                if (hours > 0) {
-                    const hStr = hours < 10 ? '0' + hours : hours;
-                    return `${hStr}:${mStr}:${sStr}`;
-                }
-                return `${mStr}:${sStr}`;
-            } else if (mode === 'stopwatch') {
-                const totalSec = Math.floor(timerStopwatchMs / 1000);
-                const hours = Math.floor(totalSec / 3600);
-                const mins = Math.floor((totalSec % 3600) / 60);
-                const secs = totalSec % 60;
-
-                const mStr = mins < 10 ? '0' + mins : mins;
-                const sStr = secs < 10 ? '0' + secs : secs;
-
-                if (hours > 0) {
-                    const hStr = hours < 10 ? '0' + hours : hours;
-                    return `${hStr}:${mStr}:${sStr}`;
-                }
-                return `${mStr}:${sStr}`;
-            }
-            return '';
-        }
-
-        let timerExitTriggered = false;
-
-        function getPeriodTargetMs() {
-            const mins = parseInt(document.getElementById('periodTargetMinutes')?.value || '0', 10);
-            const secs = parseInt(document.getElementById('periodTargetSeconds')?.value || '0', 10);
-            return (mins * 60 + secs) * 1000;
-        }
-
-        function triggerTimerExitAnimation(onComplete) {
-            if (!presentationWindow || presentationWindow.closed) {
-                if (onComplete) onComplete();
-                return;
-            }
-            const contentDiv = presentationWindow.document.getElementById('content');
-            if (!contentDiv) {
-                if (onComplete) onComplete();
-                return;
-            }
-
-            const exitAnimation = document.getElementById('exitAnimation')?.value || 'none';
-            const exitDuration = parseInt(document.getElementById('exitAnimationDuration')?.value || '500', 10);
-
-            if (exitAnimation !== 'none') {
-                contentDiv.classList.add(`animate-${exitAnimation}`);
-                contentDiv.style.animationDuration = `${exitDuration}ms`;
-
-                setTimeout(() => {
-                    contentDiv.style.display = 'none';
-                    contentDiv.textContent = '';
-                    contentDiv.classList.remove(`animate-${exitAnimation}`);
-                    if (onComplete) onComplete();
-                }, exitDuration);
-            } else {
-                contentDiv.style.display = 'none';
-                contentDiv.textContent = '';
-                if (onComplete) onComplete();
-            }
-        }
-
-        // Timer Tick Engine
-        function tickActiveTimer() {
-            const now = performance.now();
-            const delta = now - timerLastTimestamp;
-            timerLastTimestamp = now;
-
-            if (activeTimerType === 'countdown' && activeTimerState === 'RUNNING') {
-                timerCountdownMs = getTargetCountdownMs();
-                if (timerCountdownMs <= 10 && !timerExitTriggered) {
-                    timerExitTriggered = true;
-                    triggerTimerExitAnimation(() => {
-                        activeTimerState = 'STOPPED';
-                        if (activeTimerInterval) clearInterval(activeTimerInterval);
-                        activeTimerInterval = null;
-                        updateTimerControlButtons();
-                    });
-                } else if (timerCountdownMs <= 0) {
-                    activeTimerState = 'STOPPED';
-                    if (activeTimerInterval) clearInterval(activeTimerInterval);
-                    activeTimerInterval = null;
-                    updateTimerControlButtons();
-                }
-            } else if (activeTimerType === 'stopwatch' && activeTimerState === 'RUNNING') {
-                timerStopwatchMs += delta;
-                const periodTargetMs = getPeriodTargetMs();
-                if (periodTargetMs > 0 && (periodTargetMs - timerStopwatchMs <= 1000) && !timerExitTriggered) {
-                    timerExitTriggered = true;
-                    triggerTimerExitAnimation(() => {
-                        activeTimerState = 'STOPPED';
-                        if (activeTimerInterval) clearInterval(activeTimerInterval);
-                        activeTimerInterval = null;
-                        updateTimerControlButtons();
-                    });
-                } else if (periodTargetMs > 0 && timerStopwatchMs >= periodTargetMs) {
-                    activeTimerState = 'STOPPED';
-                    if (activeTimerInterval) clearInterval(activeTimerInterval);
-                    activeTimerInterval = null;
-                    updateTimerControlButtons();
-                }
-            }
-
-            // Sync updated text to Presentation Window and Preview
-            const timerText = getFormattedTimerText();
-            if (presentedAsTimer && presentationWindow && !presentationWindow.closed) {
-                const contentDiv = presentationWindow.document.getElementById('content');
-                if (contentDiv && contentDiv.style.display !== 'none') {
-                    contentDiv.textContent = timerText;
-                }
-            }
-            if (previewContent) {
-                const currentTab = document.querySelector('.tab-button.active')?.getAttribute('onclick');
-                if (currentTab && currentTab.includes('timerTab')) {
-                    previewContent.textContent = timerText;
-                }
-            }
-        }
-
-        function updateTimerControlButtons() {
-            const presentBtn = document.getElementById('presentTimerBtn');
-            const pauseBtn = document.getElementById('pauseTimerBtn');
-            const resetBtn = document.getElementById('resetTimerBtn');
-            const mode = document.querySelector('input[name="timerMode"]:checked')?.value || 'clock';
-
-            if (!presentBtn || !pauseBtn || !resetBtn) return;
-
-            if (mode === 'clock') {
-                pauseBtn.style.display = 'none';
-                resetBtn.style.display = 'none';
-                presentBtn.textContent = 'PRESENT TIMER';
-            } else {
-                pauseBtn.style.display = 'inline-block';
-                resetBtn.style.display = 'inline-block';
-
-                if (activeTimerState === 'RUNNING') {
-                    pauseBtn.textContent = 'PAUSE TIMER';
-                    pauseBtn.style.backgroundColor = '#ffc107';
-                    pauseBtn.style.color = 'black';
-                } else if (activeTimerState === 'PAUSED') {
-                    pauseBtn.textContent = 'RESUME TIMER';
-                    pauseBtn.style.backgroundColor = '#28a745';
-                    pauseBtn.style.color = 'white';
-                } else {
-                    pauseBtn.textContent = 'PAUSE TIMER';
-                    pauseBtn.style.backgroundColor = '#ffc107';
-                    pauseBtn.style.color = 'black';
-                }
-            }
-        }
-
-        function updateTimerModeVisibility() {
-            const mode = document.querySelector('input[name="timerMode"]:checked')?.value || 'clock';
-            const clockSec = document.getElementById('timerSettingsClock');
-            const countdownSec = document.getElementById('timerSettingsCountdown');
-            const stopwatchSec = document.getElementById('timerSettingsStopwatch');
-
-            if (clockSec) clockSec.style.display = mode === 'clock' ? 'block' : 'none';
-            if (countdownSec) countdownSec.style.display = mode === 'countdown' ? 'block' : 'none';
-            if (stopwatchSec) stopwatchSec.style.display = mode === 'stopwatch' ? 'block' : 'none';
-
-            updateTimerControlButtons();
-            updatePreview();
-        }
-
-        function startTimerExecution() {
-            const mode = document.querySelector('input[name="timerMode"]:checked')?.value || 'clock';
-            activeTimerType = mode;
-            activeTimerState = 'RUNNING';
-            timerLastTimestamp = performance.now();
-
-            if (mode === 'countdown') {
-                timerCountdownMs = getTargetCountdownMs();
-            } else if (mode === 'stopwatch') {
-                // Keep accumulated timerStopwatchMs if resumed, else reset on fresh start
-            }
-
-            if (activeTimerInterval) clearInterval(activeTimerInterval);
-            activeTimerInterval = setInterval(tickActiveTimer, 200);
-            updateTimerControlButtons();
-        }
-
-        function handlePresentTimer() {
-            const mode = document.querySelector('input[name="timerMode"]:checked')?.value || 'clock';
-            presentedAsTimer = true;
-            timerExitTriggered = false;
-
-            // Reset initial values if starting fresh countdown
-            if (mode === 'countdown') {
-                timerCountdownMs = getTargetCountdownMs();
-            } else if (mode === 'stopwatch' && activeTimerState === 'STOPPED') {
-                timerStopwatchMs = 0;
-            }
-
-            startTimerExecution();
-            const formattedText = getFormattedTimerText();
-
-            if (!presentationWindow || presentationWindow.closed) {
-                togglePresentationWindow();
-                setTimeout(() => doPresent(formattedText, 0), 500);
-            } else {
-                doPresent(formattedText, 0);
-            }
-        }
-
-        function handlePauseTimer() {
-            if (activeTimerState === 'RUNNING') {
-                activeTimerState = 'PAUSED';
-                if (activeTimerType === 'countdown') {
-                    timerCountdownMs = getTargetCountdownMs();
-                }
-            } else if (activeTimerState === 'PAUSED') {
-                activeTimerState = 'RUNNING';
-                timerLastTimestamp = performance.now();
-            }
-            updateTimerControlButtons();
-        }
-
-        function handleResetTimer() {
-            timerExitTriggered = false;
-            const mode = document.querySelector('input[name="timerMode"]:checked')?.value || 'clock';
-            if (mode === 'countdown') {
-                timerCountdownMs = getTargetCountdownMs();
-            } else if (mode === 'stopwatch') {
-                timerStopwatchMs = 0;
-            }
-            activeTimerState = 'STOPPED';
-            if (activeTimerInterval) {
-                clearInterval(activeTimerInterval);
-                activeTimerInterval = null;
-            }
-            updateTimerControlButtons();
-            tickActiveTimer();
-        }
-
-        function handleHideTimer() {
-            presentedAsTimer = false;
-            handleHide();
-        }
 
         // --- IndexedDB Setup for Media ---
         const DB_NAME = 'PresentationMediaDB';
@@ -1502,7 +1114,7 @@
         // --- Initialization ---
         window.addEventListener('DOMContentLoaded', () => {
             // Cache DOM elements
-            presentButton = document.getElementById('presentButton') || document.getElementById('playPauseButton');
+            presentButton = document.getElementById('presentButton');
             timerToggleBtn = document.getElementById('timerToggleBtn');
             hideButton = document.getElementById('hideButton');
             presentationText = document.getElementById('presentationText');
@@ -1534,23 +1146,6 @@
 
             saveDesignButton.addEventListener('click', saveDesignToFile);
             loadDesignInput.addEventListener('change', loadDesignFromFile);
-
-            // Timer Tab Listeners
-            document.querySelectorAll('input[name="timerMode"]').forEach(radio => {
-                radio.addEventListener('change', updateTimerModeVisibility);
-            });
-            document.getElementById('clockFormat')?.addEventListener('change', updatePreview);
-            document.getElementById('clockShowSeconds')?.addEventListener('change', updatePreview);
-            document.getElementById('countdownTargetHour')?.addEventListener('input', updatePreview);
-            document.getElementById('countdownTargetMinute')?.addEventListener('input', updatePreview);
-            document.getElementById('periodTargetMinutes')?.addEventListener('input', updatePreview);
-            document.getElementById('periodTargetSeconds')?.addEventListener('input', updatePreview);
-
-            document.getElementById('presentTimerBtn')?.addEventListener('click', handlePresentTimer);
-            document.getElementById('pauseTimerBtn')?.addEventListener('click', handlePauseTimer);
-            document.getElementById('resetTimerBtn')?.addEventListener('click', handleResetTimer);
-            document.getElementById('hideTimerBtn')?.addEventListener('click', handleHideTimer);
-            updateTimerModeVisibility();
 
             addGoogleFontButton.addEventListener('click', handleAddGoogleFont);
             googleFontInput.addEventListener('keydown', (e) => {
@@ -1711,7 +1306,6 @@
         }
 
         function handlePresent() {
-            presentedAsTimer = false;
             const text = presentationText.value;
             const duration = parseInt(presentationDuration.value, 10);
 
@@ -1725,7 +1319,8 @@
                 // ACTION: PRESENT
                 if (!presentationWindow || presentationWindow.closed) {
                     togglePresentationWindow();
-                    doPresent(text, duration);
+                    // Wait briefly for window
+                    setTimeout(() => doPresent(text, duration), 500);
                     return;
                 }
                 doPresent(text, duration);
@@ -1758,22 +1353,21 @@
             // Logic moved from old handlePresent
             addHistoryItem(text);
 
-            if (presentationWindow && !presentationWindow.closed) {
-                const contentDiv = presentationWindow.document.getElementById('content');
-                if (contentDiv) {
-                    contentDiv.textContent = text;
-                }
+            const contentDiv = presentationWindow?.document.getElementById('content');
+            if (contentDiv) {
+                contentDiv.style.opacity = '0'; // Pre-hide to avoid flash before animation
+                contentDiv.textContent = text;  // Set text before styles update for accurate box sizing
             }
 
             // update styles
             saveAndApplySettings();
-            updatePresentationWindowStyles();
 
-            // Use a timeout to ensure window is ready for animation
+            // Use a timeout to ensure window is ready
             setTimeout(() => {
-                const contentDiv = presentationWindow?.document.getElementById('content');
+                // FORCE update styles to ensure "current" settings are applied
+                updatePresentationWindowStyles();
+
                 if (contentDiv) {
-                    contentDiv.textContent = text;
                     const entryAnimation = document.getElementById('entryAnimation').value;
                     const entryDuration = document.getElementById('entryAnimationDuration').value;
 
@@ -1802,18 +1396,16 @@
                         contentDiv.style.opacity = '1';
                     }
                 }
-                if (!presentedAsTimer) {
-                    startAutoHideTimer();
-                }
+                startAutoHideTimer();
 
                 // Update Button State AFTER starting timer
-                if (duration > 0 && !presentedAsTimer) {
+                if (duration > 0) {
                     presentationState = 'PLAYING';
                     presentButton.textContent = 'PAUSE ||';
                     presentButton.style.backgroundColor = '#ffc107'; // Yellow
                     presentButton.style.color = 'black';
                 } else {
-                    // Stay READY if no timer or if presented as timer feature
+                    // Stay READY if no timer
                     resetToPresentState();
                 }
 
@@ -1833,12 +1425,10 @@
 
                         setTimeout(() => {
                             contentDiv.style.display = 'none';
-                            contentDiv.textContent = '';
                             contentDiv.classList.remove(`animate-${exitAnimation}`);
                         }, exitDuration);
                     } else {
                         contentDiv.style.display = 'none';
-                        contentDiv.textContent = '';
                     }
                 }
             }
@@ -1887,7 +1477,6 @@
 
                 timeRemaining = duration * 1000;
                 lastTickTime = performance.now();
-                seekBar.style.width = '0.01%';
                 autoHideTimer = setTimeout(handleHide, timeRemaining);
                 startSeeker(timeRemaining, timeRemaining);
             } else {
@@ -2316,12 +1905,7 @@
             if (!previewContent) return;
 
             const settings = getSettings();
-            const isTimerTabActive = document.getElementById('timerTab')?.classList.contains('active');
-            if (isTimerTabActive || presentedAsTimer) {
-                previewContent.textContent = getFormattedTimerText() || '00:00:00';
-            } else {
-                previewContent.textContent = presentationText.value || 'Preview Text';
-            }
+            previewContent.textContent = presentationText.value || 'Preview Text';
 
             // 1. Font Styling
             previewContent.style.fontFamily = settings.fontFamily;
@@ -2443,24 +2027,55 @@
                 // Show a video thumbnail or just the video? For preview, let's use the video if possible or just color.
                 // It's complex to put a video in the preview-section as background easily without structure change.
                 // Simple fallback:
-                // Update the video element in preview-media-bg-container
-                let vid = document.getElementById('preview-media-bg');
-                if (vid.src !== presentationBgVideoBlob) {
-                    vid.src = presentationBgVideoBlob;
+                // Create/Update a video element in preview-media-bg-container
+                let vid = document.getElementById('preview-video-bg');
+                if (!vid) {
+                    vid = document.createElement('video');
+                    vid.id = 'preview-video-bg';
+                    vid.autoplay = true;
+                    vid.loop = true;
+                    vid.muted = true;
+                    vid.style.width = '100%'; vid.style.height = '100%'; vid.style.objectFit = 'cover'; vid.style.position = 'absolute'; vid.style.top = 0; vid.style.left = 0; vid.style.zIndex = 1;
+                    // Ensure content is above
+                    document.getElementById('preview-content-wrapper').style.zIndex = 2;
+                    const bgMediaContainer = document.getElementById('preview-media-bg-container');
+                    if (bgMediaContainer) bgMediaContainer.appendChild(vid);
                 }
+                vid.src = presentationBgVideoBlob;
                 vid.style.display = 'block';
                 previewSection.style.backgroundImage = 'none';
 
             } else if (presentationBgImageBlob) {
                 previewSection.style.backgroundImage = `url(${presentationBgImageBlob})`;
                 previewSection.style.backgroundSize = 'cover';
-                const vid = document.getElementById('preview-media-bg');
+                const vid = document.getElementById('preview-video-bg');
                 if (vid) vid.style.display = 'none';
             } else {
                 previewSection.style.backgroundImage = 'none';
-                const vid = document.getElementById('preview-media-bg');
+                const vid = document.getElementById('preview-video-bg');
                 if (vid) vid.style.display = 'none';
             }
+        }
+
+        function calculateConstrainedTransform(container, element, hAlign, vAlign, hAdjust, vAdjust) {
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+            const elementWidth = element.offsetWidth;
+            const elementHeight = element.offsetHeight;
+
+            // Ensure the element has a measurable width for calculation
+            element.style.width = 'max-content';
+
+            let x = hAdjust;
+            let y = vAdjust;
+
+            // Horizontal constraints based on requirements
+            const hMidPoint = (containerWidth - elementWidth) / 2;
+            // Vertical constraints based on requirements
+            const vMidPoint = (containerHeight - elementHeight) / 2;
+
+            // The slider value (-50 to 50) should represent a percentage of the available movement space.
+            return { x: (x / 50) * hMidPoint, y: (y / 50) * vMidPoint };
         }
 
         // --- Autocomplete ---
@@ -2576,6 +2191,7 @@
         function handleFormatButtonClick(e) {
             const button = e.currentTarget;
             const style = button.dataset.style;
+            const onValue = button.dataset.on;
 
             const isCurrentlyActive = button.classList.contains('active');
 
@@ -2655,7 +2271,6 @@
             document.querySelectorAll('.tab-button').forEach(tb => tb.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
             evt.currentTarget.classList.add('active');
-            updatePreview();
         }
 
         function togglePresentationWindow() {
@@ -2692,11 +2307,11 @@
                         <title>Presentation</title>
                         <style>
                             body { margin:0; display:flex; height:100vh; background-color:black; overflow:hidden; transition: all 0.3s; } 
-                            #content { color: white; font-size: 4vw; transition: all 0.3s; white-space: pre-wrap; text-align: center; }
+                            #content { color: white; font-size: 4vw; transition: all 0.3s; display: none; }
                             ${animationStyles}
                         </style>
                     </head>
-                    <body><div id="content"></div></body>
+                    <body><div id="content" style="display: none;"></div></body>
                     </html>
                  `);
                     presentationWindow.document.close(); // Important to finalize document writing
@@ -2847,6 +2462,8 @@
             }
 
             const contentRect = content.getBoundingClientRect();
+            const elWidth = contentRect.width;
+            const elHeight = contentRect.height;
 
             // Calculate limits based on alignment
             // The adjustments are in Percentage of Screen Size, mapped to pixels? 

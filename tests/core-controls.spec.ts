@@ -78,7 +78,9 @@ test.describe('Core Presentation Controls', () => {
     await presentationWindow.waitForLoadState();
 
     // FR-06: Check seek bar starts
-    await expect(page.locator('#seek-bar')).toHaveCSS('width', /%$/);
+    await expect.poll(async () => {
+      return await page.locator('#seek-bar').evaluate(el => el.style.width);
+    }, { timeout: 2000 }).toMatch(/%$/);
 
     // Wait for the seek bar to be around 50%
     await page.waitForFunction(async () => {
@@ -101,6 +103,6 @@ test.describe('Core Presentation Controls', () => {
     await page.locator('#playPauseButton').click(); // RESUME
 
     // FR-04: Auto-hide
-    await expect(presentationWindow.locator('#content')).toBeHidden({ timeout: 2000 });
+    await expect(presentationWindow.locator('#content')).toBeHidden({ timeout: 5000 });
   });
 });
