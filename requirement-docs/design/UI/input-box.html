@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Input Box — TEXT / VERSE / TIMER / LYRICS / MEDIA</title>
+<style>
+  /* ==========================================================
+     TOKENS — copy the whole <style> block into your app, or a
+     shared stylesheet. "ib-" prefix keeps this from colliding
+     with the "tb-" toolbar classes from the last file.
+     ========================================================== */
+  :root{
+    --ib-navy:#1c3f5f;
+    --ib-navy-hover:#234b6e;
+    --ib-border:#cfd4d9;
+    --ib-text:#1f2937;
+    --ib-muted:#6b7280;
+    --ib-orange:#e8823c;
+    --ib-panel-bg:#ffffff;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; padding:24px; background:#f4f5f7;
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  .page-note{ max-width:460px; margin:0 auto 14px; font-size:13px; color:#555; }
+  .page-note code{ background:#eaeaea; padding:1px 5px; border-radius:3px; }
+
+  /* ==========================================================
+     CONTAINER
+     ========================================================== */
+  .ib-container{
+    max-width:460px; margin:0 auto 40px;
+    border:1px solid var(--ib-border); border-radius:3px; background:var(--ib-panel-bg);
+    font-size:13px; color:var(--ib-text); overflow:hidden;
+  }
+
+  /* Hidden radios that drive every CSS-only interaction in this
+     component: main tabs, timer sub-tabs, stanza/file selection. */
+  .ib-tab-radio, .ib-subtab-radio, .ib-hidden-radio, .ib-hidden-checkbox{
+    position:absolute; opacity:0; width:1px; height:1px; pointer-events:none;
+  }
+
+  /* ==========================================================
+     MAIN TAB BAR
+     ========================================================== */
+  .ib-tabs{ display:flex; }
+  .ib-tab{
+    flex:1; text-align:center; padding:11px 4px; font-weight:700; font-size:12.5px;
+    letter-spacing:.3px; color:var(--ib-navy); background:#fff; cursor:pointer;
+    border-right:1px solid var(--ib-border); user-select:none;
+  }
+  .ib-tab:last-of-type{ border-right:none; }
+
+  #ibTabText:checked ~ .ib-tabs label[for="ibTabText"],
+  #ibTabVerse:checked ~ .ib-tabs label[for="ibTabVerse"],
+  #ibTabTimer:checked ~ .ib-tabs label[for="ibTabTimer"],
+  #ibTabLyrics:checked ~ .ib-tabs label[for="ibTabLyrics"],
+  #ibTabMedia:checked ~ .ib-tabs label[for="ibTabMedia"]{
+    background:var(--ib-navy); color:#fff;
+  }
+
+  /* ==========================================================
+     PANEL SWITCHING (CSS-only, same trick as the tabs)
+     ========================================================== */
+  .ib-panel{ display:none; border-top:1px solid var(--ib-border); }
+  #ibTabText:checked ~ .ib-panels #panelText,
+  #ibTabVerse:checked ~ .ib-panels #panelVerse,
+  #ibTabTimer:checked ~ .ib-panels #panelTimer,
+  #ibTabLyrics:checked ~ .ib-panels #panelLyrics,
+  #ibTabMedia:checked ~ .ib-panels #panelMedia{
+    display:block;
+  }
+
+  /* ==========================================================
+     SHARED: content row, inputs, play/x buttons, duration
+     ========================================================== */
+  .ib-row{ display:flex; align-items:flex-start; gap:8px; padding:10px; }
+
+  .ib-textarea, .ib-text-input{
+    flex:1; border:1px solid var(--ib-border); border-radius:3px;
+    padding:8px 9px; font-size:13px; font-family:inherit; color:var(--ib-text);
+    resize:none;
+  }
+  .ib-textarea::placeholder, .ib-text-input::placeholder{ color:#9aa1ab; }
+
+  .ib-play-toggle, .ib-play-btn, .ib-x-btn{
+    flex-shrink:0; width:34px; height:34px; border:none; border-radius:3px;
+    background:var(--ib-navy); color:#fff; font-size:13px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .ib-play-toggle:hover, .ib-play-btn:hover, .ib-x-btn:hover{ background:var(--ib-navy-hover); }
+
+  /* Play/Pause toggle: checkbox-driven icon swap, no JS needed to
+     flip the icon — real "is it presenting" state plugs in later. */
+  .ib-play-toggle .ib-icon-pause{ display:none; }
+  .ib-hidden-checkbox:checked + .ib-play-toggle .ib-icon-play{ display:none; }
+  .ib-hidden-checkbox:checked + .ib-play-toggle .ib-icon-pause{ display:inline; }
+
+  .ib-duration{ display:flex; flex-direction:column; align-items:center; gap:4px; width:48px; flex-shrink:0; }
+  .ib-duration-input{
+    width:100%; height:34px; text-align:center; border:1px solid var(--ib-border);
+    border-radius:3px; font-size:13px; font-family:inherit;
+  }
+  .ib-duration-bar{ width:100%; height:4px; background:#e5e7eb; border-radius:2px; overflow:hidden; }
+  .ib-duration-fill{ width:0%; height:100%; background:var(--ib-navy); } /* live progress via JS later */
+
+  /* ==========================================================
+     BACKGROUND ROW (shared shape, contents vary per panel)
+     ========================================================== */
+  .ib-bg-row{ display:flex; align-items:center; gap:7px; padding:8px 10px; border-top:1px solid var(--ib-border); }
+  .ib-bg-label{ font-weight:700; font-size:12px; color:var(--ib-text); margin-right:1px; white-space:nowrap; }
+  .ib-select{
+    height:26px; border:1px solid var(--ib-border); border-radius:3px; background:#fff;
+    padding:0 4px; font-size:12px; font-family:inherit; color:var(--ib-text);
+  }
+  .ib-color-swatch{
+    width:26px; height:26px; padding:0; border:1px solid var(--ib-border);
+    border-radius:3px; cursor:pointer; background:none;
+  }
+  .ib-browse-btn{
+    flex:1; height:26px; padding:0 10px; border:1px solid var(--ib-border); border-radius:3px;
+    background:#fff; font-size:12px; font-family:inherit; color:var(--ib-muted);
+    text-align:left; cursor:pointer;
+  }
+  .ib-apply-btn{
+    height:26px; padding:0 14px; border:none; border-radius:3px; background:var(--ib-navy);
+    color:#fff; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
+  .ib-apply-btn:hover{ background:var(--ib-navy-hover); }
+
+  /* ==========================================================
+     TIMER PANEL
+     ========================================================== */
+  .ib-timer-body{ display:flex; }
+  .ib-timer-sidebar{ display:flex; flex-direction:column; width:96px; flex-shrink:0; border-right:1px solid var(--ib-border); }
+  .ib-subtab{
+    padding:9px 8px; font-size:11.5px; color:var(--ib-navy); background:#fff; cursor:pointer;
+    border-bottom:1px solid var(--ib-border); user-select:none;
+  }
+  #ibTimeNow:checked ~ .ib-timer-body .ib-timer-sidebar label[for="ibTimeNow"],
+  #ibCountdown:checked ~ .ib-timer-body .ib-timer-sidebar label[for="ibCountdown"],
+  #ibPomodoro:checked ~ .ib-timer-body .ib-timer-sidebar label[for="ibPomodoro"]{
+    background:var(--ib-navy); color:#fff;
+  }
+
+  .ib-timer-content{ flex:1; display:flex; align-items:center; }
+  .ib-timer-fields{ display:none; align-items:center; gap:16px; padding:0 12px; }
+  #ibTimeNow:checked ~ .ib-timer-body .ib-timer-fields--now,
+  #ibCountdown:checked ~ .ib-timer-body .ib-timer-fields--countdown,
+  #ibPomodoro:checked ~ .ib-timer-body .ib-timer-fields--pomodoro{
+    display:flex;
+  }
+  .ib-field-pair{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .ib-time-input{
+    width:42px; height:30px; text-align:center; border:1px solid var(--ib-border);
+    border-radius:3px; font-size:13px; font-family:inherit;
+  }
+  .ib-field-label{ font-size:9.5px; letter-spacing:.4px; color:var(--ib-muted); text-transform:uppercase; }
+  .ib-checkbox-label{ display:flex; align-items:center; gap:5px; font-size:12px; color:var(--ib-text); margin-left:4px; white-space:nowrap; }
+
+  .ib-timer-actions{ display:flex; align-items:center; gap:6px; padding:10px; flex-shrink:0; }
+
+  /* ==========================================================
+     LYRICS PANEL
+     ========================================================== */
+  .ib-song-picker{ padding:10px 10px 0; }
+  .ib-song-search{
+    width:100%; height:30px; border:1px solid var(--ib-border); border-radius:3px;
+    text-align:center; font-size:12.5px; font-family:inherit; color:var(--ib-text);
+  }
+  .ib-row--lyrics{ align-items:stretch; }
+  .ib-stanza-list{ flex:1; display:flex; flex-direction:column; gap:6px; }
+  .ib-stanza-item{
+    display:block; padding:9px 10px; border:1px solid var(--ib-border); border-radius:2px;
+    font-size:11.5px; line-height:1.5; text-align:center; color:var(--ib-text);
+    background:#fff; cursor:pointer;
+  }
+  .ib-hidden-radio:checked + .ib-stanza-item{
+    background:var(--ib-navy); color:#fff; border-color:var(--ib-navy); font-weight:600;
+  }
+  .ib-lyrics-actions, .ib-media-actions{ display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+
+  /* ==========================================================
+     MEDIA PANEL
+     ========================================================== */
+  .ib-row--media{ align-items:stretch; }
+  .ib-media-list{ flex:1; display:flex; flex-direction:column; gap:4px; }
+  .ib-media-item{
+    display:block; padding:7px 9px; border:1px solid var(--ib-border); border-radius:2px;
+    font-size:11.5px; text-align:center; color:var(--ib-text); background:#fff; cursor:pointer;
+  }
+  .ib-hidden-radio:checked + .ib-media-item{
+    background:var(--ib-navy); color:#fff; border-color:var(--ib-navy);
+  }
+  .ib-browse-inline-btn{
+    margin-top:2px; padding:7px 9px; border:1px dashed var(--ib-border); border-radius:2px;
+    background:#fafafa; font-size:11px; color:var(--ib-muted); cursor:pointer; font-family:inherit;
+  }
+  .ib-media-preview{ width:96px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .ib-preview-thumb{
+    width:96px; height:64px; border-radius:2px;
+    background:linear-gradient(160deg,#2b2f36,#0e1013);
+  }
+  .ib-preview-label{ font-size:10px; color:var(--ib-muted); }
+
+  .ib-dropzone{
+    flex:1; border:1px dashed var(--ib-border); border-radius:3px; background:#fafafa;
+    padding:14px; font-size:12.5px; color:#9aa1ab; cursor:pointer; font-family:inherit;
+  }
+
+  /* ==========================================================
+     RESPONSIVE — tabs/buttons stay usable at phone widths
+     ========================================================== */
+  @media (max-width:420px){
+    .ib-tab{ font-size:11px; padding:9px 2px; }
+    .ib-row{ flex-wrap:wrap; }
+    .ib-row--lyrics, .ib-row--media{ flex-wrap:nowrap; }
+  }
+</style>
+</head>
+<body>
+
+<p class="page-note">
+  Standalone preview of the redesigned Input Box from your mockup. Tabs, Timer sub-tabs,
+  and stanza/file selection all switch via hidden <code>radio</code> inputs — click around,
+  it already works with zero JS. Background-row contents (color swatch vs. Browse button)
+  are hardcoded per panel to match your mockup; making them respond live to the dropdown
+  value, and toggling the empty ↔ populated states in Lyrics/Media, are JS-pass items.
+</p>
+
+<div class="ib-container" id="presentationInputBox">
+
+  <input type="radio" name="ib-main-tab" id="ibTabText" class="ib-tab-radio" checked>
+  <input type="radio" name="ib-main-tab" id="ibTabVerse" class="ib-tab-radio">
+  <input type="radio" name="ib-main-tab" id="ibTabTimer" class="ib-tab-radio">
+  <input type="radio" name="ib-main-tab" id="ibTabLyrics" class="ib-tab-radio">
+  <input type="radio" name="ib-main-tab" id="ibTabMedia" class="ib-tab-radio">
+
+  <div class="ib-tabs">
+    <label for="ibTabText" class="ib-tab">TEXT</label>
+    <label for="ibTabVerse" class="ib-tab">VERSE</label>
+    <label for="ibTabTimer" class="ib-tab">TIMER</label>
+    <label for="ibTabLyrics" class="ib-tab">LYRICS</label>
+    <label for="ibTabMedia" class="ib-tab">MEDIA</label>
+  </div>
+
+  <div class="ib-panels">
+
+    <!-- ================= TEXT ================= -->
+    <div class="ib-panel" id="panelText">
+      <div class="ib-row">
+        <textarea class="ib-textarea" rows="1" placeholder="Write any text …" data-cmd="text-content"></textarea>
+        <input type="checkbox" id="playText" class="ib-hidden-checkbox">
+        <label for="playText" class="ib-play-toggle" title="Play / Pause" data-cmd="toggle-present-text">
+          <span class="ib-icon-play">▶</span><span class="ib-icon-pause">‖</span>
+        </label>
+        <div class="ib-duration">
+          <input type="text" class="ib-duration-input" value="30" aria-label="Duration in seconds" data-cmd="text-duration">
+          <div class="ib-duration-bar"><div class="ib-duration-fill"></div></div>
+        </div>
+      </div>
+      <div class="ib-bg-row">
+        <span class="ib-bg-label">Background</span>
+        <select class="ib-select" data-cmd="bg-type-text">
+          <option>Solid</option>
+          <option>Picture</option>
+          <option>Video</option>
+        </select>
+        <input type="color" class="ib-color-swatch" value="#e8823c" data-cmd="bg-color-text">
+        <button type="button" class="ib-apply-btn" data-cmd="apply-bg-text">apply</button>
+      </div>
+    </div>
+
+    <!-- ================= VERSE ================= -->
+    <div class="ib-panel" id="panelVerse">
+      <div class="ib-row">
+        <input type="text" class="ib-text-input" placeholder="Type a book of the Bible, e.g., 'John 3:16'" data-cmd="verse-ref">
+        <input type="checkbox" id="playVerse" class="ib-hidden-checkbox">
+        <label for="playVerse" class="ib-play-toggle" title="Play / Pause" data-cmd="toggle-present-verse">
+          <span class="ib-icon-play">▶</span><span class="ib-icon-pause">‖</span>
+        </label>
+        <div class="ib-duration">
+          <input type="text" class="ib-duration-input" value="30" aria-label="Duration in seconds" data-cmd="verse-duration">
+          <div class="ib-duration-bar"><div class="ib-duration-fill"></div></div>
+        </div>
+      </div>
+      <div class="ib-bg-row">
+        <span class="ib-bg-label">Background</span>
+        <select class="ib-select" data-cmd="bg-type-verse">
+          <option selected>Picture</option>
+          <option>Solid</option>
+          <option>Video</option>
+        </select>
+        <button type="button" class="ib-browse-btn" data-cmd="bg-browse-verse">Browse…</button>
+        <button type="button" class="ib-apply-btn" data-cmd="apply-bg-verse">apply</button>
+      </div>
+    </div>
+
+    <!-- ================= TIMER ================= -->
+    <div class="ib-panel" id="panelTimer">
+      <input type="radio" name="ib-timer-subtab" id="ibTimeNow" class="ib-subtab-radio" checked>
+      <input type="radio" name="ib-timer-subtab" id="ibCountdown" class="ib-subtab-radio">
+      <input type="radio" name="ib-timer-subtab" id="ibPomodoro" class="ib-subtab-radio">
+
+      <div class="ib-timer-body">
+        <div class="ib-timer-sidebar">
+          <label for="ibTimeNow" class="ib-subtab">Time Now</label>
+          <label for="ibCountdown" class="ib-subtab">Countdown</label>
+          <label for="ibPomodoro" class="ib-subtab">Pomodoro</label>
+        </div>
+
+        <div class="ib-timer-content">
+          <div class="ib-timer-fields ib-timer-fields--now">
+            <!-- Time Now needs no extra inputs -->
+          </div>
+          <div class="ib-timer-fields ib-timer-fields--countdown">
+            <div class="ib-field-pair">
+              <input type="text" class="ib-time-input" value="24" data-cmd="countdown-hh">
+              <span class="ib-field-label">HH</span>
+            </div>
+            <div class="ib-field-pair">
+              <input type="text" class="ib-time-input" value="59" data-cmd="countdown-mm">
+              <span class="ib-field-label">MM</span>
+            </div>
+          </div>
+          <div class="ib-timer-fields ib-timer-fields--pomodoro">
+            <div class="ib-field-pair">
+              <input type="text" class="ib-time-input" value="05" data-cmd="pomodoro-mm">
+              <span class="ib-field-label">MM</span>
+            </div>
+            <div class="ib-field-pair">
+              <input type="text" class="ib-time-input" value="30" data-cmd="pomodoro-ss">
+              <span class="ib-field-label">SS</span>
+            </div>
+            <label class="ib-checkbox-label">
+              <input type="checkbox" checked data-cmd="pomodoro-count-up"> Count up
+            </label>
+          </div>
+        </div>
+
+        <div class="ib-timer-actions">
+          <input type="checkbox" id="playTimer" class="ib-hidden-checkbox">
+          <label for="playTimer" class="ib-play-toggle" title="Play / Pause" data-cmd="toggle-present-timer">
+            <span class="ib-icon-play">▶</span><span class="ib-icon-pause">‖</span>
+          </label>
+          <button type="button" class="ib-x-btn" data-cmd="hide-timer" title="Hide">✕</button>
+        </div>
+      </div>
+
+      <div class="ib-bg-row">
+        <span class="ib-bg-label">Background</span>
+        <select class="ib-select" data-cmd="bg-type-timer">
+          <option selected>Video</option>
+          <option>Solid</option>
+          <option>Picture</option>
+        </select>
+        <button type="button" class="ib-browse-btn" data-cmd="bg-browse-timer">Browse…</button>
+        <button type="button" class="ib-apply-btn" data-cmd="apply-bg-timer">apply</button>
+      </div>
+    </div>
+
+    <!-- ================= LYRICS ================= -->
+    <div class="ib-panel" id="panelLyrics">
+
+      <!-- Empty state — swap visibility with the loaded state via JS
+           once a song is actually selected. -->
+      <div class="ib-lyrics-empty" style="display:none;">
+        <div class="ib-row">
+          <textarea class="ib-textarea" rows="2" placeholder="Paste lyrics here …" data-cmd="lyrics-paste"></textarea>
+          <button type="button" class="ib-play-btn" data-cmd="play-lyrics" title="Present"><span>▶</span></button>
+          <button type="button" class="ib-x-btn" data-cmd="hide-lyrics" title="Hide">✕</button>
+        </div>
+      </div>
+
+      <div class="ib-lyrics-loaded">
+        <div class="ib-song-picker">
+          <input type="text" class="ib-song-search" value="258 - Blessed assurance" data-cmd="lyrics-song-search">
+        </div>
+        <div class="ib-row ib-row--lyrics">
+          <div class="ib-stanza-list">
+            <input type="radio" name="ib-stanza" id="stanza1" class="ib-hidden-radio" checked>
+            <label for="stanza1" class="ib-stanza-item">1 Blessed assurance, Jesus is mine! O, what a foretaste of glory divine! Heir of salvation, purchase of God, born of His Spirit, washed in His blood.</label>
+
+            <input type="radio" name="ib-stanza" id="stanza2" class="ib-hidden-radio">
+            <label for="stanza2" class="ib-stanza-item">Refrain: This is my story, this is my song, praising my Savior all the day long; this is my story, this is my song, praising my Savior all the day long.</label>
+
+            <input type="radio" name="ib-stanza" id="stanza3" class="ib-hidden-radio">
+            <label for="stanza3" class="ib-stanza-item">2 Perfect submission, perfect delight, visions of rapture now burst on my sight; angels descending, bring from above echoes of mercy, whispers of love.</label>
+          </div>
+          <div class="ib-lyrics-actions">
+            <button type="button" class="ib-play-btn" data-cmd="play-lyrics" title="Present"><span>▶</span></button>
+            <button type="button" class="ib-x-btn" data-cmd="hide-lyrics" title="Hide">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ib-bg-row">
+        <span class="ib-bg-label">Background</span>
+        <select class="ib-select" data-cmd="bg-type-lyrics">
+          <option>Solid</option>
+          <option>Picture</option>
+          <option>Video</option>
+        </select>
+        <input type="color" class="ib-color-swatch" value="#e8823c" data-cmd="bg-color-lyrics">
+        <button type="button" class="ib-apply-btn" data-cmd="apply-bg-lyrics">apply</button>
+      </div>
+    </div>
+
+    <!-- ================= MEDIA ================= -->
+    <div class="ib-panel" id="panelMedia">
+
+      <!-- Empty state — swap with the loaded state via JS once files exist. -->
+      <div class="ib-media-empty" style="display:none;">
+        <div class="ib-row">
+          <button type="button" class="ib-dropzone" data-cmd="media-browse">Drag &amp; drop or browse media</button>
+          <button type="button" class="ib-play-btn" data-cmd="play-media" title="Present"><span>▶</span></button>
+          <button type="button" class="ib-x-btn" data-cmd="hide-media" title="Hide">✕</button>
+        </div>
+      </div>
+
+      <div class="ib-media-loaded">
+        <div class="ib-row ib-row--media">
+          <div class="ib-media-list">
+            <input type="radio" name="ib-media-file" id="file1" class="ib-hidden-radio">
+            <label for="file1" class="ib-media-item">DSC_00123.JPG</label>
+
+            <input type="radio" name="ib-media-file" id="file2" class="ib-hidden-radio" checked>
+            <label for="file2" class="ib-media-item">DSC_00125.JPG</label>
+
+            <input type="radio" name="ib-media-file" id="file3" class="ib-hidden-radio">
+            <label for="file3" class="ib-media-item">AVI_00126.AVI</label>
+
+            <button type="button" class="ib-browse-inline-btn" data-cmd="media-browse">+ Add more media…</button>
+          </div>
+          <div class="ib-media-preview">
+            <div class="ib-preview-thumb" data-cmd="media-preview"></div>
+            <span class="ib-preview-label">Preview</span>
+          </div>
+          <div class="ib-media-actions">
+            <button type="button" class="ib-play-btn" data-cmd="play-media" title="Present"><span>▶</span></button>
+            <button type="button" class="ib-x-btn" data-cmd="hide-media" title="Hide">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ib-bg-row">
+        <span class="ib-bg-label">Background</span>
+        <select class="ib-select" data-cmd="bg-type-media">
+          <option>Solid</option>
+          <option>Picture</option>
+          <option>Video</option>
+        </select>
+        <input type="color" class="ib-color-swatch" value="#e8823c" data-cmd="bg-color-media">
+        <button type="button" class="ib-apply-btn" data-cmd="apply-bg-media">apply</button>
+      </div>
+    </div>
+
+  </div><!-- /.ib-panels -->
+</div><!-- /.ib-container -->
+
+</body>
+</html>

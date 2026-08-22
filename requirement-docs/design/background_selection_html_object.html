@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist Background Settings</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --panel-bg: #2d2d2d;
+            --text-color: #ffffff;
+            --accent-color: #007aff;
+            --border-color: #444444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Presentation Screen Mockup */
+        .presentation-screen {
+            width: 600px;
+            height: 400px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: background 0.3s ease;
+            background: #333333;
+        }
+
+        .screen-content {
+            font-size: 24px;
+            font-weight: 500;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+
+        .bg-preview-media {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+            display: none;
+        }
+
+        /* Minimalist Floating Controls */
+        .control-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(45, 45, 45, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 6px 10px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 10;
+        }
+
+        .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #aaa;
+            padding-left: 8px;
+        }
+
+        /* Select styling */
+        select {
+            background: transparent;
+            color: var(--text-color);
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 6px 24px 6px 8px;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23ffffff' d='M0 0l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+        }
+
+        select option {
+            background: var(--panel-bg);
+            color: var(--text-color);
+        }
+
+        /* Contextual slots */
+        .input-slot {
+            display: flex;
+            align-items: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Custom Color Picker Button */
+        .color-wrapper {
+            position: relative;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #fff;
+            box-shadow: 0 0 4px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+
+        input[type="color"] {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            width: 34px;
+            height: 34px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 0;
+        }
+
+        /* Browse File Button */
+        .browse-btn {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+
+        .browse-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="presentation-screen" id="screen">
+        <div class="screen-content">Presentation Title</div>
+        <img id="imagePreview" class="bg-preview-media" alt="Background">
+        <video id="videoPreview" class="bg-preview-media" autoplay loop muted></video>
+
+        <!-- Minimal Control UI -->
+        <div class="control-panel">
+            <span class="label">BG:</span>
+            
+            <!-- Type Selector Dropdown -->
+            <select id="bgType" onchange="handleTypeChange()">
+                <option value="color">Solid Color</option>
+                <option value="picture">Picture</option>
+                <option value="video">Video</option>
+            </select>
+
+            <!-- Dynamic Input Slots -->
+            <div id="slotColor" class="input-slot">
+                <div class="color-wrapper">
+                    <input type="color" id="colorPicker" value="#333333" oninput="applyColor(this.value)">
+                </div>
+            </div>
+
+            <div id="slotPicture" class="input-slot hidden">
+                <button class="browse-btn" onclick="document.getElementById('filePicture').click()">
+                    📁 Browse
+                </button>
+                <input type="file" id="filePicture" accept="image/*" onchange="applyPicture(this)">
+            </div>
+
+            <div id="slotVideo" class="input-slot hidden">
+                <button class="browse-btn" onclick="document.getElementById('fileVideo').click()">
+                    📁 Browse
+                </button>
+                <input type="file" id="fileVideo" accept="video/*" onchange="applyVideo(this)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const screen = document.getElementById('screen');
+        const imgPreview = document.getElementById('imagePreview');
+        const vidPreview = document.getElementById('videoPreview');
+
+        function handleTypeChange() {
+            const type = document.getElementById('bgType').value;
+            
+            // Hide all input slots first
+            document.getElementById('slotColor').classList.add('hidden');
+            document.getElementById('slotPicture').classList.add('hidden');
+            document.getElementById('slotVideo').classList.add('hidden');
+
+            // Hide media previews
+            imgPreview.style.display = 'none';
+            vidPreview.style.display = 'none';
+            vidPreview.pause();
+
+            // Reveal the active configuration slot & restore state
+            if (type === 'color') {
+                document.getElementById('slotColor').classList.remove('hidden');
+                applyColor(document.getElementById('colorPicker').value);
+            } else if (type === 'picture') {
+                document.getElementById('slotPicture').classList.remove('hidden');
+                if (imgPreview.src) imgPreview.style.display = 'block';
+            } else if (type === 'video') {
+                document.getElementById('slotVideo').classList.remove('hidden');
+                if (vidPreview.src) {
+                    vidPreview.style.display = 'block';
+                    vidPreview.play();
+                }
+            }
+        }
+
+        function applyColor(hex) {
+            screen.style.background = hex;
+        }
+
+        function applyPicture(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imgPreview.src = e.target.result;
+                    imgPreview.style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function applyVideo(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const url = URL.createObjectURL(file);
+                vidPreview.src = url;
+                vidPreview.style.display = 'block';
+                vidPreview.play();
+            }
+        }
+    </script>
+</body>
+</html>

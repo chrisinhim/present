@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text Formatting Toolbar — Compact (PowerPoint-style)</title>
+<style>
+  /* ==========================================================
+     TOKENS
+     Copy this whole <style> block into your app's <head>,
+     or into a shared stylesheet if it's already split out.
+     ========================================================== */
+  :root{
+    --tb-bg:#ffffff;
+    --tb-border:#d6d6d6;
+    --tb-border-strong:#b6b6b6;
+    --tb-hover:#eef3fc;
+    --tb-active-bg:#dce7fb;
+    --tb-accent:#1a73e8;
+    --tb-text:#202020;
+    --tb-text-muted:#666666;
+    --tb-menu-shadow:0 6px 16px rgba(0,0,0,.16), 0 0 0 1px rgba(0,0,0,.04);
+
+    /* Theme color columns (1–10). Change these 10 to re-theme every
+       color grid in the toolbar — tint/shade rows are derived from
+       these automatically via CSS filters, no extra colors to edit. */
+    --theme-c1:#FFFFFF;
+    --theme-c2:#000000;
+    --theme-c3:#E7E6E6;
+    --theme-c4:#1F3864;
+    --theme-c5:#2E75B6;
+    --theme-c6:#ED7D31;
+    --theme-c7:#375623;
+    --theme-c8:#5B9BD5;
+    --theme-c9:#7030A0;
+    --theme-c10:#70AD47;
+  }
+
+  * { box-sizing:border-box; }
+  body{
+    margin:0; padding:24px;
+    background:#f4f5f7;
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  .page-note{
+    max-width:760px; margin:0 auto 14px; font-size:13px; color:#555;
+  }
+  .page-note code{ background:#eaeaea; padding:1px 5px; border-radius:3px; }
+
+  /* ==========================================================
+     TOOLBAR SHELL
+     Horizontally scrollable so it degrades gracefully on phone
+     widths instead of wrapping into a multi-row mess.
+     ========================================================== */
+  .pc-toolbar{
+    display:flex; align-items:stretch; gap:2px;
+    max-width:760px; margin:0 auto;
+    background:var(--tb-bg); border:1px solid var(--tb-border); border-radius:6px;
+    padding:4px 6px; overflow-x:auto; -webkit-overflow-scrolling:touch;
+    font-size:12.5px; color:var(--tb-text);
+  }
+  .pc-toolbar::-webkit-scrollbar{ height:6px; }
+  .pc-toolbar::-webkit-scrollbar-thumb{ background:#ccc; border-radius:3px; }
+
+  .tb-group{ display:flex; align-items:center; gap:2px; flex-shrink:0; }
+  .tb-divider{ width:1px; background:var(--tb-border); margin:3px 4px; flex-shrink:0; }
+
+  /* ==========================================================
+     BASE BUTTON
+     ========================================================== */
+  .tb-icon-btn{
+    display:inline-flex; align-items:center; gap:3px;
+    height:27px; min-width:27px; padding:0 6px;
+    border:1px solid transparent; border-radius:4px; background:transparent;
+    font-size:12.5px; line-height:1; color:var(--tb-text); cursor:pointer;
+    white-space:nowrap; font-family:inherit;
+  }
+  .tb-icon-btn:hover{ background:var(--tb-hover); border-color:var(--tb-border); }
+  .tb-icon-btn.is-active{ background:var(--tb-active-bg); border-color:var(--tb-accent); }
+  .tb-icon-btn:focus-visible{ outline:2px solid var(--tb-accent); outline-offset:1px; }
+
+  .tb-bold{ font-weight:700; }
+  .tb-italic{ font-style:italic; font-family:Georgia, serif; }
+  .tb-underline{ text-decoration:underline; }
+  .tb-strike{ text-decoration:line-through; }
+
+  /* Clear formatting: "A" with a diagonal strike, PowerPoint-style */
+  .tb-clear{ position:relative; }
+  .tb-clear .tb-clear-slash{
+    position:absolute; left:2px; right:2px; top:50%;
+    height:2px; background:#c00000; transform:rotate(-28deg);
+  }
+
+  /* ==========================================================
+     FONT NAME / SIZE GROUP
+     ========================================================== */
+  .tb-select, .tb-size-input{
+    height:27px; border:1px solid var(--tb-border); border-radius:4px; background:#fff;
+    padding:0 4px; font-size:12.5px; color:var(--tb-text); font-family:inherit;
+  }
+  .tb-font-name{ width:132px; }
+  .tb-size-input{ width:38px; text-align:center; }
+  .tb-size-wrap{ display:flex; align-items:center; border:1px solid var(--tb-border); border-radius:4px; overflow:hidden; }
+  .tb-size-wrap .tb-size-input{ border:none; border-radius:0; }
+  .tb-size-wrap .tb-chev-col{ display:flex; flex-direction:column; border-left:1px solid var(--tb-border); }
+  .tb-size-wrap .tb-chev-col button{
+    border:none; background:#fff; width:16px; height:13.5px; font-size:8px;
+    line-height:1; cursor:pointer; color:var(--tb-text-muted); padding:0;
+  }
+  .tb-size-wrap .tb-chev-col button:hover{ background:var(--tb-hover); }
+
+  /* ==========================================================
+     DROPDOWNS (native <details>/<summary> — no JS needed to
+     open/close; wire up mutual-exclusivity + outside-click
+     later when we get to the JS pass)
+     ========================================================== */
+  details.tb-dropdown{ position:relative; flex-shrink:0; }
+  details.tb-dropdown > summary{ list-style:none; cursor:pointer; }
+  details.tb-dropdown > summary::-webkit-details-marker{ display:none; }
+  details.tb-dropdown[open] > summary.tb-icon-btn{ background:var(--tb-active-bg); border-color:var(--tb-accent); }
+
+  .tb-chevron{ font-size:9px; margin-left:1px; color:var(--tb-text-muted); }
+  .tb-split-btn{ padding:0 8px; gap:5px; }
+  .tb-btn-label{ font-size:12.5px; }
+
+  .tb-menu{
+    position:absolute; top:calc(100% + 3px); left:0; z-index:50;
+    background:#fff; border:1px solid var(--tb-border-strong); border-radius:6px;
+    box-shadow:var(--tb-menu-shadow); padding:5px; min-width:180px;
+  }
+  .tb-menu-wide{ min-width:220px; }
+  .tb-menu-list{ display:flex; flex-direction:column; gap:1px; }
+  .tb-menu-item{
+    display:flex; align-items:center; gap:8px; width:100%; text-align:left;
+    padding:6px 8px; border:none; background:none; border-radius:3px;
+    font-size:12.5px; color:var(--tb-text); cursor:pointer; font-family:inherit;
+  }
+  .tb-menu-item:hover{ background:var(--tb-hover); }
+  .tb-menu-icon{ width:16px; display:inline-flex; justify-content:center; color:var(--tb-text-muted); flex-shrink:0; }
+  .tb-menu-sep{ height:1px; background:var(--tb-border); margin:4px 2px; }
+  .tb-submenu-arrow{ margin-left:auto; color:var(--tb-text-muted); }
+
+  /* ==========================================================
+     ALIGNMENT ICONS — pure CSS bars, no glyph font needed
+     ========================================================== */
+  .tb-align-icon{ display:flex; flex-direction:column; gap:2px; width:16px; }
+  .tb-align-icon i{ display:block; height:2px; background:currentColor; border-radius:1px; }
+  .align-left i:nth-child(1){ width:100%; }
+  .align-left i:nth-child(2){ width:70%; }
+  .align-left i:nth-child(3){ width:85%; }
+  .align-center{ align-items:center; }
+  .align-center i:nth-child(1){ width:100%; }
+  .align-center i:nth-child(2){ width:60%; }
+  .align-center i:nth-child(3){ width:80%; }
+  .align-right{ align-items:flex-end; }
+  .align-right i:nth-child(1){ width:100%; }
+  .align-right i:nth-child(2){ width:70%; }
+  .align-right i:nth-child(3){ width:85%; }
+
+  /* ==========================================================
+     COLOR SWATCH BUTTON ON THE TOOLBAR ITSELF
+     (font color "A" with red underline, highlight "ab" with
+     yellow underline, etc.)
+     ========================================================== */
+  .tb-color-btn .tb-glyph{ position:relative; padding-bottom:2px; }
+  .tb-swatch-underline{ position:absolute; left:1px; right:1px; bottom:-2px; height:3px; border-radius:1px; }
+
+  /* ==========================================================
+     COLOR PICKER PANELS (Text Fill / Text Outline / Font Color)
+     ========================================================== */
+  .tb-color-panel{ width:256px; padding:8px; }
+  .tb-contrast-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:2px 2px 8px; font-size:12px; color:var(--tb-text-muted);
+    border-bottom:1px solid var(--tb-border); margin-bottom:8px;
+  }
+  .tb-toggle{
+    width:30px; height:16px; border-radius:8px; background:#c6c6c6;
+    position:relative; display:inline-block; flex-shrink:0;
+  }
+  .tb-toggle::after{
+    content:""; position:absolute; top:2px; left:2px;
+    width:12px; height:12px; border-radius:50%; background:#6b6b6b;
+  }
+
+  .tb-color-label{ font-size:11px; font-weight:600; color:var(--tb-text-muted); margin:2px 0 4px; }
+
+  /* 10 columns x 6 rows = 60 buttons. Column color + row tint/shade
+     are both handled with CSS below, so the HTML is just 60 identical
+     empty <button> tags — see the markup. */
+  .tb-theme-grid{ display:grid; grid-template-columns:repeat(10, 1fr); gap:2px; margin-bottom:8px; }
+  .tb-theme-grid .tb-swatch-btn{
+    width:21px; height:16px; border:1px solid rgba(0,0,0,.15); border-radius:2px;
+    cursor:pointer; padding:0;
+  }
+  .tb-theme-grid .tb-swatch-btn:hover{ outline:2px solid var(--tb-accent); outline-offset:1px; }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+1){ background:var(--theme-c1); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+2){ background:var(--theme-c2); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+3){ background:var(--theme-c3); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+4){ background:var(--theme-c4); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+5){ background:var(--theme-c5); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+6){ background:var(--theme-c6); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+7){ background:var(--theme-c7); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+8){ background:var(--theme-c8); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+9){ background:var(--theme-c9); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+10){ background:var(--theme-c10); }
+  /* row 1 = base (no filter); rows 2–6 = tint/shade via brightness() */
+  .tb-theme-grid .tb-swatch-btn:nth-child(n+11):nth-child(-n+20){ filter:brightness(1.45); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(n+21):nth-child(-n+30){ filter:brightness(1.2); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(n+31):nth-child(-n+40){ filter:brightness(.85); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(n+41):nth-child(-n+50){ filter:brightness(.65); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(n+51):nth-child(-n+60){ filter:brightness(.45); }
+
+  .tb-standard-row{ display:flex; gap:2px; margin-bottom:8px; }
+  .tb-standard-row .tb-swatch-btn{
+    width:21px; height:16px; border:1px solid rgba(0,0,0,.15); border-radius:2px;
+    cursor:pointer; padding:0;
+  }
+  .tb-standard-row .tb-swatch-btn:hover{ outline:2px solid var(--tb-accent); outline-offset:1px; }
+
+  .tb-highlight-grid{ display:grid; grid-template-columns:repeat(5, 1fr); gap:3px; margin-bottom:8px; }
+  .tb-highlight-grid .tb-swatch-btn{
+    width:100%; height:18px; border:1px solid rgba(0,0,0,.15); border-radius:2px; cursor:pointer; padding:0;
+  }
+
+  /* ==========================================================
+     PREVIEW BOX — just so this file previews in context; delete
+     this block (and the two elements in <body>) when you lift
+     the toolbar into your app.
+     ========================================================== */
+  .preview-box{
+    max-width:760px; margin:14px auto 0; height:150px;
+    background:#000; color:#fff; display:flex; align-items:center; justify-content:center;
+    border-radius:6px; font-size:20px;
+  }
+</style>
+</head>
+<body>
+
+<p class="page-note">
+  Standalone preview. The <code>&lt;style&gt;</code> block above and the
+  <code>#textFormatToolbar</code> markup below are the two pieces to copy into your app.
+  Dropdowns open/close natively via <code>&lt;details&gt;</code> — no JS wired up yet, as agreed.
+</p>
+
+<!-- ============================================================
+     TEXT FORMATTING TOOLBAR
+     ============================================================ -->
+<div class="pc-toolbar" id="textFormatToolbar">
+
+  <!-- FONT NAME -->
+  <div class="tb-group">
+    <select class="tb-select tb-font-name" data-cmd="font-family" title="Font">
+      <option>Aptos (Body)</option>
+      <option>Arial</option>
+      <option>Calibri</option>
+      <option>Georgia</option>
+      <option>Times New Roman</option>
+      <option>Verdana</option>
+    </select>
+  </div>
+
+  <!-- FONT SIZE -->
+  <div class="tb-group">
+    <div class="tb-size-wrap">
+      <input type="text" class="tb-size-input" data-cmd="font-size" value="18" title="Font size">
+      <div class="tb-chev-col">
+        <button type="button" title="Next size up">▲</button>
+        <button type="button" title="Next size down">▼</button>
+      </div>
+    </div>
+    <button type="button" class="tb-icon-btn" data-cmd="grow-font" title="Increase font size">A<span style="font-size:9px;">▲</span></button>
+    <button type="button" class="tb-icon-btn" data-cmd="shrink-font" title="Decrease font size">A<span style="font-size:9px;">▼</span></button>
+  </div>
+
+  <div class="tb-divider"></div>
+
+  <!-- CLEAR FORMATTING -->
+  <button type="button" class="tb-icon-btn tb-clear" data-cmd="clear-format" title="Clear All Formatting">
+    A<span class="tb-clear-slash"></span>
+  </button>
+
+  <div class="tb-divider"></div>
+
+  <!-- B I U S -->
+  <div class="tb-group">
+    <button type="button" class="tb-icon-btn tb-bold" data-cmd="bold" title="Bold (Ctrl+B)">B</button>
+    <button type="button" class="tb-icon-btn tb-italic" data-cmd="italic" title="Italic (Ctrl+I)">I</button>
+    <button type="button" class="tb-icon-btn tb-underline" data-cmd="underline" title="Underline (Ctrl+U)">U</button>
+    <button type="button" class="tb-icon-btn tb-strike" data-cmd="strikethrough" title="Strikethrough">S</button>
+  </div>
+
+  <div class="tb-divider"></div>
+
+  <!-- CHARACTER SPACING -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn" title="Character Spacing">A↔V<span class="tb-chevron">▾</span></summary>
+    <div class="tb-menu tb-menu-list">
+      <button type="button" class="tb-menu-item" data-cmd="spacing-very-tight">Very Tight</button>
+      <button type="button" class="tb-menu-item" data-cmd="spacing-tight">Tight</button>
+      <button type="button" class="tb-menu-item" data-cmd="spacing-normal">Normal</button>
+      <button type="button" class="tb-menu-item" data-cmd="spacing-loose">Loose</button>
+      <button type="button" class="tb-menu-item" data-cmd="spacing-very-loose">Very Loose</button>
+      <div class="tb-menu-sep"></div>
+      <button type="button" class="tb-menu-item" data-cmd="spacing-more">More Spacing…</button>
+    </div>
+  </details>
+
+  <!-- CHANGE CASE -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn" title="Change Case">Aa<span class="tb-chevron">▾</span></summary>
+    <div class="tb-menu tb-menu-list">
+      <button type="button" class="tb-menu-item" data-cmd="case-sentence">Sentence case.</button>
+      <button type="button" class="tb-menu-item" data-cmd="case-lower">lowercase</button>
+      <button type="button" class="tb-menu-item" data-cmd="case-upper">UPPERCASE</button>
+      <button type="button" class="tb-menu-item" data-cmd="case-title">Capitalize Each Word</button>
+      <button type="button" class="tb-menu-item" data-cmd="case-toggle">tOGGLE cASE</button>
+    </div>
+  </details>
+
+  <div class="tb-divider"></div>
+
+  <!-- HIGHLIGHT COLOR -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-color-btn" title="Text Highlight Color">
+      <span class="tb-glyph">ab<span class="tb-swatch-underline" style="background:#FFFF00;"></span></span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-color-panel" style="width:150px;">
+      <div class="tb-highlight-grid">
+        <button type="button" class="tb-swatch-btn" style="background:#FFFF00" data-color="#FFFF00" title="Yellow"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00FF00" data-color="#00FF00" title="Bright Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00FFFF" data-color="#00FFFF" title="Turquoise"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FF00FF" data-color="#FF00FF" title="Pink"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#0000FF" data-color="#0000FF" title="Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FF0000" data-color="#FF0000" title="Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00008B" data-color="#00008B" title="Dark Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#008080" data-color="#008080" title="Teal"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#008000" data-color="#008000" title="Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#800080" data-color="#800080" title="Violet"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#800000" data-color="#800000" title="Dark Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#808000" data-color="#808000" title="Dark Yellow"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#808080" data-color="#808080" title="Gray 50%"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#C0C0C0" data-color="#C0C0C0" title="Gray 25%"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#000000" data-color="#000000" title="Black"></button>
+      </div>
+      <button type="button" class="tb-menu-item" data-cmd="highlight-none" style="width:100%;">No Color</button>
+    </div>
+  </details>
+
+  <!-- FONT COLOR -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-color-btn" title="Font Color">
+      <span class="tb-glyph">A<span class="tb-swatch-underline" style="background:#C00000;"></span></span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-color-panel">
+      <div class="tb-color-label">Theme Colours</div>
+      <div class="tb-theme-grid">
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+      </div>
+      <div class="tb-color-label">Standard Colours</div>
+      <div class="tb-standard-row">
+        <button type="button" class="tb-swatch-btn" style="background:#C00000" data-color="#C00000" title="Dark Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FF0000" data-color="#FF0000" title="Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FFC000" data-color="#FFC000" title="Orange"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FFFF00" data-color="#FFFF00" title="Yellow"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#92D050" data-color="#92D050" title="Light Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00B050" data-color="#00B050" title="Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00B0F0" data-color="#00B0F0" title="Light Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#0070C0" data-color="#0070C0" title="Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#002060" data-color="#002060" title="Dark Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#7030A0" data-color="#7030A0" title="Purple"></button>
+      </div>
+      <button type="button" class="tb-menu-item" data-cmd="font-color-auto">Automatic</button>
+      <div class="tb-menu-sep"></div>
+      <button type="button" class="tb-menu-item" data-cmd="font-color-more"><span class="tb-menu-icon">◐</span>More Colours…</button>
+      <button type="button" class="tb-menu-item" data-cmd="font-color-eyedrop"><span class="tb-menu-icon">✎</span>Eyedropper</button>
+    </div>
+  </details>
+
+  <div class="tb-divider"></div>
+
+  <!-- ALIGNMENT -->
+  <div class="tb-group tb-align-group">
+    <button type="button" class="tb-icon-btn is-active" data-cmd="align-left" title="Align Left">
+      <span class="tb-align-icon align-left"><i></i><i></i><i></i></span>
+    </button>
+    <button type="button" class="tb-icon-btn" data-cmd="align-center" title="Align Center">
+      <span class="tb-align-icon align-center"><i></i><i></i><i></i></span>
+    </button>
+    <button type="button" class="tb-icon-btn" data-cmd="align-right" title="Align Right">
+      <span class="tb-align-icon align-right"><i></i><i></i><i></i></span>
+    </button>
+  </div>
+
+  <div class="tb-divider"></div>
+
+  <!-- ROTATE -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-split-btn" title="Rotate">
+      <span class="tb-glyph" style="font-size:14px;">⟳</span>
+      <span class="tb-btn-label">Rotate</span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-menu-list tb-menu-wide">
+      <button type="button" class="tb-menu-item" data-cmd="rotate-right-90"><span class="tb-menu-icon">↻</span>Rotate Right 90°</button>
+      <button type="button" class="tb-menu-item" data-cmd="rotate-left-90"><span class="tb-menu-icon">↺</span>Rotate Left 90°</button>
+      <button type="button" class="tb-menu-item" data-cmd="flip-vertical"><span class="tb-menu-icon">⇕</span>Flip Vertical</button>
+      <button type="button" class="tb-menu-item" data-cmd="flip-horizontal"><span class="tb-menu-icon">⇔</span>Flip Horizontal</button>
+      <div class="tb-menu-sep"></div>
+      <button type="button" class="tb-menu-item" data-cmd="rotate-more">More Rotation Options…</button>
+    </div>
+  </details>
+
+  <div class="tb-divider"></div>
+
+  <!-- TEXT FILL -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-split-btn" title="Text Fill">
+      <span class="tb-glyph">A<span class="tb-swatch-underline" style="background:#000000;"></span></span>
+      <span class="tb-btn-label">Text Fill</span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-color-panel">
+      <div class="tb-contrast-row">High-contrast only <span class="tb-toggle"></span></div>
+      <div class="tb-color-label">Theme Colours</div>
+      <div class="tb-theme-grid">
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+      </div>
+      <div class="tb-color-label">Standard Colours</div>
+      <div class="tb-standard-row">
+        <button type="button" class="tb-swatch-btn" style="background:#C00000" data-color="#C00000" title="Dark Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FF0000" data-color="#FF0000" title="Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FFC000" data-color="#FFC000" title="Orange"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FFFF00" data-color="#FFFF00" title="Yellow"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#92D050" data-color="#92D050" title="Light Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00B050" data-color="#00B050" title="Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00B0F0" data-color="#00B0F0" title="Light Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#0070C0" data-color="#0070C0" title="Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#002060" data-color="#002060" title="Dark Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#7030A0" data-color="#7030A0" title="Purple"></button>
+      </div>
+      <button type="button" class="tb-menu-item" data-cmd="fill-none">No Fill</button>
+      <div class="tb-menu-sep"></div>
+      <button type="button" class="tb-menu-item" data-cmd="fill-more"><span class="tb-menu-icon">◐</span>More Fill Colours…</button>
+      <button type="button" class="tb-menu-item" data-cmd="fill-eyedrop"><span class="tb-menu-icon">✎</span>Eyedropper</button>
+      <button type="button" class="tb-menu-item" data-cmd="fill-picture"><span class="tb-menu-icon">🖼</span>Picture…</button>
+      <button type="button" class="tb-menu-item" data-cmd="fill-gradient"><span class="tb-menu-icon">▨</span>Gradient<span class="tb-submenu-arrow">›</span></button>
+      <button type="button" class="tb-menu-item" data-cmd="fill-texture"><span class="tb-menu-icon">▦</span>Texture<span class="tb-submenu-arrow">›</span></button>
+    </div>
+  </details>
+
+  <!-- TEXT OUTLINE -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-split-btn" title="Text Outline">
+      <span class="tb-glyph" style="-webkit-text-stroke:1px #000; color:#fff;">A</span>
+      <span class="tb-btn-label">Text Outline</span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-color-panel">
+      <div class="tb-contrast-row">High-contrast only <span class="tb-toggle"></span></div>
+      <div class="tb-color-label">Theme Colours</div>
+      <div class="tb-theme-grid">
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+      </div>
+      <div class="tb-color-label">Standard Colours</div>
+      <div class="tb-standard-row">
+        <button type="button" class="tb-swatch-btn" style="background:#C00000" data-color="#C00000" title="Dark Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FF0000" data-color="#FF0000" title="Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FFC000" data-color="#FFC000" title="Orange"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FFFF00" data-color="#FFFF00" title="Yellow"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#92D050" data-color="#92D050" title="Light Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00B050" data-color="#00B050" title="Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00B0F0" data-color="#00B0F0" title="Light Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#0070C0" data-color="#0070C0" title="Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#002060" data-color="#002060" title="Dark Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#7030A0" data-color="#7030A0" title="Purple"></button>
+      </div>
+      <button type="button" class="tb-menu-item" data-cmd="outline-none">No Outline</button>
+      <div class="tb-menu-sep"></div>
+      <button type="button" class="tb-menu-item" data-cmd="outline-more"><span class="tb-menu-icon">◐</span>More Outline Colours…</button>
+      <button type="button" class="tb-menu-item" data-cmd="outline-eyedrop"><span class="tb-menu-icon">✎</span>Eyedropper</button>
+      <button type="button" class="tb-menu-item" data-cmd="outline-weight"><span class="tb-menu-icon">▬</span>Weight<span class="tb-submenu-arrow">›</span></button>
+      <button type="button" class="tb-menu-item" data-cmd="outline-dashes"><span class="tb-menu-icon">┄</span>Dashes<span class="tb-submenu-arrow">›</span></button>
+    </div>
+  </details>
+
+  <!-- TEXT EFFECTS -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-split-btn" title="Text Effects">
+      <span class="tb-glyph" style="text-shadow:1px 1px 2px rgba(0,0,0,.5);">A</span>
+      <span class="tb-btn-label">Text Effects</span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-menu-list tb-menu-wide">
+      <button type="button" class="tb-menu-item" data-cmd="effect-shadow">
+        <span class="tb-menu-icon" style="text-shadow:1px 1px 1px #999;">A</span>Shadow<span class="tb-submenu-arrow">›</span>
+      </button>
+      <button type="button" class="tb-menu-item" data-cmd="effect-reflection">
+        <span class="tb-menu-icon" style="opacity:.5; transform:scaleY(-1); display:inline-block;">A</span>Reflection<span class="tb-submenu-arrow">›</span>
+      </button>
+      <button type="button" class="tb-menu-item" data-cmd="effect-glow">
+        <span class="tb-menu-icon" style="text-shadow:0 0 4px #1a73e8;">A</span>Glow<span class="tb-submenu-arrow">›</span>
+      </button>
+      <button type="button" class="tb-menu-item" data-cmd="effect-bevel">
+        <span class="tb-menu-icon" style="text-shadow:-1px -1px 0 #fff, 1px 1px 0 #999;">A</span>Bevel<span class="tb-submenu-arrow">›</span>
+      </button>
+    </div>
+  </details>
+
+</div>
+<!-- ============================================================
+     END TOOLBAR
+     ============================================================ -->
+
+<div class="preview-box">Preview Text</div>
+
+</body>
+</html>

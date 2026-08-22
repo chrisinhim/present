@@ -1,0 +1,2540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text Formatting Toolbar — Compact (PowerPoint-style)</title>
+<style>
+  /* ==========================================================
+     TOKENS
+     Copy this whole <style> block into your app's <head>,
+     or into a shared stylesheet if it's already split out.
+     ========================================================== */
+  :root{
+    --tb-bg:#ffffff;
+    --tb-border:#d6d6d6;
+    --tb-border-strong:#b6b6b6;
+    --tb-hover:#eef3fc;
+    --tb-active-bg:#dce7fb;
+    --tb-accent:#1a73e8;
+    --tb-text:#202020;
+    --tb-text-muted:#666666;
+    --tb-menu-shadow:0 6px 16px rgba(0,0,0,.16), 0 0 0 1px rgba(0,0,0,.04);
+
+    /* Theme color columns (1–10). Change these 10 to re-theme every
+       color grid in the toolbar — tint/shade rows are derived from
+       these automatically via CSS filters, no extra colors to edit. */
+    --theme-c1:#FFFFFF;
+    --theme-c2:#000000;
+    --theme-c3:#E7E6E6;
+    --theme-c4:#1F3864;
+    --theme-c5:#2E75B6;
+    --theme-c6:#ED7D31;
+    --theme-c7:#375623;
+    --theme-c8:#5B9BD5;
+    --theme-c9:#7030A0;
+    --theme-c10:#70AD47;
+  }
+
+  * { box-sizing:border-box; }
+  body{
+    margin:0; padding:24px;
+    background:#f4f5f7;
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  .page-note{
+    max-width:760px; margin:0 auto 14px; font-size:13px; color:#555;
+  }
+  .page-note code{ background:#eaeaea; padding:1px 5px; border-radius:3px; }
+
+  /* ==========================================================
+     TOOLBAR SHELL
+     Horizontally scrollable so it degrades gracefully on phone
+     widths instead of wrapping into a multi-row mess.
+     ========================================================== */
+  .pc-toolbar{
+    display:flex; align-items:stretch; flex-wrap:wrap; gap:4px 2px;
+    max-width:760px; margin:0 auto;
+    background:var(--tb-bg); border:1px solid var(--tb-border); border-radius:6px;
+    padding:4px 6px; overflow:visible;
+    font-size:12.5px; color:var(--tb-text);
+  }
+  .pc-toolbar::-webkit-scrollbar{ height:6px; }
+  .pc-toolbar::-webkit-scrollbar-thumb{ background:#ccc; border-radius:3px; }
+
+  .tb-group{ display:flex; align-items:center; gap:2px; flex-shrink:0; }
+  .tb-divider{ width:1px; background:var(--tb-border); margin:3px 4px; flex-shrink:0; }
+
+  /* ==========================================================
+     BASE BUTTON
+     ========================================================== */
+  .tb-icon-btn{
+    display:inline-flex; align-items:center; gap:3px;
+    height:27px; min-width:27px; padding:0 6px;
+    border:1px solid transparent; border-radius:4px; background:transparent;
+    font-size:12.5px; line-height:1; color:var(--tb-text); cursor:pointer;
+    white-space:nowrap; font-family:inherit;
+  }
+  .tb-icon-btn:hover{ background:var(--tb-hover); border-color:var(--tb-border); }
+  .tb-icon-btn.is-active{ background:var(--tb-active-bg); border-color:var(--tb-accent); }
+  .tb-icon-btn:focus-visible{ outline:2px solid var(--tb-accent); outline-offset:1px; }
+
+  .tb-bold{ font-weight:700; }
+  .tb-italic{ font-style:italic; font-family:Georgia, serif; }
+  .tb-underline{ text-decoration:underline; }
+  .tb-strike{ text-decoration:line-through; }
+
+  /* Clear formatting: "A" with a diagonal strike, PowerPoint-style */
+  .tb-clear{ position:relative; }
+  .tb-clear .tb-clear-slash{
+    position:absolute; left:2px; right:2px; top:50%;
+    height:2px; background:#c00000; transform:rotate(-28deg);
+  }
+
+  /* ==========================================================
+     FONT NAME / SIZE GROUP
+     ========================================================== */
+  .tb-select, .tb-size-input{
+    height:27px; border:1px solid var(--tb-border); border-radius:4px; background:#fff;
+    padding:0 4px; font-size:12.5px; color:var(--tb-text); font-family:inherit;
+  }
+  .tb-font-name{ width:132px; }
+  .tb-size-input{ width:38px; text-align:center; }
+  .tb-size-wrap{ display:flex; align-items:center; border:1px solid var(--tb-border); border-radius:4px; overflow:hidden; }
+  .tb-size-wrap .tb-size-input{ border:none; border-radius:0; }
+  .tb-size-wrap .tb-chev-col{ display:flex; flex-direction:column; border-left:1px solid var(--tb-border); }
+  .tb-size-wrap .tb-chev-col button{
+    border:none; background:#fff; width:16px; height:13.5px; font-size:8px;
+    line-height:1; cursor:pointer; color:var(--tb-text-muted); padding:0;
+  }
+  .tb-size-wrap .tb-chev-col button:hover{ background:var(--tb-hover); }
+
+  /* ==========================================================
+     DROPDOWNS (native <details>/<summary> — no JS needed to
+     open/close; wire up mutual-exclusivity + outside-click
+     later when we get to the JS pass)
+     ========================================================== */
+  details.tb-dropdown{ position:relative; flex-shrink:0; }
+  details.tb-dropdown[open]{ z-index:60; }
+  details.tb-dropdown > summary{ list-style:none; cursor:pointer; }
+  details.tb-dropdown > summary::-webkit-details-marker{ display:none; }
+  details.tb-dropdown[open] > summary.tb-icon-btn{ background:var(--tb-active-bg); border-color:var(--tb-accent); }
+
+  .tb-chevron{ font-size:9px; margin-left:1px; color:var(--tb-text-muted); }
+  .tb-split-btn{ padding:0 8px; gap:5px; }
+  .tb-btn-label{ font-size:12.5px; }
+
+  .tb-menu{
+    position:fixed; top:0; left:0; z-index:50;
+    background:#fff; border:1px solid var(--tb-border-strong); border-radius:6px;
+    box-shadow:var(--tb-menu-shadow); padding:5px;
+    width:max-content; min-width:0; max-width:calc(100vw - 16px); overflow-x:hidden;
+  }
+  .tb-menu-wide{ width:max-content; }
+  .tb-menu-list{ display:flex; flex-direction:column; gap:1px; }
+  .tb-menu-item{
+    display:flex; align-items:center; gap:8px; width:100%; text-align:left;
+    padding:6px 8px; border:none; background:none; border-radius:3px;
+    font-size:12.5px; color:var(--tb-text); cursor:pointer; font-family:inherit;
+  }
+  .tb-menu-item:hover{ background:var(--tb-hover); }
+  .tb-background-menu .tb-menu-item.is-selected{ background:var(--tb-active-bg); color:#1c3f5f; font-weight:700; }
+  .tb-background-menu .tb-menu-item{ justify-content:flex-start; }
+  .tb-background-swatch{ width:18px; height:18px; padding:0; border:1px solid var(--tb-border); border-radius:3px; cursor:pointer; }
+  .tb-menu-icon{ width:16px; display:inline-flex; justify-content:center; color:var(--tb-text-muted); flex-shrink:0; }
+  .tb-menu-sep{ height:1px; background:var(--tb-border); margin:4px 2px; }
+  .tb-submenu-arrow{ margin-left:auto; color:var(--tb-text-muted); }
+
+  /* ==========================================================
+     ALIGNMENT ICONS — pure CSS bars, no glyph font needed
+     ========================================================== */
+  .tb-align-icon{ display:flex; flex-direction:column; gap:2px; width:16px; }
+  .tb-align-icon i{ display:block; height:2px; background:currentColor; border-radius:1px; }
+  .align-left i:nth-child(1){ width:100%; }
+  .align-left i:nth-child(2){ width:70%; }
+  .align-left i:nth-child(3){ width:85%; }
+  .align-center{ align-items:center; }
+  .align-center i:nth-child(1){ width:100%; }
+  .align-center i:nth-child(2){ width:60%; }
+  .align-center i:nth-child(3){ width:80%; }
+  .align-right{ align-items:flex-end; }
+  .align-right i:nth-child(1){ width:100%; }
+  .align-right i:nth-child(2){ width:70%; }
+  .align-right i:nth-child(3){ width:85%; }
+
+  /* ==========================================================
+     COLOR SWATCH BUTTON ON THE TOOLBAR ITSELF
+     (font color "A" with red underline, highlight "ab" with
+     yellow underline, etc.)
+     ========================================================== */
+  .tb-color-btn .tb-glyph{ position:relative; padding-bottom:2px; }
+  .tb-swatch-underline{ position:absolute; left:1px; right:1px; bottom:-2px; height:3px; border-radius:1px; }
+
+  /* ==========================================================
+     COLOR PICKER PANELS (Text Fill / Text Outline / Font Color)
+     ========================================================== */
+  .tb-color-panel{ width:min(max-content, calc(100vw - 16px)); min-width:0; padding:8px; }
+  .tb-contrast-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:2px 2px 8px; font-size:12px; color:var(--tb-text-muted);
+    border-bottom:1px solid var(--tb-border); margin-bottom:8px;
+  }
+  .tb-toggle{
+    width:30px; height:16px; border-radius:8px; background:#c6c6c6;
+    position:relative; display:inline-block; flex-shrink:0;
+  }
+  .tb-toggle::after{
+    content:""; position:absolute; top:2px; left:2px;
+    width:12px; height:12px; border-radius:50%; background:#6b6b6b;
+  }
+
+  .tb-color-label{ font-size:11px; font-weight:600; color:var(--tb-text-muted); margin:2px 0 4px; }
+
+  /* 10 columns x 6 rows = 60 buttons. Column color + row tint/shade
+     are both handled with CSS below, so the HTML is just 60 identical
+     empty <button> tags — see the markup. */
+  .tb-theme-grid{ display:grid; grid-template-columns:repeat(10, 1fr); gap:2px; margin-bottom:8px; }
+  .tb-theme-grid .tb-swatch-btn{
+    width:21px; height:16px; border:1px solid rgba(0,0,0,.15); border-radius:2px;
+    cursor:pointer; padding:0;
+  }
+  .tb-theme-grid .tb-swatch-btn:hover{ outline:2px solid var(--tb-accent); outline-offset:1px; }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+1){ background:var(--theme-c1); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+2){ background:var(--theme-c2); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+3){ background:var(--theme-c3); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+4){ background:var(--theme-c4); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+5){ background:var(--theme-c5); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+6){ background:var(--theme-c6); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+7){ background:var(--theme-c7); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+8){ background:var(--theme-c8); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+9){ background:var(--theme-c9); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(10n+10){ background:var(--theme-c10); }
+  /* row 1 = base (no filter); rows 2–6 = tint/shade via brightness() */
+  .tb-theme-grid .tb-swatch-btn:nth-child(n+11):nth-child(-n+20){ filter:brightness(1.45); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(n+21):nth-child(-n+30){ filter:brightness(1.2); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(n+31):nth-child(-n+40){ filter:brightness(.85); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(n+41):nth-child(-n+50){ filter:brightness(.65); }
+  .tb-theme-grid .tb-swatch-btn:nth-child(n+51):nth-child(-n+60){ filter:brightness(.45); }
+
+  .tb-standard-row{ display:flex; gap:2px; margin-bottom:8px; }
+  .tb-standard-row .tb-swatch-btn{
+    width:21px; height:16px; border:1px solid rgba(0,0,0,.15); border-radius:2px;
+    cursor:pointer; padding:0;
+  }
+  .tb-standard-row .tb-swatch-btn:hover{ outline:2px solid var(--tb-accent); outline-offset:1px; }
+
+  .tb-highlight-grid{ display:grid; grid-template-columns:repeat(5, 1fr); gap:3px; margin-bottom:8px; }
+  .tb-highlight-grid .tb-swatch-btn{
+    width:100%; height:18px; border:1px solid rgba(0,0,0,.15); border-radius:2px; cursor:pointer; padding:0;
+  }
+
+  /* ==========================================================
+     PREVIEW BOX — just so this file previews in context; delete
+     this block (and the two elements in <body>) when you lift
+     the toolbar into your app.
+     ========================================================== */
+  .preview-box{
+    max-width:760px; margin:14px auto 0; height:150px;
+    background:#000; color:#fff; display:flex; align-items:center; justify-content:center;
+    border-radius:6px; font-size:20px;
+  }
+
+  /* ==========================================================
+     STANDALONE WORKSPACE PRESENTATION
+     ========================================================== */
+  body{
+    min-height:100vh; padding:clamp(16px, 4vw, 40px);
+    background:#edf1f4; color:#1f2937;
+  }
+  .preview-box{
+    position:relative; height:clamp(190px, 30vw, 280px); margin:0 auto 12px;
+    border:1px solid #304e66; border-radius:10px;
+    background:linear-gradient(145deg, #152a3a 0%, #214a66 58%, #2d6b7b 100%);
+    box-shadow:0 12px 30px rgba(25, 48, 66, .16);
+    font-size:clamp(22px, 3vw, 32px); font-weight:700; letter-spacing:.2px;
+  }
+  .preview-box::after{
+    content:"LIVE PREVIEW"; position:absolute; top:16px; left:18px;
+    padding:5px 8px; border:1px solid rgba(255,255,255,.28); border-radius:3px;
+    color:rgba(255,255,255,.72); font-size:10px; letter-spacing:1.2px;
+  }
+  .pc-toolbar{
+    max-width:760px; border-radius:8px; padding:6px 8px;
+    box-shadow:0 4px 14px rgba(31, 41, 55, .08);
+  }
+  .ib-container{
+    margin:12px auto 0; border-radius:8px;
+    box-shadow:0 4px 14px rgba(31, 41, 55, .08);
+  }
+  .ib-tabs{ background:#f8fafb; }
+  .ib-tab{ padding:12px 4px; }
+  .ib-row{ padding:14px; }
+  .ib-bg-row{ padding:10px 14px; background:#fbfcfd; }
+  .ib-play-toggle, .ib-play-btn, .ib-x-btn{ width:38px; height:38px; }
+  .ib-duration-input{ height:38px; }
+  .ib-color-swatch, .ib-browse-btn, .ib-apply-btn{ height:30px; }
+  .ib-select{ height:30px; }
+
+  @media (max-width:560px){
+    .pc-toolbar{ margin-left:-2px; margin-right:-2px; overflow:visible; }
+    .tb-btn-label{ display:none; }
+    .ib-bg-row{ flex-wrap:wrap; }
+    .ib-bg-row .ib-browse-btn{ min-width:0; }
+    .ib-bg-row .ib-apply-btn{ margin-left:auto; }
+  }
+
+    /* ==========================================================
+     TOKENS — copy the whole <style> block into your app, or a
+     shared stylesheet. "ib-" prefix keeps this from colliding
+     with the "tb-" toolbar classes from the last file.
+     ========================================================== */
+  :root{
+    --ib-navy:#1c3f5f;
+    --ib-navy-hover:#234b6e;
+    --ib-border:#cfd4d9;
+    --ib-text:#1f2937;
+    --ib-muted:#6b7280;
+    --ib-orange:#e8823c;
+    --ib-panel-bg:#ffffff;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; padding:24px; background:#f4f5f7;
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  .page-note{ max-width:460px; margin:0 auto 14px; font-size:13px; color:#555; }
+  .page-note code{ background:#eaeaea; padding:1px 5px; border-radius:3px; }
+
+  /* ==========================================================
+     CONTAINER
+     ========================================================== */
+  .ib-container{
+    max-width:760px; margin:0 auto;
+    border:1px solid var(--ib-border); border-radius:3px; background:var(--ib-panel-bg);
+    font-size:13px; color:var(--ib-text); overflow:hidden;
+  }
+
+  /* Hidden radios that drive every CSS-only interaction in this
+     component: main tabs, timer sub-tabs, stanza/file selection. */
+  .ib-tab-radio, .ib-subtab-radio, .ib-hidden-radio, .ib-hidden-checkbox{
+    position:absolute; opacity:0; width:1px; height:1px; pointer-events:none;
+  }
+
+  /* ==========================================================
+     MAIN TAB BAR
+     ========================================================== */
+  .ib-tabs{ display:flex; }
+  .ib-tab{
+    flex:1; text-align:center; padding:11px 4px; font-weight:700; font-size:12.5px;
+    letter-spacing:.3px; color:var(--ib-navy); background:#fff; cursor:pointer;
+    border-right:1px solid var(--ib-border); user-select:none;
+  }
+  .ib-tab:last-of-type{ border-right:none; }
+
+  #ibTabText:checked ~ .ib-tabs label[for="ibTabText"],
+  #ibTabVerse:checked ~ .ib-tabs label[for="ibTabVerse"],
+  #ibTabTimer:checked ~ .ib-tabs label[for="ibTabTimer"],
+  #ibTabLyrics:checked ~ .ib-tabs label[for="ibTabLyrics"],
+  #ibTabMedia:checked ~ .ib-tabs label[for="ibTabMedia"]{
+    background:var(--ib-navy); color:#fff;
+  }
+
+  /* ==========================================================
+     PANEL SWITCHING (CSS-only, same trick as the tabs)
+     ========================================================== */
+  .ib-panel{ display:none; border-top:1px solid var(--ib-border); }
+  #ibTabText:checked ~ .ib-panels #panelText,
+  #ibTabVerse:checked ~ .ib-panels #panelVerse,
+  #ibTabTimer:checked ~ .ib-panels #panelTimer,
+  #ibTabLyrics:checked ~ .ib-panels #panelLyrics,
+  #ibTabMedia:checked ~ .ib-panels #panelMedia{
+    display:block;
+  }
+
+  /* ==========================================================
+     SHARED: content row, inputs, play/x buttons, duration
+     ========================================================== */
+  .ib-row{ display:flex; align-items:flex-start; gap:8px; padding:10px; }
+
+  .ib-textarea, .ib-text-input{
+    flex:1; border:1px solid var(--ib-border); border-radius:3px;
+    padding:8px 9px; font-size:13px; font-family:inherit; color:var(--ib-text);
+    resize:none;
+  }
+  .ib-textarea::placeholder, .ib-text-input::placeholder{ color:#9aa1ab; }
+
+  .ib-play-toggle, .ib-play-btn, .ib-x-btn{
+    flex-shrink:0; width:34px; height:34px; border:none; border-radius:3px;
+    background:var(--ib-navy); color:#fff; font-size:13px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .ib-play-toggle:hover, .ib-play-btn:hover, .ib-x-btn:hover{ background:var(--ib-navy-hover); }
+
+  /* Play/Pause toggle: checkbox-driven icon swap, no JS needed to
+     flip the icon — real "is it presenting" state plugs in later. */
+  .ib-play-toggle .ib-icon-pause{ display:none; }
+  .ib-hidden-checkbox:checked + .ib-play-toggle .ib-icon-play{ display:none; }
+  .ib-hidden-checkbox:checked + .ib-play-toggle .ib-icon-pause{ display:inline; }
+
+  .ib-duration{ display:flex; flex-direction:column; align-items:center; gap:4px; width:48px; flex-shrink:0; }
+  .ib-duration-input{
+    width:100%; height:34px; text-align:center; border:1px solid var(--ib-border);
+    border-radius:3px; font-size:13px; font-family:inherit;
+  }
+  .ib-duration-bar{ width:100%; height:4px; background:#e5e7eb; border-radius:2px; overflow:hidden; }
+  .ib-duration-fill{ width:0%; height:100%; background:var(--ib-navy); } /* live progress via JS later */
+
+  /* ==========================================================
+     BACKGROUND ROW (shared shape, contents vary per panel)
+     ========================================================== */
+  .ib-bg-row{ display:flex; align-items:center; gap:7px; padding:8px 10px; border-top:1px solid var(--ib-border); }
+  .ib-bg-label{ font-weight:700; font-size:12px; color:var(--ib-text); margin-right:1px; white-space:nowrap; }
+  .ib-select{
+    height:26px; border:1px solid var(--ib-border); border-radius:3px; background:#fff;
+    padding:0 4px; font-size:12px; font-family:inherit; color:var(--ib-text);
+  }
+  .ib-color-swatch{
+    width:26px; height:26px; padding:0; border:1px solid var(--ib-border);
+    border-radius:3px; cursor:pointer; background:none;
+  }
+  .ib-browse-btn{
+    flex:1; height:26px; padding:0 10px; border:1px solid var(--ib-border); border-radius:3px;
+    background:#fff; font-size:12px; font-family:inherit; color:var(--ib-muted);
+    text-align:left; cursor:pointer;
+  }
+  .ib-apply-btn{
+    height:26px; padding:0 14px; border:none; border-radius:3px; background:var(--ib-navy);
+    color:#fff; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
+  .ib-apply-btn:hover{ background:var(--ib-navy-hover); }
+
+  /* ==========================================================
+     VERSE PICKER
+     ========================================================== */
+  .ib-verse-mode-radio, .ib-book-radio, .ib-chapter-radio{
+    position:absolute; opacity:0; width:1px; height:1px; pointer-events:none;
+  }
+  .ib-verse-mode-tabs, .ib-book-grid, .ib-chapter-grid, .ib-verse-grid{
+    display:grid; gap:5px;
+  }
+  .ib-verse-mode-tabs{ grid-template-columns:repeat(2, minmax(0, 1fr)); margin-bottom:10px; }
+  .ib-verse-mode-tab, .ib-book-label, .ib-chapter-label, .ib-verse-label{
+    border:1px solid var(--ib-border); border-radius:3px; background:#fff;
+    color:var(--ib-text); cursor:pointer; font-size:11.5px; text-align:center;
+  }
+  .ib-verse-mode-tab{ padding:8px; font-weight:700; }
+  .ib-book-grid{ grid-template-columns:repeat(auto-fit, minmax(60px, 1fr)); padding:1px; }
+  .ib-book-label{ padding:4px 3px; font-size:10.5px; }
+  .ib-book-category-group{
+    grid-column:1 / -1; display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(60px, 1fr)); gap:5px;
+  }
+  .ib-book-label.category-law{ color:#9a5b13; }
+  .ib-book-label.category-history{ color:#256b4a; }
+  .ib-book-label.category-poetry{ color:#73539c; }
+  .ib-book-label.category-major-prophets{ color:#a33b47; }
+  .ib-book-label.category-minor-prophets{ color:#b06b2e; }
+  .ib-book-label.category-gospels{ color:#1d6480; }
+  .ib-book-label.category-acts{ color:#287b73; }
+  .ib-book-label.category-pauline{ color:#425b9b; }
+  .ib-book-label.category-general{ color:#80652a; }
+  .ib-book-label.category-prophecy{ color:#8c3d78; }
+  .ib-book-label:hover{ filter:brightness(.88); }
+  .ib-chapter-grid{ grid-template-columns:repeat(auto-fill, minmax(30px, 1fr)); padding:1px; }
+  .ib-chapter-label{ padding:4px 2px; font-size:10.5px; }
+  .ib-verse-grid{ grid-template-columns:repeat(auto-fill, minmax(48px, 1fr)); padding:1px; }
+  .ib-verse-label{ display:flex; align-items:center; justify-content:center; gap:3px; min-height:24px; padding:3px 2px; font-size:10.5px; }
+  .ib-verse-label input{ accent-color:var(--ib-navy); }
+  .ib-verse-picker{ padding:12px 14px 0; }
+  .ib-verse-section-label{ display:block; margin:9px 0 5px; font-size:11px; font-weight:700; color:var(--ib-muted); text-transform:uppercase; letter-spacing:.4px; }
+  .ib-quote-controls{ display:flex; align-items:center; gap:8px; margin-top:10px; }
+  .ib-fetch-btn{ height:30px; padding:0 14px; border:0; border-radius:3px; background:var(--ib-orange); color:#fff; font-size:12px; font-weight:700; cursor:pointer; }
+  .ib-fetch-btn:hover{ background:#c9672c; }
+  .ib-quote-results{ display:none; margin-top:10px; border-top:1px solid var(--ib-border); }
+  .ib-verse-paragraph{ display:block; padding:8px 0; border-bottom:1px solid #e7eaed; color:var(--ib-text); cursor:pointer; font-size:12px; line-height:1.45; }
+  .ib-verse-paragraph:hover{ color:var(--ib-navy); background:#f8fafb; }
+  .ib-reference-preview{ display:none; margin-top:10px; padding:10px; border:1px solid var(--ib-border); border-radius:3px; color:var(--ib-navy); font-weight:700; text-align:center; }
+
+  #ibVerseQuote:checked ~ .ib-verse-picker .ib-verse-mode-tabs label[for="ibVerseQuote"],
+  #ibVerseRefer:checked ~ .ib-verse-picker .ib-verse-mode-tabs label[for="ibVerseRefer"]{
+    background:var(--ib-navy); border-color:var(--ib-navy); color:#fff;
+  }
+  #ibVerseQuote:checked ~ .ib-verse-picker .ib-quote-controls,
+  #ibVerseQuote:checked ~ .ib-verse-picker .ib-quote-results{ display:flex; }
+  #ibVerseQuote:checked ~ .ib-verse-picker .ib-quote-results{ display:block; }
+  #ibVerseRefer:checked ~ .ib-verse-picker .ib-reference-preview{ display:block; }
+  #ibBookJohn:checked ~ .ib-verse-picker .ib-john-chapters{ display:block; }
+  #ibBookJohn:checked ~ .ib-verse-picker label[for="ibBookJohn"],
+  #ibJohnChapter3:checked ~ .ib-verse-picker label[for="ibJohnChapter3"]{
+    background:var(--ib-navy); border-color:var(--ib-navy); color:#fff;
+  }
+  .ib-john-chapters{ display:none; }
+  .ib-selected-state{ margin-top:8px; font-size:11px; color:var(--ib-muted); }
+
+  /* ==========================================================
+     TIMER PANEL
+     ========================================================== */
+  .ib-timer-body{ display:flex; }
+  .ib-timer-sidebar{ display:flex; flex-direction:column; width:96px; flex-shrink:0; border-right:1px solid var(--ib-border); }
+  .ib-subtab{
+    padding:9px 8px; font-size:11.5px; color:var(--ib-navy); background:#fff; cursor:pointer;
+    border-bottom:1px solid var(--ib-border); user-select:none;
+  }
+  #ibTimeNow:checked ~ .ib-timer-body .ib-timer-sidebar label[for="ibTimeNow"],
+  #ibCountdown:checked ~ .ib-timer-body .ib-timer-sidebar label[for="ibCountdown"],
+  #ibPomodoro:checked ~ .ib-timer-body .ib-timer-sidebar label[for="ibPomodoro"]{
+    background:var(--ib-navy); color:#fff;
+  }
+
+  .ib-timer-content{ flex:1; display:flex; align-items:center; }
+  .ib-timer-fields{ display:none; align-items:center; gap:16px; padding:0 12px; }
+  #ibTimeNow:checked ~ .ib-timer-body .ib-timer-fields--now,
+  #ibCountdown:checked ~ .ib-timer-body .ib-timer-fields--countdown,
+  #ibPomodoro:checked ~ .ib-timer-body .ib-timer-fields--pomodoro{
+    display:flex;
+  }
+  .ib-field-pair{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .ib-time-input{
+    width:42px; height:30px; text-align:center; border:1px solid var(--ib-border);
+    border-radius:3px; font-size:13px; font-family:inherit;
+  }
+  .ib-field-label{ font-size:9.5px; letter-spacing:.4px; color:var(--ib-muted); text-transform:uppercase; }
+  .ib-checkbox-label{ display:flex; align-items:center; gap:5px; font-size:12px; color:var(--ib-text); margin-left:4px; white-space:nowrap; }
+
+  .ib-common-actions{
+    max-width:760px; margin:0 auto;
+    display:flex; align-items:center; justify-content:flex-end; gap:8px;
+    padding:10px 14px; border-top:1px solid var(--ib-border); background:#f8fafb;
+  }
+  .ib-common-actions .ib-duration{ width:48px; flex-shrink:0; }
+  .ib-common-actions .ib-duration-bar{ display:none; }
+  .ib-common-actions > .ib-duration-bar{
+    display:block; flex:1; width:auto; min-width:80px; margin:0 4px;
+  }
+
+  /* ==========================================================
+     LYRICS PANEL
+     ========================================================== */
+  .ib-song-picker{ padding:10px 10px 0; }
+  .ib-song-search{
+    width:100%; height:30px; border:1px solid var(--ib-border); border-radius:3px;
+    text-align:center; font-size:12.5px; font-family:inherit; color:var(--ib-text);
+  }
+  .ib-row--lyrics{ align-items:stretch; }
+  .ib-stanza-list{ flex:1; display:flex; flex-direction:column; gap:6px; }
+  .ib-stanza-item{
+    display:block; padding:9px 10px; border:1px solid var(--ib-border); border-radius:2px;
+    font-size:11.5px; line-height:1.5; text-align:center; color:var(--ib-text);
+    background:#fff; cursor:pointer;
+  }
+  .ib-hidden-radio:checked + .ib-stanza-item{
+    background:var(--ib-navy); color:#fff; border-color:var(--ib-navy); font-weight:600;
+  }
+  .ib-lyrics-actions, .ib-media-actions{ display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+
+  /* ==========================================================
+     MEDIA PANEL
+     ========================================================== */
+  .ib-row--media{ align-items:stretch; }
+  .ib-media-list{ flex:1; display:flex; flex-direction:column; gap:4px; }
+  .ib-media-item{
+    display:block; padding:7px 9px; border:1px solid var(--ib-border); border-radius:2px;
+    font-size:11.5px; text-align:center; color:var(--ib-text); background:#fff; cursor:pointer;
+  }
+  .ib-hidden-radio:checked + .ib-media-item{
+    background:var(--ib-navy); color:#fff; border-color:var(--ib-navy);
+  }
+  .ib-browse-inline-btn{
+    margin-top:2px; padding:7px 9px; border:1px dashed var(--ib-border); border-radius:2px;
+    background:#fafafa; font-size:11px; color:var(--ib-muted); cursor:pointer; font-family:inherit;
+  }
+  .ib-media-preview{ width:96px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .ib-preview-thumb{
+    width:96px; height:64px; border-radius:2px;
+    background:linear-gradient(160deg,#2b2f36,#0e1013);
+  }
+  .ib-preview-label{ font-size:10px; color:var(--ib-muted); }
+
+  .ib-dropzone{
+    flex:1; border:1px dashed var(--ib-border); border-radius:3px; background:#fafafa;
+    padding:14px; font-size:12.5px; color:#9aa1ab; cursor:pointer; font-family:inherit;
+  }
+
+  /* ==========================================================
+     RESPONSIVE — tabs/buttons stay usable at phone widths
+     ========================================================== */
+  /* ==========================================================
+     ANIMATION KEYFRAMES & UTILITIES
+     ========================================================== */
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
+  @keyframes slideInTop { from { transform:translateY(-100%); opacity:0; } to { transform:translateY(0); opacity:1; } }
+  @keyframes slideOutTop { from { transform:translateY(0); opacity:1; } to { transform:translateY(-100%); opacity:0; } }
+  @keyframes slideInBottom { from { transform:translateY(100%); opacity:0; } to { transform:translateY(0); opacity:1; } }
+  @keyframes slideOutBottom { from { transform:translateY(0); opacity:1; } to { transform:translateY(100%); opacity:0; } }
+  @keyframes slideInLeft { from { transform:translateX(-100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+  @keyframes slideOutLeft { from { transform:translateX(0); opacity:1; } to { transform:translateX(-100%); opacity:0; } }
+  @keyframes slideInRight { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+  @keyframes slideOutRight { from { transform:translateX(0); opacity:1; } to { transform:translateX(100%); opacity:0; } }
+  @keyframes zoomIn { from { transform:scale(0.3); opacity:0; } to { transform:scale(1); opacity:1; } }
+  @keyframes zoomOut { from { transform:scale(1); opacity:1; } to { transform:scale(0.3); opacity:0; } }
+  @keyframes expandX { from { transform:scaleX(0); opacity:0; } to { transform:scaleX(1); opacity:1; } }
+  @keyframes expandY { from { transform:scaleY(0); opacity:0; } to { transform:scaleY(1); opacity:1; } }
+  @keyframes contractX { from { transform:scaleX(1); opacity:1; } to { transform:scaleX(0); opacity:0; } }
+  @keyframes contractY { from { transform:scaleY(1); opacity:1; } to { transform:scaleY(0); opacity:0; } }
+
+  .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+  .animate-fade-out { animation: fadeOut 0.4s ease-out forwards; }
+  .animate-slide-in-top { animation: slideInTop 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
+  .animate-slide-out-top { animation: slideOutTop 0.4s cubic-bezier(0.7,0,0.84,0) forwards; }
+  .animate-slide-in-bottom { animation: slideInBottom 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
+  .animate-slide-out-bottom { animation: slideOutBottom 0.4s cubic-bezier(0.7,0,0.84,0) forwards; }
+  .animate-slide-in-left { animation: slideInLeft 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
+  .animate-slide-out-left { animation: slideOutLeft 0.4s cubic-bezier(0.7,0,0.84,0) forwards; }
+  .animate-slide-in-right { animation: slideInRight 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
+  .animate-slide-out-right { animation: slideOutRight 0.4s cubic-bezier(0.7,0,0.84,0) forwards; }
+  .animate-zoom-in { animation: zoomIn 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+  .animate-zoom-out { animation: zoomOut 0.35s cubic-bezier(0.7,0,0.84,0) forwards; }
+  .animate-expand-horizontally { animation: expandX 0.45s ease-out forwards; }
+  .animate-expand-vertically { animation: expandY 0.45s ease-out forwards; }
+  .animate-expand-left { animation: expandX 0.45s ease-out forwards; transform-origin: right center; }
+  .animate-expand-right { animation: expandX 0.45s ease-out forwards; transform-origin: left center; }
+  .animate-contract-horizontally { animation: contractX 0.4s ease-out forwards; }
+  .animate-contract-vertically { animation: contractY 0.4s ease-out forwards; }
+  .animate-contract-left { animation: contractX 0.4s ease-out forwards; transform-origin: left center; }
+  .animate-contract-right { animation: contractX 0.4s ease-out forwards; transform-origin: right center; }
+
+  /* Autocomplete Suggestions */
+  .ib-textarea-wrap { position: relative; width: 100%; }
+  #autocomplete-suggestions {
+    position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+    max-height: 180px; overflow-y: auto; background: #ffffff;
+    border: 1px solid var(--ib-border); border-radius: 4px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12); z-index: 100;
+  }
+  .suggestion-item {
+    padding: 7px 12px; font-size: 12.5px; color: var(--ib-text); cursor: pointer; text-align: left;
+  }
+  .suggestion-item:hover, .suggestion-item.active {
+    background: var(--tb-hover); color: var(--ib-navy); font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<!-- <p class="page-note">
+  Standalone preview. The <code>&lt;style&gt;</code> block above and the
+  <code>#textFormatToolbar</code> markup below are the two pieces to copy into your app.
+  Dropdowns open/close natively via <code>&lt;details&gt;</code> — no JS wired up yet, as agreed.
+</p> -->
+
+<!-- ============================================================
+     TEXT FORMATTING TOOLBAR
+     ============================================================ -->
+<div class="preview-box">Preview Text</div>
+
+<div class="pc-toolbar" id="textFormatToolbar">
+
+  <!-- FONT NAME -->
+  <div class="tb-group">
+    <select class="tb-select tb-font-name" data-cmd="font-family" title="Font">
+      <option>Aptos (Body)</option>
+      <option>Arial</option>
+      <option>Calibri</option>
+      <option>Georgia</option>
+      <option>Times New Roman</option>
+      <option>Verdana</option>
+    </select>
+  </div>
+
+  <!-- FONT SIZE -->
+  <div class="tb-group">
+    <div class="tb-size-wrap">
+      <input type="text" class="tb-size-input" data-cmd="font-size" value="18" title="Font size">
+      <div class="tb-chev-col">
+        <button type="button" title="Next size up">▲</button>
+        <button type="button" title="Next size down">▼</button>
+      </div>
+    </div>
+    <button type="button" class="tb-icon-btn" data-cmd="grow-font" title="Increase font size">A<span style="font-size:9px;">▲</span></button>
+    <button type="button" class="tb-icon-btn" data-cmd="shrink-font" title="Decrease font size">A<span style="font-size:9px;">▼</span></button>
+  </div>
+
+  <div class="tb-divider"></div>
+
+  <!-- CLEAR FORMATTING -->
+  <button type="button" class="tb-icon-btn tb-clear" data-cmd="clear-format" title="Clear All Formatting">
+    A<span class="tb-clear-slash"></span>
+  </button>
+
+  <div class="tb-divider"></div>
+
+  <!-- B I U S -->
+  <div class="tb-group">
+    <button type="button" class="tb-icon-btn tb-bold" data-cmd="bold" title="Bold (Ctrl+B)">B</button>
+    <button type="button" class="tb-icon-btn tb-italic" data-cmd="italic" title="Italic (Ctrl+I)">I</button>
+    <button type="button" class="tb-icon-btn tb-underline" data-cmd="underline" title="Underline (Ctrl+U)">U</button>
+    <button type="button" class="tb-icon-btn tb-strike" data-cmd="strikethrough" title="Strikethrough">S</button>
+  </div>
+
+  <div class="tb-divider"></div>
+
+  <!-- CHARACTER SPACING -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn" title="Character Spacing">A↔V<span class="tb-chevron">▾</span></summary>
+    <div class="tb-menu tb-menu-list">
+      <button type="button" class="tb-menu-item" data-cmd="spacing-very-tight">Very Tight</button>
+      <button type="button" class="tb-menu-item" data-cmd="spacing-tight">Tight</button>
+      <button type="button" class="tb-menu-item" data-cmd="spacing-normal">Normal</button>
+      <button type="button" class="tb-menu-item" data-cmd="spacing-loose">Loose</button>
+      <button type="button" class="tb-menu-item" data-cmd="spacing-very-loose">Very Loose</button>
+      <div class="tb-menu-sep"></div>
+      <button type="button" class="tb-menu-item" data-cmd="spacing-more">More Spacing…</button>
+    </div>
+  </details>
+
+  <!-- CHANGE CASE -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn" title="Change Case">Aa<span class="tb-chevron">▾</span></summary>
+    <div class="tb-menu tb-menu-list">
+      <button type="button" class="tb-menu-item" data-cmd="case-sentence">Sentence case.</button>
+      <button type="button" class="tb-menu-item" data-cmd="case-lower">lowercase</button>
+      <button type="button" class="tb-menu-item" data-cmd="case-upper">UPPERCASE</button>
+      <button type="button" class="tb-menu-item" data-cmd="case-title">Capitalize Each Word</button>
+      <button type="button" class="tb-menu-item" data-cmd="case-toggle">tOGGLE cASE</button>
+    </div>
+  </details>
+
+  <div class="tb-divider"></div>
+
+  <!-- HIGHLIGHT COLOR -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-color-btn" title="Text Highlight Color">
+      <span class="tb-glyph">ab<span class="tb-swatch-underline" style="background:#FFFF00;"></span></span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-color-panel">
+      <div class="tb-highlight-grid">
+        <button type="button" class="tb-swatch-btn" style="background:#FFFF00" data-color="#FFFF00" title="Yellow"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00FF00" data-color="#00FF00" title="Bright Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00FFFF" data-color="#00FFFF" title="Turquoise"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FF00FF" data-color="#FF00FF" title="Pink"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#0000FF" data-color="#0000FF" title="Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FF0000" data-color="#FF0000" title="Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00008B" data-color="#00008B" title="Dark Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#008080" data-color="#008080" title="Teal"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#008000" data-color="#008000" title="Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#800080" data-color="#800080" title="Violet"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#800000" data-color="#800000" title="Dark Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#808000" data-color="#808000" title="Dark Yellow"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#808080" data-color="#808080" title="Gray 50%"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#C0C0C0" data-color="#C0C0C0" title="Gray 25%"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#000000" data-color="#000000" title="Black"></button>
+      </div>
+      <button type="button" class="tb-menu-item" data-cmd="highlight-none" style="width:100%;">No Color</button>
+    </div>
+  </details>
+
+  <!-- FONT COLOR -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-color-btn" title="Font Color">
+      <span class="tb-glyph">A<span class="tb-swatch-underline" style="background:#C00000;"></span></span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-color-panel">
+      <div class="tb-color-label">Theme Colours</div>
+      <div class="tb-theme-grid">
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+      </div>
+      <div class="tb-color-label">Standard Colours</div>
+      <div class="tb-standard-row">
+        <button type="button" class="tb-swatch-btn" style="background:#C00000" data-color="#C00000" title="Dark Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FF0000" data-color="#FF0000" title="Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FFC000" data-color="#FFC000" title="Orange"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FFFF00" data-color="#FFFF00" title="Yellow"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#92D050" data-color="#92D050" title="Light Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00B050" data-color="#00B050" title="Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00B0F0" data-color="#00B0F0" title="Light Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#0070C0" data-color="#0070C0" title="Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#002060" data-color="#002060" title="Dark Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#7030A0" data-color="#7030A0" title="Purple"></button>
+      </div>
+      <button type="button" class="tb-menu-item" data-cmd="font-color-auto">Automatic</button>
+      <div class="tb-menu-sep"></div>
+      <button type="button" class="tb-menu-item" data-cmd="font-color-more"><span class="tb-menu-icon">◐</span>More Colours…</button>
+      <button type="button" class="tb-menu-item" data-cmd="font-color-eyedrop"><span class="tb-menu-icon">✎</span>Eyedropper</button>
+    </div>
+  </details>
+
+  <div class="tb-divider"></div>
+
+  <!-- ALIGNMENT -->
+  <div class="tb-group tb-align-group">
+    <button type="button" class="tb-icon-btn is-active" data-cmd="align-left" title="Align Left">
+      <span class="tb-align-icon align-left"><i></i><i></i><i></i></span>
+    </button>
+    <button type="button" class="tb-icon-btn" data-cmd="align-center" title="Align Center">
+      <span class="tb-align-icon align-center"><i></i><i></i><i></i></span>
+    </button>
+    <button type="button" class="tb-icon-btn" data-cmd="align-right" title="Align Right">
+      <span class="tb-align-icon align-right"><i></i><i></i><i></i></span>
+    </button>
+  </div>
+
+  <div class="tb-divider"></div>
+
+  <!-- ROTATE -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-split-btn" title="Rotate">
+      <span class="tb-glyph" style="font-size:14px;">⟳</span>
+      <span class="tb-btn-label">Rotate</span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-menu-list tb-menu-wide">
+      <button type="button" class="tb-menu-item" data-cmd="rotate-right-90"><span class="tb-menu-icon">↻</span>Rotate Right 90°</button>
+      <button type="button" class="tb-menu-item" data-cmd="rotate-left-90"><span class="tb-menu-icon">↺</span>Rotate Left 90°</button>
+      <button type="button" class="tb-menu-item" data-cmd="flip-vertical"><span class="tb-menu-icon">⇕</span>Flip Vertical</button>
+      <button type="button" class="tb-menu-item" data-cmd="flip-horizontal"><span class="tb-menu-icon">⇔</span>Flip Horizontal</button>
+      <div class="tb-menu-sep"></div>
+      <button type="button" class="tb-menu-item" data-cmd="rotate-more">More Rotation Options…</button>
+    </div>
+  </details>
+
+  <div class="tb-divider"></div>
+
+  <!-- TEXT FILL -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-split-btn" title="Text Fill">
+      <span class="tb-glyph">A<span class="tb-swatch-underline" style="background:#000000;"></span></span>
+      <span class="tb-btn-label">Text Fill</span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-color-panel">
+      <div class="tb-contrast-row">High-contrast only <span class="tb-toggle"></span></div>
+      <div class="tb-color-label">Theme Colours</div>
+      <div class="tb-theme-grid">
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+      </div>
+      <div class="tb-color-label">Standard Colours</div>
+      <div class="tb-standard-row">
+        <button type="button" class="tb-swatch-btn" style="background:#C00000" data-color="#C00000" title="Dark Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FF0000" data-color="#FF0000" title="Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FFC000" data-color="#FFC000" title="Orange"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FFFF00" data-color="#FFFF00" title="Yellow"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#92D050" data-color="#92D050" title="Light Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00B050" data-color="#00B050" title="Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00B0F0" data-color="#00B0F0" title="Light Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#0070C0" data-color="#0070C0" title="Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#002060" data-color="#002060" title="Dark Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#7030A0" data-color="#7030A0" title="Purple"></button>
+      </div>
+      <button type="button" class="tb-menu-item" data-cmd="fill-none">No Fill</button>
+      <div class="tb-menu-sep"></div>
+      <button type="button" class="tb-menu-item" data-cmd="fill-more"><span class="tb-menu-icon">◐</span>More Fill Colours…</button>
+      <button type="button" class="tb-menu-item" data-cmd="fill-eyedrop"><span class="tb-menu-icon">✎</span>Eyedropper</button>
+      <button type="button" class="tb-menu-item" data-cmd="fill-picture"><span class="tb-menu-icon">🖼</span>Picture…</button>
+      <button type="button" class="tb-menu-item" data-cmd="fill-gradient"><span class="tb-menu-icon">▨</span>Gradient<span class="tb-submenu-arrow">›</span></button>
+      <button type="button" class="tb-menu-item" data-cmd="fill-texture"><span class="tb-menu-icon">▦</span>Texture<span class="tb-submenu-arrow">›</span></button>
+    </div>
+  </details>
+
+  <!-- TEXT OUTLINE -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-split-btn" title="Text Outline">
+      <span class="tb-glyph" style="-webkit-text-stroke:1px #000; color:#fff;">A</span>
+      <span class="tb-btn-label">Text Outline</span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-color-panel">
+      <div class="tb-contrast-row">High-contrast only <span class="tb-toggle"></span></div>
+      <div class="tb-color-label">Theme Colours</div>
+      <div class="tb-theme-grid">
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+        <button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button><button type="button" class="tb-swatch-btn"></button>
+      </div>
+      <div class="tb-color-label">Standard Colours</div>
+      <div class="tb-standard-row">
+        <button type="button" class="tb-swatch-btn" style="background:#C00000" data-color="#C00000" title="Dark Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FF0000" data-color="#FF0000" title="Red"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FFC000" data-color="#FFC000" title="Orange"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#FFFF00" data-color="#FFFF00" title="Yellow"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#92D050" data-color="#92D050" title="Light Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00B050" data-color="#00B050" title="Green"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#00B0F0" data-color="#00B0F0" title="Light Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#0070C0" data-color="#0070C0" title="Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#002060" data-color="#002060" title="Dark Blue"></button>
+        <button type="button" class="tb-swatch-btn" style="background:#7030A0" data-color="#7030A0" title="Purple"></button>
+      </div>
+      <button type="button" class="tb-menu-item" data-cmd="outline-none">No Outline</button>
+      <div class="tb-menu-sep"></div>
+      <button type="button" class="tb-menu-item" data-cmd="outline-more"><span class="tb-menu-icon">◐</span>More Outline Colours…</button>
+      <button type="button" class="tb-menu-item" data-cmd="outline-eyedrop"><span class="tb-menu-icon">✎</span>Eyedropper</button>
+      <button type="button" class="tb-menu-item" data-cmd="outline-weight"><span class="tb-menu-icon">▬</span>Weight<span class="tb-submenu-arrow">›</span></button>
+      <button type="button" class="tb-menu-item" data-cmd="outline-dashes"><span class="tb-menu-icon">┄</span>Dashes<span class="tb-submenu-arrow">›</span></button>
+    </div>
+  </details>
+
+  <!-- TEXT EFFECTS -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-split-btn" title="Text Effects">
+      <span class="tb-glyph" style="text-shadow:1px 1px 2px rgba(0,0,0,.5);">A</span>
+      <span class="tb-btn-label">Text Effects</span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-menu-list tb-menu-wide">
+      <button type="button" class="tb-menu-item" data-cmd="effect-shadow">
+        <span class="tb-menu-icon" style="text-shadow:1px 1px 1px #999;">A</span>Shadow<span class="tb-submenu-arrow">›</span>
+      </button>
+      <button type="button" class="tb-menu-item" data-cmd="effect-reflection">
+        <span class="tb-menu-icon" style="opacity:.5; transform:scaleY(-1); display:inline-block;">A</span>Reflection<span class="tb-submenu-arrow">›</span>
+      </button>
+      <button type="button" class="tb-menu-item" data-cmd="effect-glow">
+        <span class="tb-menu-icon" style="text-shadow:0 0 4px #1a73e8;">A</span>Glow<span class="tb-submenu-arrow">›</span>
+      </button>
+      <button type="button" class="tb-menu-item" data-cmd="effect-bevel">
+        <span class="tb-menu-icon" style="text-shadow:-1px -1px 0 #fff, 1px 1px 0 #999;">A</span>Bevel<span class="tb-submenu-arrow">›</span>
+      </button>
+    </div>
+  </details>
+
+  <div class="tb-divider"></div>
+
+  <!-- BACKGROUND -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-split-btn" title="Background">
+      <span class="tb-glyph" style="font-size:14px;">▧</span>
+      <span class="tb-btn-label">Background</span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-menu-list tb-menu-wide tb-background-menu">
+      <button type="button" class="tb-menu-item" data-cmd="bg-type" data-value="Picture">
+        <span class="tb-menu-icon">▧</span>Picture
+      </button>
+      <button type="button" class="tb-menu-item" data-cmd="bg-type" data-value="Video">
+        <span class="tb-menu-icon">▶</span>Video
+      </button>
+      <!-- <div class="tb-menu-sep"></div> -->
+      <label class="tb-menu-item" for="toolbarBackgroundColor">
+        <span class="tb-menu-icon">●</span>Solid Color
+        <input id="toolbarBackgroundColor" class="tb-background-swatch" type="color" value="#e8823c" data-cmd="bg-color">
+      </label>
+    </div>
+  </details>
+
+  <!-- ANIMATION -->
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-split-btn" title="Entry Animation">
+      <span class="tb-glyph" style="font-size:14px;">↗</span>
+      <span class="tb-btn-label">Entry</span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-menu-list tb-menu-wide tb-animation-menu">
+      <button type="button" class="tb-menu-item is-selected" data-cmd="entry-animation" data-value="none">None</button>
+      <div class="tb-color-label">Fade</div>
+      <button type="button" class="tb-menu-item" data-cmd="entry-animation" data-value="fade-in">Fade In</button>
+      <div class="tb-color-label">Slide</div>
+      <button type="button" class="tb-menu-item" data-cmd="entry-animation" data-value="slide-in-top">Top</button>
+      <button type="button" class="tb-menu-item" data-cmd="entry-animation" data-value="slide-in-bottom">Bottom</button>
+      <button type="button" class="tb-menu-item" data-cmd="entry-animation" data-value="slide-in-left">Left</button>
+      <button type="button" class="tb-menu-item" data-cmd="entry-animation" data-value="slide-in-right">Right</button>
+      <div class="tb-color-label">Zoom</div>
+      <button type="button" class="tb-menu-item" data-cmd="entry-animation" data-value="zoom-in">Zoom In</button>
+      <div class="tb-color-label">Expand</div>
+      <button type="button" class="tb-menu-item" data-cmd="entry-animation" data-value="expand-horizontally">Exp H</button>
+      <button type="button" class="tb-menu-item" data-cmd="entry-animation" data-value="expand-vertically">Exp V</button>
+      <button type="button" class="tb-menu-item" data-cmd="entry-animation" data-value="expand-left">Exp L</button>
+      <button type="button" class="tb-menu-item" data-cmd="entry-animation" data-value="expand-right">Exp R</button>
+    </div>
+  </details>
+
+  <details class="tb-dropdown">
+    <summary class="tb-icon-btn tb-split-btn" title="Exit Animation">
+      <span class="tb-glyph" style="font-size:14px;">↘</span>
+      <span class="tb-btn-label">Exit</span>
+      <span class="tb-chevron">▾</span>
+    </summary>
+    <div class="tb-menu tb-menu-list tb-menu-wide tb-animation-menu">
+      <button type="button" class="tb-menu-item is-selected" data-cmd="exit-animation" data-value="none">None</button>
+      <div class="tb-color-label">Fade</div>
+      <button type="button" class="tb-menu-item" data-cmd="exit-animation" data-value="fade-out">Fade Out</button>
+      <div class="tb-color-label">Slide</div>
+      <button type="button" class="tb-menu-item" data-cmd="exit-animation" data-value="slide-out-top">Top</button>
+      <button type="button" class="tb-menu-item" data-cmd="exit-animation" data-value="slide-out-bottom">Bottom</button>
+      <button type="button" class="tb-menu-item" data-cmd="exit-animation" data-value="slide-out-left">Left</button>
+      <button type="button" class="tb-menu-item" data-cmd="exit-animation" data-value="slide-out-right">Right</button>
+      <div class="tb-color-label">Zoom</div>
+      <button type="button" class="tb-menu-item" data-cmd="exit-animation" data-value="zoom-out">Zoom Out</button>
+      <div class="tb-color-label">Contract</div>
+      <button type="button" class="tb-menu-item" data-cmd="exit-animation" data-value="contract-horizontally">Con H</button>
+      <button type="button" class="tb-menu-item" data-cmd="exit-animation" data-value="contract-vertically">Con V</button>
+      <button type="button" class="tb-menu-item" data-cmd="exit-animation" data-value="contract-left">Con L</button>
+      <button type="button" class="tb-menu-item" data-cmd="exit-animation" data-value="contract-right">Con R</button>
+    </div>
+  </details>
+
+
+  
+</div>
+<!-- ============================================================
+     END TOOLBAR
+     ============================================================ -->
+
+
+<!-- <p class="page-note">
+  Standalone preview of the redesigned Input Box from your mockup. Tabs, Timer sub-tabs,
+  and stanza/file selection all switch via hidden <code>radio</code> inputs — click around,
+  it already works with zero JS. Background-row contents (color swatch vs. Browse button)
+  are hardcoded per panel to match your mockup; making them respond live to the dropdown
+  value, and toggling the empty ↔ populated states in Lyrics/Media, are JS-pass items.
+</p> -->
+
+
+  <div class="ib-common-actions" aria-label="Presentation controls">
+    <input type="checkbox" id="playPresentation" class="ib-hidden-checkbox">
+    <label for="playPresentation" class="ib-play-toggle" title="Play / Pause" data-cmd="toggle-present">
+      <span class="ib-icon-play">▶</span><span class="ib-icon-pause">‖</span>
+    </label>
+    <div class="ib-duration-bar"><div class="ib-duration-fill"></div></div>
+    <div class="ib-duration">
+      <input type="text" class="ib-duration-input" value="30" aria-label="Display duration in seconds" data-cmd="display-duration">
+    </div>
+    <button type="button" class="ib-x-btn" data-cmd="hide-presentation" title="Hide">✕</button>
+  </div>
+
+<div class="ib-container" id="presentationInputBox">
+
+  <input type="radio" name="ib-main-tab" id="ibTabText" class="ib-tab-radio" checked>
+  <input type="radio" name="ib-main-tab" id="ibTabVerse" class="ib-tab-radio">
+  <input type="radio" name="ib-main-tab" id="ibTabTimer" class="ib-tab-radio">
+  <input type="radio" name="ib-main-tab" id="ibTabLyrics" class="ib-tab-radio" >
+  <input type="radio" name="ib-main-tab" id="ibTabMedia" class="ib-tab-radio">
+
+  <div class="ib-tabs">
+    <label for="ibTabText" class="ib-tab">TEXT</label>
+    <label for="ibTabVerse" class="ib-tab">VERSE</label>
+    <label for="ibTabTimer" class="ib-tab">TIMER</label>
+    <label for="ibTabLyrics" class="ib-tab">LYRICS</label>
+    <label for="ibTabMedia" class="ib-tab">MEDIA</label>
+  </div>
+
+  <div class="ib-panels">
+
+    <!-- ================= TEXT ================= -->
+    <div class="ib-panel" id="panelText">
+      <div class="ib-row">
+        <div class="ib-textarea-wrap" id="autocomplete-container">
+          <textarea class="ib-textarea" id="presentationText" rows="1" placeholder="Write any text …" data-cmd="text-content"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= VERSE ================= -->
+    <div class="ib-panel" id="panelVerse">
+      <input type="radio" name="ib-verse-mode" id="ibVerseQuote" class="ib-verse-mode-radio" checked>
+      <input type="radio" name="ib-verse-mode" id="ibVerseRefer" class="ib-verse-mode-radio">
+
+      <input type="radio" name="ib-bible-book" id="ibBookGenesis" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookExodus" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookLeviticus" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookNumbers" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookDeuteronomy" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookJoshua" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookJudges" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookRuth" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook1Samuel" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook2Samuel" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook1Kings" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook2Kings" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook1Chronicles" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook2Chronicles" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookEzra" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookNehemiah" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookEsther" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookJob" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookPsalms" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookProverbs" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookEcclesiastes" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookSongOfSolomon" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookIsaiah" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookJeremiah" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookLamentations" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookEzekiel" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookDaniel" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookHosea" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookJoel" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookAmos" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookObadiah" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookJonah" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookMicah" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookNahum" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookHabakkuk" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookZephaniah" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookHaggai" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookZechariah" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookMalachi" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookMatthew" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookMark" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookLuke" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookJohn" class="ib-book-radio" checked>
+      <input type="radio" name="ib-bible-book" id="ibBookActs" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookRomans" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook1Corinthians" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook2Corinthians" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookGalatians" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookEphesians" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookPhilippians" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookColossians" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook1Thessalonians" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook2Thessalonians" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook1Timothy" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook2Timothy" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookTitus" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookPhilemon" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookHebrews" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookJames" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook1Peter" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook2Peter" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook1John" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook2John" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBook3John" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookJude" class="ib-book-radio">
+      <input type="radio" name="ib-bible-book" id="ibBookRevelation" class="ib-book-radio">
+
+      <input type="radio" name="ib-john-chapter" id="ibJohnChapter1" class="ib-chapter-radio">
+      <input type="radio" name="ib-john-chapter" id="ibJohnChapter2" class="ib-chapter-radio">
+      <input type="radio" name="ib-john-chapter" id="ibJohnChapter3" class="ib-chapter-radio" checked>
+      <input type="radio" name="ib-john-chapter" id="ibJohnChapter4" class="ib-chapter-radio">
+      <input type="radio" name="ib-john-chapter" id="ibJohnChapter5" class="ib-chapter-radio">
+
+      <div class="ib-verse-picker">
+        <div class="ib-verse-mode-tabs">
+          <label for="ibVerseQuote" class="ib-verse-mode-tab">QUOTE</label>
+          <label for="ibVerseRefer" class="ib-verse-mode-tab">REFER</label>
+        </div>
+
+        <span class="ib-verse-section-label">Book of the Bible</span>
+        <div class="ib-book-grid">
+          <label for="ibBookGenesis" class="ib-book-label">Genesis</label><label for="ibBookExodus" class="ib-book-label">Exodus</label><label for="ibBookLeviticus" class="ib-book-label">Leviticus</label><label for="ibBookNumbers" class="ib-book-label">Numbers</label><label for="ibBookDeuteronomy" class="ib-book-label">Deuteronomy</label><label for="ibBookJoshua" class="ib-book-label">Joshua</label><label for="ibBookJudges" class="ib-book-label">Judges</label><label for="ibBookRuth" class="ib-book-label">Ruth</label><label for="ibBook1Samuel" class="ib-book-label">1 Samuel</label><label for="ibBook2Samuel" class="ib-book-label">2 Samuel</label><label for="ibBook1Kings" class="ib-book-label">1 Kings</label><label for="ibBook2Kings" class="ib-book-label">2 Kings</label><label for="ibBook1Chronicles" class="ib-book-label">1 Chronicles</label><label for="ibBook2Chronicles" class="ib-book-label">2 Chronicles</label><label for="ibBookEzra" class="ib-book-label">Ezra</label><label for="ibBookNehemiah" class="ib-book-label">Nehemiah</label><label for="ibBookEsther" class="ib-book-label">Esther</label><label for="ibBookJob" class="ib-book-label">Job</label><label for="ibBookPsalms" class="ib-book-label">Psalms</label><label for="ibBookProverbs" class="ib-book-label">Proverbs</label><label for="ibBookEcclesiastes" class="ib-book-label">Ecclesiastes</label><label for="ibBookSongOfSolomon" class="ib-book-label">Song of Solomon</label><label for="ibBookIsaiah" class="ib-book-label">Isaiah</label><label for="ibBookJeremiah" class="ib-book-label">Jeremiah</label><label for="ibBookLamentations" class="ib-book-label">Lamentations</label><label for="ibBookEzekiel" class="ib-book-label">Ezekiel</label><label for="ibBookDaniel" class="ib-book-label">Daniel</label><label for="ibBookHosea" class="ib-book-label">Hosea</label><label for="ibBookJoel" class="ib-book-label">Joel</label><label for="ibBookAmos" class="ib-book-label">Amos</label><label for="ibBookObadiah" class="ib-book-label">Obadiah</label><label for="ibBookJonah" class="ib-book-label">Jonah</label><label for="ibBookMicah" class="ib-book-label">Micah</label><label for="ibBookNahum" class="ib-book-label">Nahum</label><label for="ibBookHabakkuk" class="ib-book-label">Habakkuk</label><label for="ibBookZephaniah" class="ib-book-label">Zephaniah</label><label for="ibBookHaggai" class="ib-book-label">Haggai</label><label for="ibBookZechariah" class="ib-book-label">Zechariah</label><label for="ibBookMalachi" class="ib-book-label">Malachi</label><label for="ibBookMatthew" class="ib-book-label">Matthew</label><label for="ibBookMark" class="ib-book-label">Mark</label><label for="ibBookLuke" class="ib-book-label">Luke</label><label for="ibBookJohn" class="ib-book-label">John</label><label for="ibBookActs" class="ib-book-label">Acts</label><label for="ibBookRomans" class="ib-book-label">Romans</label><label for="ibBook1Corinthians" class="ib-book-label">1 Corinthians</label><label for="ibBook2Corinthians" class="ib-book-label">2 Corinthians</label><label for="ibBookGalatians" class="ib-book-label">Galatians</label><label for="ibBookEphesians" class="ib-book-label">Ephesians</label><label for="ibBookPhilippians" class="ib-book-label">Philippians</label><label for="ibBookColossians" class="ib-book-label">Colossians</label><label for="ibBook1Thessalonians" class="ib-book-label">1 Thessalonians</label><label for="ibBook2Thessalonians" class="ib-book-label">2 Thessalonians</label><label for="ibBook1Timothy" class="ib-book-label">1 Timothy</label><label for="ibBook2Timothy" class="ib-book-label">2 Timothy</label><label for="ibBookTitus" class="ib-book-label">Titus</label><label for="ibBookPhilemon" class="ib-book-label">Philemon</label><label for="ibBookHebrews" class="ib-book-label">Hebrews</label><label for="ibBookJames" class="ib-book-label">James</label><label for="ibBook1Peter" class="ib-book-label">1 Peter</label><label for="ibBook2Peter" class="ib-book-label">2 Peter</label><label for="ibBook1John" class="ib-book-label">1 John</label><label for="ibBook2John" class="ib-book-label">2 John</label><label for="ibBook3John" class="ib-book-label">3 John</label><label for="ibBookJude" class="ib-book-label">Jude</label><label for="ibBookRevelation" class="ib-book-label">Revelation</label>
+        </div>
+
+        <div class="ib-john-chapters">
+          <span class="ib-verse-section-label">John chapter</span>
+          <div class="ib-chapter-grid">
+            <label for="ibJohnChapter1" class="ib-chapter-label">1</label><label for="ibJohnChapter2" class="ib-chapter-label">2</label><label for="ibJohnChapter3" class="ib-chapter-label">3</label><label for="ibJohnChapter4" class="ib-chapter-label">4</label><label for="ibJohnChapter5" class="ib-chapter-label">5</label>
+          </div>
+          <span class="ib-verse-section-label">John 3 verses</span>
+          <div class="ib-verse-grid">
+            <label class="ib-verse-label"><input type="checkbox">1</label><label class="ib-verse-label"><input type="checkbox">2</label><label class="ib-verse-label"><input type="checkbox">3</label><label class="ib-verse-label"><input type="checkbox">4</label><label class="ib-verse-label"><input type="checkbox">5</label><label class="ib-verse-label"><input type="checkbox">6</label><label class="ib-verse-label"><input type="checkbox">7</label><label class="ib-verse-label"><input type="checkbox">8</label><label class="ib-verse-label"><input type="checkbox">9</label><label class="ib-verse-label"><input type="checkbox">10</label><label class="ib-verse-label"><input type="checkbox">11</label><label class="ib-verse-label"><input type="checkbox">12</label><label class="ib-verse-label"><input type="checkbox">13</label><label class="ib-verse-label"><input type="checkbox">14</label><label class="ib-verse-label"><input type="checkbox">15</label><label class="ib-verse-label"><input type="checkbox">16</label><label class="ib-verse-label"><input type="checkbox">17</label><label class="ib-verse-label"><input type="checkbox">18</label><label class="ib-verse-label"><input type="checkbox">19</label><label class="ib-verse-label"><input type="checkbox">20</label><label class="ib-verse-label"><input type="checkbox">21</label><label class="ib-verse-label"><input type="checkbox">22</label><label class="ib-verse-label"><input type="checkbox">23</label><label class="ib-verse-label"><input type="checkbox">24</label><label class="ib-verse-label"><input type="checkbox">25</label><label class="ib-verse-label"><input type="checkbox">26</label><label class="ib-verse-label"><input type="checkbox">27</label><label class="ib-verse-label"><input type="checkbox">28</label><label class="ib-verse-label"><input type="checkbox">29</label><label class="ib-verse-label"><input type="checkbox">30</label><label class="ib-verse-label"><input type="checkbox">31</label><label class="ib-verse-label"><input type="checkbox">32</label><label class="ib-verse-label"><input type="checkbox">33</label><label class="ib-verse-label"><input type="checkbox">34</label><label class="ib-verse-label"><input type="checkbox">35</label><label class="ib-verse-label"><input type="checkbox">36</label>
+          </div>
+        </div>
+
+        <div class="ib-quote-controls">
+          <button type="button" class="ib-fetch-btn" data-cmd="fetch-verse-text">Fetch</button>
+          <span class="ib-selected-state">Selected reference: John 3</span>
+        </div>
+        <div class="ib-quote-results" aria-label="Fetched verse text">
+          <span class="ib-verse-paragraph">John 3:1 Nicodemus came to Jesus by night.</span>
+          <span class="ib-verse-paragraph">John 3:2 He said, Rabbi, we know that you are a teacher come from God.</span>
+          <span class="ib-verse-paragraph">John 3:3 Jesus answered, Except a man be born again, he cannot see the kingdom of God.</span>
+        </div>
+        <div class="ib-reference-preview">John 3:1-6</div>
+      </div>
+    </div>
+
+    <!-- ================= TIMER ================= -->
+    <div class="ib-panel" id="panelTimer">
+      <input type="radio" name="ib-timer-subtab" id="ibTimeNow" class="ib-subtab-radio" checked>
+      <input type="radio" name="ib-timer-subtab" id="ibCountdown" class="ib-subtab-radio">
+      <input type="radio" name="ib-timer-subtab" id="ibPomodoro" class="ib-subtab-radio">
+
+      <div class="ib-timer-body">
+        <div class="ib-timer-sidebar">
+          <label for="ibTimeNow" class="ib-subtab">Time Now</label>
+          <label for="ibCountdown" class="ib-subtab">Countdown</label>
+          <label for="ibPomodoro" class="ib-subtab">Pomodoro</label>
+        </div>
+
+        <div class="ib-timer-content">
+          <div class="ib-timer-fields ib-timer-fields--now">
+            <!-- Time Now needs no extra inputs -->
+          </div>
+          <div class="ib-timer-fields ib-timer-fields--countdown">
+            <div class="ib-field-pair">
+              <input type="text" class="ib-time-input" value="24" data-cmd="countdown-hh">
+              <span class="ib-field-label">HH</span>
+            </div>
+            <div class="ib-field-pair">
+              <input type="text" class="ib-time-input" value="59" data-cmd="countdown-mm">
+              <span class="ib-field-label">MM</span>
+            </div>
+          </div>
+          <div class="ib-timer-fields ib-timer-fields--pomodoro">
+            <div class="ib-field-pair">
+              <input type="text" class="ib-time-input" value="05" data-cmd="pomodoro-mm">
+              <span class="ib-field-label">MM</span>
+            </div>
+            <div class="ib-field-pair">
+              <input type="text" class="ib-time-input" value="30" data-cmd="pomodoro-ss">
+              <span class="ib-field-label">SS</span>
+            </div>
+            <label class="ib-checkbox-label">
+              <input type="checkbox" checked data-cmd="pomodoro-count-up"> Count up
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ================= LYRICS ================= -->
+    <div class="ib-panel" id="panelLyrics">
+
+      <!-- Empty state — swap visibility with the loaded state via JS
+           once a song is actually selected. -->
+      <div class="ib-lyrics-empty" style="display:none;">
+        <div class="ib-row">
+          <textarea class="ib-textarea" rows="2" placeholder="Paste lyrics here …" data-cmd="lyrics-paste"></textarea>
+        </div>
+      </div>
+
+      <div class="ib-lyrics-loaded">
+        <div class="ib-song-picker">
+          <input type="text" class="ib-song-search" value="258 - Blessed assurance" data-cmd="lyrics-song-search">
+        </div>
+        <div class="ib-row ib-row--lyrics">
+          <div class="ib-stanza-list">
+            <input type="radio" name="ib-stanza" id="stanza1" class="ib-hidden-radio" checked>
+            <label for="stanza1" class="ib-stanza-item">1 Blessed assurance, Jesus is mine! O, what a foretaste of glory divine! Heir of salvation, purchase of God, born of His Spirit, washed in His blood.</label>
+
+            <input type="radio" name="ib-stanza" id="stanza2" class="ib-hidden-radio">
+            <label for="stanza2" class="ib-stanza-item">Refrain: This is my story, this is my song, praising my Savior all the day long; this is my story, this is my song, praising my Savior all the day long.</label>
+
+            <input type="radio" name="ib-stanza" id="stanza3" class="ib-hidden-radio">
+            <label for="stanza3" class="ib-stanza-item">2 Perfect submission, perfect delight, visions of rapture now burst on my sight; angels descending, bring from above echoes of mercy, whispers of love.</label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= MEDIA ================= -->
+    <div class="ib-panel" id="panelMedia">
+
+      <!-- Empty state — swap with the loaded state via JS once files exist. -->
+      <div class="ib-media-empty" style="display:none;">
+        <div class="ib-row">
+          <button type="button" class="ib-dropzone" data-cmd="media-browse">Drag &amp; drop or browse media</button>
+        </div>
+      </div>
+
+      <div class="ib-media-loaded">
+        <div class="ib-row ib-row--media">
+          <div class="ib-media-list">
+            <input type="radio" name="ib-media-file" id="file1" class="ib-hidden-radio">
+            <label for="file1" class="ib-media-item">DSC_00123.JPG</label>
+
+            <input type="radio" name="ib-media-file" id="file2" class="ib-hidden-radio" checked>
+            <label for="file2" class="ib-media-item">DSC_00125.JPG</label>
+
+            <input type="radio" name="ib-media-file" id="file3" class="ib-hidden-radio">
+            <label for="file3" class="ib-media-item">AVI_00126.AVI</label>
+
+            <button type="button" class="ib-browse-inline-btn" data-cmd="media-browse">+ Add more media…</button>
+          </div>
+          <div class="ib-media-preview">
+            <div class="ib-preview-thumb" data-cmd="media-preview"></div>
+            <span class="ib-preview-label">Preview</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /.ib-panels -->
+</div><!-- /#presentationInputBox -->
+
+<script>
+(() => {
+  'use strict';
+
+  /* ==========================================================
+     1. CONSTANTS & METADATA
+     ========================================================== */
+  const STORAGE_KEY = 'presentationSettings_v3';
+  const DB_NAME = 'PresentationMediaDB';
+  const STORE_NAME = 'mediaStore';
+
+  const BIBLE_BOOKS = [
+    { name:'Genesis', abbr:'Gen', cat:'law', chapters:50 },
+    { name:'Exodus', abbr:'Exod', cat:'law', chapters:40 },
+    { name:'Leviticus', abbr:'Lev', cat:'law', chapters:27 },
+    { name:'Numbers', abbr:'Num', cat:'law', chapters:36 },
+    { name:'Deuteronomy', abbr:'Deut', cat:'law', chapters:34 },
+    { name:'Joshua', abbr:'Josh', cat:'history', chapters:24 },
+    { name:'Judges', abbr:'Judg', cat:'history', chapters:21 },
+    { name:'Ruth', abbr:'Ruth', cat:'history', chapters:4 },
+    { name:'1 Samuel', abbr:'1 Sam', cat:'history', chapters:31 },
+    { name:'2 Samuel', abbr:'2 Sam', cat:'history', chapters:24 },
+    { name:'1 Kings', abbr:'1 Kgs', cat:'history', chapters:22 },
+    { name:'2 Kings', abbr:'2 Kgs', cat:'history', chapters:25 },
+    { name:'1 Chronicles', abbr:'1 Chr', cat:'history', chapters:29 },
+    { name:'2 Chronicles', abbr:'2 Chr', cat:'history', chapters:36 },
+    { name:'Ezra', abbr:'Ezra', cat:'history', chapters:10 },
+    { name:'Nehemiah', abbr:'Neh', cat:'history', chapters:13 },
+    { name:'Esther', abbr:'Esth', cat:'history', chapters:10 },
+    { name:'Job', abbr:'Job', cat:'poetry', chapters:42 },
+    { name:'Psalms', abbr:'Ps', cat:'poetry', chapters:150 },
+    { name:'Proverbs', abbr:'Prov', cat:'poetry', chapters:31 },
+    { name:'Ecclesiastes', abbr:'Eccl', cat:'poetry', chapters:12 },
+    { name:'Song of Solomon', abbr:'Song', cat:'poetry', chapters:8 },
+    { name:'Isaiah', abbr:'Isa', cat:'major-prophets', chapters:66 },
+    { name:'Jeremiah', abbr:'Jer', cat:'major-prophets', chapters:52 },
+    { name:'Lamentations', abbr:'Lam', cat:'major-prophets', chapters:5 },
+    { name:'Ezekiel', abbr:'Ezek', cat:'major-prophets', chapters:48 },
+    { name:'Daniel', abbr:'Dan', cat:'major-prophets', chapters:12 },
+    { name:'Hosea', abbr:'Hos', cat:'minor-prophets', chapters:14 },
+    { name:'Joel', abbr:'Joel', cat:'minor-prophets', chapters:3 },
+    { name:'Amos', abbr:'Amos', cat:'minor-prophets', chapters:9 },
+    { name:'Obadiah', abbr:'Obad', cat:'minor-prophets', chapters:1 },
+    { name:'Jonah', abbr:'Jonah', cat:'minor-prophets', chapters:4 },
+    { name:'Micah', abbr:'Mic', cat:'minor-prophets', chapters:7 },
+    { name:'Nahum', abbr:'Nah', cat:'minor-prophets', chapters:3 },
+    { name:'Habakkuk', abbr:'Hab', cat:'minor-prophets', chapters:3 },
+    { name:'Zephaniah', abbr:'Zeph', cat:'minor-prophets', chapters:3 },
+    { name:'Haggai', abbr:'Hag', cat:'minor-prophets', chapters:2 },
+    { name:'Zechariah', abbr:'Zech', cat:'minor-prophets', chapters:14 },
+    { name:'Malachi', abbr:'Mal', cat:'minor-prophets', chapters:4 },
+    { name:'Matthew', abbr:'Matt', cat:'gospels', chapters:28 },
+    { name:'Mark', abbr:'Mark', cat:'gospels', chapters:16 },
+    { name:'Luke', abbr:'Luke', cat:'gospels', chapters:24 },
+    { name:'John', abbr:'John', cat:'gospels', chapters:21 },
+    { name:'Acts', abbr:'Acts', cat:'acts', chapters:28 },
+    { name:'Romans', abbr:'Rom', cat:'pauline', chapters:16 },
+    { name:'1 Corinthians', abbr:'1 Cor', cat:'pauline', chapters:16 },
+    { name:'2 Corinthians', abbr:'2 Cor', cat:'pauline', chapters:13 },
+    { name:'Galatians', abbr:'Gal', cat:'pauline', chapters:6 },
+    { name:'Ephesians', abbr:'Eph', cat:'pauline', chapters:6 },
+    { name:'Philippians', abbr:'Phil', cat:'pauline', chapters:4 },
+    { name:'Colossians', abbr:'Col', cat:'pauline', chapters:4 },
+    { name:'1 Thessalonians', abbr:'1 Thess', cat:'pauline', chapters:5 },
+    { name:'2 Thessalonians', abbr:'2 Thess', cat:'pauline', chapters:3 },
+    { name:'1 Timothy', abbr:'1 Tim', cat:'pauline', chapters:6 },
+    { name:'2 Timothy', abbr:'2 Tim', cat:'pauline', chapters:4 },
+    { name:'Titus', abbr:'Titus', cat:'pauline', chapters:3 },
+    { name:'Philemon', abbr:'Philem', cat:'pauline', chapters:1 },
+    { name:'Hebrews', abbr:'Heb', cat:'general', chapters:13 },
+    { name:'James', abbr:'Jas', cat:'general', chapters:5 },
+    { name:'1 Peter', abbr:'1 Pet', cat:'general', chapters:5 },
+    { name:'2 Peter', abbr:'2 Pet', cat:'general', chapters:3 },
+    { name:'1 John', abbr:'1 John', cat:'general', chapters:5 },
+    { name:'2 John', abbr:'2 John', cat:'general', chapters:1 },
+    { name:'3 John', abbr:'3 John', cat:'general', chapters:1 },
+    { name:'Jude', abbr:'Jude', cat:'general', chapters:1 },
+    { name:'Revelation', abbr:'Rev', cat:'prophecy', chapters:22 }
+  ];
+
+  /* ==========================================================
+     2. APP STATE
+     ========================================================== */
+  const state = {
+    // Presentation runtime
+    presentationWindow: null,
+    presentationState: 'READY', // 'READY', 'PLAYING', 'PAUSED'
+    presentedAsTimer: false,
+    currentText: 'Preview Text',
+    durationSec: 30,
+    timeRemainingMs: 0,
+    autoHideTimer: null,
+    seekAnimFrame: null,
+    seekStartTime: 0,
+    seekDurationMs: 0,
+
+    // Typography & Formatting
+    fontFamily: 'Aptos (Body)',
+    fontSize: 22,
+    bold: false,
+    italic: false,
+    underline: false,
+    strikethrough: false,
+    charSpacing: 'normal',
+    textTransform: 'none',
+    highlightColor: 'transparent',
+    fontColor: '#ffffff',
+    alignment: 'center', // 'left', 'center', 'right'
+    rotation: 0,
+    flipH: false,
+    flipV: false,
+
+    // Text Fill / Outline / Effects
+    fillType: 'solid',
+    fillColor: '#ffffff',
+    outlineColor: '#000000',
+    outlineWidth: 0,
+    effectShadow: false,
+    effectReflection: false,
+    effectGlow: false,
+    effectBevel: false,
+
+    // Backgrounds & Animations
+    bgType: 'solid', // 'solid', 'picture', 'video'
+    bgColor: '#152a3a',
+    bgImageBlobUrl: null,
+    bgVideoBlobUrl: null,
+    entryAnimation: 'none',
+    exitAnimation: 'none',
+    entryDurationMs: 500,
+    exitDurationMs: 400,
+
+    // Timer Mode State
+    activeTimerType: 'clock', // 'clock', 'countdown', 'pomodoro'
+    timerRunning: false,
+    timerLastTimestamp: 0,
+    pomodoroMs: 330000, // 5m 30s default
+    pomodoroCountUp: true,
+
+    // Verse Picker State
+    selectedBook: 'John',
+    selectedChapter: 3,
+    selectedVerses: [1, 2, 3],
+    verseMode: 'quote' // 'quote', 'refer'
+  };
+
+  /* ==========================================================
+     3. INDEXED-DB MEDIA HELPER
+     ========================================================== */
+  const dbPromise = window.indexedDB ? new Promise((resolve) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      e.target.result.createObjectStore(STORE_NAME);
+    };
+    req.onsuccess = (e) => resolve(e.target.result);
+    req.onerror = () => resolve(null);
+  }) : Promise.resolve(null);
+
+  async function saveMediaBlob(key, file) {
+    try {
+      const db = await dbPromise;
+      if (!db) return;
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(file, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (e) {
+      console.warn('Could not save media blob to DB', e);
+    }
+  }
+
+  async function loadMediaBlob(key) {
+    try {
+      const db = await dbPromise;
+      if (!db) return null;
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get(key);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) {
+      console.warn('Could not load media blob from DB', e);
+      return null;
+    }
+  }
+
+  /* ==========================================================
+     4. DOM CACHE
+     ========================================================== */
+  const toolbar = document.getElementById('textFormatToolbar');
+  const previewBox = document.querySelector('.preview-box');
+  const playCheckbox = document.getElementById('playPresentation');
+  const durationInput = document.querySelector('.ib-duration-input');
+  const durationFill = document.querySelector('.ib-duration-fill');
+  const hideBtn = document.querySelector('.ib-x-btn');
+  const textarea = document.getElementById('presentationText');
+  const autocompleteContainer = document.getElementById('autocomplete-container');
+  let suggestionsDiv = null;
+  let activeSuggestionIndex = -1;
+
+  /* ==========================================================
+     5. TOOLBAR DROPDOWN BEHAVIOR & POSITIONING
+     ========================================================== */
+  function positionOpenMenus() {
+    if (!toolbar) return;
+    toolbar.querySelectorAll('details.tb-dropdown[open]').forEach(dropdown => {
+      const summary = dropdown.querySelector(':scope > summary');
+      const menu = dropdown.querySelector(':scope > .tb-menu');
+      if (!summary || !menu) return;
+
+      menu.style.left = '0px';
+      menu.style.top = '0px';
+      const summaryRect = summary.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const edge = 8;
+
+      let left = Math.max(edge, Math.min(summaryRect.left, window.innerWidth - menuRect.width - edge));
+      let top = summaryRect.bottom + 4;
+      if (top + menuRect.height > window.innerHeight - edge) {
+        top = Math.max(edge, summaryRect.top - menuRect.height - 4);
+      }
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+    });
+  }
+
+  function setupDropdownMutualExclusivity() {
+    if (!toolbar) return;
+    toolbar.querySelectorAll('details.tb-dropdown').forEach(dropdown => {
+      dropdown.addEventListener('toggle', () => {
+        if (dropdown.open) {
+          toolbar.querySelectorAll('details.tb-dropdown[open]').forEach(other => {
+            if (other !== dropdown) other.removeAttribute('open');
+          });
+          positionOpenMenus();
+        }
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!toolbar.contains(e.target)) {
+        toolbar.querySelectorAll('details.tb-dropdown[open]').forEach(d => d.removeAttribute('open'));
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        toolbar.querySelectorAll('details.tb-dropdown[open]').forEach(d => d.removeAttribute('open'));
+      }
+    });
+
+    window.addEventListener('resize', positionOpenMenus);
+    window.addEventListener('scroll', positionOpenMenus, true);
+  }
+
+  /* ==========================================================
+     6. PRESENTATION WINDOW (POPUP) & STYLES SYNC
+     ========================================================== */
+  function getFullCssText() {
+    let css = '';
+    for (const sheet of document.styleSheets) {
+      try {
+        for (const rule of sheet.cssRules) {
+          css += rule.cssText + '\n';
+        }
+      } catch (err) {
+        // Cross-origin stylesheet access fallback
+      }
+    }
+    return css;
+  }
+
+  function openPresentationWindow() {
+    if (state.presentationWindow && !state.presentationWindow.closed) return;
+    const geom = JSON.parse(localStorage.getItem('pres_geom') || '{"w":800,"h":600,"x":100,"y":100}');
+    const features = `width=${geom.w},height=${geom.h},left=${geom.x},top=${geom.y},menubar=no,toolbar=no,location=no,status=no`;
+    state.presentationWindow = window.open('', 'PresentationWindow', features);
+
+    if (!state.presentationWindow) {
+      alert('Popup window was blocked by your browser. Please allow popups for this site.');
+      return;
+    }
+
+    const doc = state.presentationWindow.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Presentation Output</title>
+  <style>
+    body {
+      margin: 0; padding: 2vw; box-sizing: border-box; height: 100vh; width: 100vw;
+      display: flex; align-items: center; justify-content: center;
+      background: #000; color: #fff; overflow: hidden; font-family: sans-serif;
+      user-select: none;
+    }
+    #content {
+      font-size: 4.5vw; text-align: center; white-space: pre-wrap; line-height: 1.35;
+      max-width: 96vw; max-height: 96vh; z-index: 2;
+    }
+    #bg-video {
+      position: absolute; top:0; left:0; width:100%; height:100%;
+      object-fit: cover; z-index: 1; pointer-events: none;
+    }
+    ${getFullCssText()}
+  </style>
+</head>
+<body>
+  <div id="content"></div>
+</body>
+</html>`);
+    doc.close();
+
+    state.presentationWindow.document.body.addEventListener('dblclick', () => {
+      if (!state.presentationWindow.document.fullscreenElement) {
+        state.presentationWindow.document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        state.presentationWindow.document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    state.presentationWindow.addEventListener('beforeunload', () => {
+      try {
+        const win = state.presentationWindow;
+        localStorage.setItem('pres_geom', JSON.stringify({
+          w: win.outerWidth || 800,
+          h: win.outerHeight || 600,
+          x: win.screenX || 100,
+          y: win.screenY || 100
+        }));
+      } catch (e) {}
+    });
+
+    setTimeout(syncAllStyles, 100);
+  }
+
+  function syncAllStyles() {
+    const textShadowList = [];
+    if (state.effectShadow) textShadowList.push('2px 3px 6px rgba(0,0,0,0.75)');
+    if (state.effectGlow) textShadowList.push('0 0 12px #1a73e8');
+    if (state.effectBevel) textShadowList.push('-1px -1px 0 #ffffff, 1px 1px 0 #000000');
+    const combinedShadow = textShadowList.join(', ') || 'none';
+
+    let transform = `rotate(${state.rotation}deg)`;
+    if (state.flipH) transform += ' scaleX(-1)';
+    if (state.flipV) transform += ' scaleY(-1)';
+
+    // Update Swatch UI in Toolbar Background dropdown
+    const bgSwatch = document.getElementById('toolbarBackgroundColor');
+    if (bgSwatch && state.bgColor) {
+      bgSwatch.value = state.bgColor;
+    }
+
+    // 1. Apply to Live Preview Box Container
+    if (previewBox) {
+      if (state.bgType === 'video' && state.bgVideoBlobUrl) {
+        previewBox.style.background = '#000000';
+        previewBox.style.backgroundImage = 'none';
+      } else if (state.bgType === 'picture' && state.bgImageBlobUrl) {
+        previewBox.style.backgroundImage = `url(${state.bgImageBlobUrl})`;
+        previewBox.style.backgroundSize = 'cover';
+        previewBox.style.backgroundPosition = 'center';
+      } else {
+        previewBox.style.backgroundImage = 'none';
+        previewBox.style.backgroundColor = state.bgColor || '#152a3a';
+        previewBox.style.background = state.bgColor || '#152a3a';
+      }
+
+      previewBox.style.fontFamily = state.fontFamily;
+      previewBox.style.fontWeight = state.bold ? '700' : '400';
+      previewBox.style.fontStyle = state.italic ? 'italic' : 'normal';
+      let decor = [];
+      if (state.underline) decor.push('underline');
+      if (state.strikethrough) decor.push('line-through');
+      previewBox.style.textDecoration = decor.join(' ') || 'none';
+
+      previewBox.style.letterSpacing = state.charSpacing === 'very-tight' ? '-2px' :
+                                       state.charSpacing === 'tight' ? '-1px' :
+                                       state.charSpacing === 'loose' ? '2px' :
+                                       state.charSpacing === 'very-loose' ? '4px' : 'normal';
+      previewBox.style.textTransform = state.textTransform;
+      previewBox.style.color = state.fontColor;
+      previewBox.style.textAlign = state.alignment;
+      previewBox.style.textShadow = combinedShadow;
+      previewBox.style.webkitTextStroke = state.outlineWidth > 0 ? `${state.outlineWidth}px ${state.outlineColor}` : '0';
+
+      if (state.fillType === 'gradient') {
+        previewBox.style.backgroundImage = 'linear-gradient(135deg, #FFC000 0%, #FF0000 100%)';
+        previewBox.style.webkitBackgroundClip = 'text';
+        previewBox.style.webkitTextFillColor = 'transparent';
+      } else {
+        previewBox.style.webkitBackgroundClip = '';
+        previewBox.style.webkitTextFillColor = '';
+      }
+      previewBox.style.transform = transform;
+    }
+
+    // 2. Apply to Popup Presentation Window
+    if (state.presentationWindow && !state.presentationWindow.closed) {
+      const presDoc = state.presentationWindow.document;
+      const content = presDoc.getElementById('content');
+      const body = presDoc.body;
+
+      if (body) {
+        const alignMap = { left: 'flex-start', center: 'center', right: 'flex-end' };
+        body.style.justifyContent = alignMap[state.alignment] || 'center';
+
+        const existingVideo = body.querySelector('#bg-video');
+        if (existingVideo) existingVideo.remove();
+
+        if (state.bgType === 'video' && state.bgVideoBlobUrl) {
+          const video = presDoc.createElement('video');
+          video.id = 'bg-video';
+          video.src = state.bgVideoBlobUrl;
+          video.autoplay = true;
+          video.loop = true;
+          video.muted = true;
+          body.insertBefore(video, body.firstChild);
+          body.style.backgroundColor = 'transparent';
+          body.style.backgroundImage = 'none';
+        } else if (state.bgType === 'picture' && state.bgImageBlobUrl) {
+          body.style.backgroundImage = `url(${state.bgImageBlobUrl})`;
+          body.style.backgroundSize = 'cover';
+          body.style.backgroundPosition = 'center';
+          body.style.backgroundColor = 'transparent';
+        } else {
+          body.style.backgroundColor = state.bgColor || '#000000';
+          body.style.background = state.bgColor || '#000000';
+          body.style.backgroundImage = 'none';
+        }
+      }
+
+      if (content) {
+        content.style.fontFamily = state.fontFamily;
+        content.style.fontWeight = state.bold ? '700' : '400';
+        content.style.fontStyle = state.italic ? 'italic' : 'normal';
+        let decor = [];
+        if (state.underline) decor.push('underline');
+        if (state.strikethrough) decor.push('line-through');
+        content.style.textDecoration = decor.join(' ') || 'none';
+
+        content.style.letterSpacing = state.charSpacing === 'very-tight' ? '-2px' :
+                                      state.charSpacing === 'tight' ? '-1px' :
+                                      state.charSpacing === 'loose' ? '2px' :
+                                      state.charSpacing === 'very-loose' ? '4px' : 'normal';
+        content.style.textTransform = state.textTransform;
+        content.style.backgroundColor = state.highlightColor !== 'transparent' ? state.highlightColor : '';
+        content.style.color = state.fontColor;
+        content.style.textAlign = state.alignment;
+        content.style.textShadow = combinedShadow;
+        content.style.webkitTextStroke = state.outlineWidth > 0 ? `${state.outlineWidth}px ${state.outlineColor}` : '0';
+
+        if (state.fillType === 'gradient') {
+          content.style.backgroundImage = 'linear-gradient(135deg, #FFC000 0%, #FF0000 100%)';
+          content.style.webkitBackgroundClip = 'text';
+          content.style.webkitTextFillColor = 'transparent';
+        } else {
+          content.style.backgroundImage = 'none';
+          content.style.webkitBackgroundClip = '';
+          content.style.webkitTextFillColor = '';
+        }
+        content.style.transform = transform;
+      }
+    }
+  }
+
+  /* ==========================================================
+     7. PRESENTATION ENGINE & SEEK BAR
+     ========================================================== */
+  function getCurrentDisplayText() {
+    const activeTab = document.querySelector('input[name="ib-main-tab"]:checked')?.id;
+    if (activeTab === 'ibTabTimer') {
+      return getFormattedTimerString();
+    } else if (activeTab === 'ibTabVerse') {
+      if (state.verseMode === 'refer') {
+        const vStr = state.selectedVerses.length > 1 ? `${Math.min(...state.selectedVerses)}-${Math.max(...state.selectedVerses)}` : state.selectedVerses[0] || '1';
+        return `${state.selectedBook} ${state.selectedChapter}:${vStr}`;
+      }
+      const activeQuote = document.querySelector('.ib-verse-paragraph.is-selected') || document.querySelector('.ib-verse-paragraph');
+      return activeQuote ? activeQuote.textContent.trim() : `${state.selectedBook} ${state.selectedChapter}`;
+    } else if (activeTab === 'ibTabLyrics') {
+      const selectedStanza = document.querySelector('input[name="ib-stanza"]:checked');
+      if (selectedStanza) {
+        const label = document.querySelector(`label[for="${selectedStanza.id}"]`);
+        if (label) return label.textContent.trim();
+      }
+    }
+    return (textarea && textarea.value.trim()) || 'Preview Text';
+  }
+
+  function present(text, durationSec) {
+    state.currentText = text || getCurrentDisplayText();
+    state.durationSec = typeof durationSec === 'number' ? durationSec : parseInt(durationInput?.value || '30', 10);
+    if (!state.currentText) {
+      alert('Please enter or select some text to present.');
+      return;
+    }
+
+    if (!state.presentationWindow || state.presentationWindow.closed) {
+      openPresentationWindow();
+    }
+
+    // Update live text in preview and output
+    previewBox.textContent = state.currentText;
+    syncAllStyles();
+
+    setTimeout(() => {
+      if (state.presentationWindow && !state.presentationWindow.closed) {
+        const content = state.presentationWindow.document.getElementById('content');
+        if (content) {
+          content.textContent = state.currentText;
+          content.className = '';
+          void content.offsetWidth; // Reflow to reset animation
+          if (state.entryAnimation && state.entryAnimation !== 'none') {
+            content.classList.add(`animate-${state.entryAnimation}`);
+          }
+        }
+      }
+    }, 80);
+
+    // Update State & Controls
+    state.presentationState = 'PLAYING';
+    if (playCheckbox) playCheckbox.checked = true;
+
+    // Auto-Hide Countdown
+    clearTimeout(state.autoHideTimer);
+    cancelAnimationFrame(state.seekAnimFrame);
+
+    if (state.durationSec > 0) {
+      state.seekDurationMs = state.durationSec * 1000;
+      state.timeRemainingMs = state.seekDurationMs;
+      state.seekStartTime = performance.now();
+      startSeekAnimation();
+      state.autoHideTimer = setTimeout(() => hidePresentation(), state.seekDurationMs);
+    } else {
+      if (durationFill) durationFill.style.width = '0%';
+    }
+  }
+
+  function startSeekAnimation() {
+    const tick = (now) => {
+      if (state.presentationState !== 'PLAYING') return;
+      const elapsed = now - state.seekStartTime;
+      const progress = Math.min(100, (elapsed / state.seekDurationMs) * 100);
+      if (durationFill) durationFill.style.width = `${progress}%`;
+      if (progress < 100) {
+        state.seekAnimFrame = requestAnimationFrame(tick);
+      }
+    };
+    state.seekAnimFrame = requestAnimationFrame(tick);
+  }
+
+  function pausePresentation() {
+    if (state.presentationState !== 'PLAYING') return;
+    state.presentationState = 'PAUSED';
+    if (playCheckbox) playCheckbox.checked = false;
+    clearTimeout(state.autoHideTimer);
+    cancelAnimationFrame(state.seekAnimFrame);
+    const elapsed = performance.now() - state.seekStartTime;
+    state.timeRemainingMs = Math.max(0, state.seekDurationMs - elapsed);
+  }
+
+  function resumePresentation() {
+    if (state.presentationState !== 'PAUSED') return;
+    state.presentationState = 'PLAYING';
+    if (playCheckbox) playCheckbox.checked = true;
+    state.seekStartTime = performance.now() - (state.seekDurationMs - state.timeRemainingMs);
+    startSeekAnimation();
+    state.autoHideTimer = setTimeout(() => hidePresentation(), state.timeRemainingMs);
+  }
+
+  function hidePresentation() {
+    clearTimeout(state.autoHideTimer);
+    cancelAnimationFrame(state.seekAnimFrame);
+    state.presentationState = 'READY';
+    if (playCheckbox) playCheckbox.checked = false;
+    if (durationFill) durationFill.style.width = '0%';
+
+    if (state.presentationWindow && !state.presentationWindow.closed) {
+      const content = state.presentationWindow.document.getElementById('content');
+      if (content) {
+        if (state.exitAnimation && state.exitAnimation !== 'none') {
+          content.className = `animate-${state.exitAnimation}`;
+          setTimeout(() => {
+            if (state.presentationState === 'READY') content.textContent = '';
+          }, state.exitDurationMs);
+        } else {
+          content.textContent = '';
+        }
+      }
+    }
+  }
+
+  /* ==========================================================
+     8. TOOLBAR COMMAND DISPATCHER
+     ========================================================== */
+  function setupToolbarCommands() {
+    if (!toolbar) return;
+
+    // Font Family
+    const fontSelect = toolbar.querySelector('[data-cmd="font-family"]');
+    if (fontSelect) {
+      fontSelect.addEventListener('change', () => {
+        state.fontFamily = fontSelect.value;
+        syncAllStyles();
+        saveSettings();
+      });
+    }
+
+    // Font Size
+    const sizeInput = toolbar.querySelector('.tb-size-input');
+    const updateFontSize = (delta, absVal) => {
+      let sz = absVal !== undefined ? absVal : (parseInt(sizeInput.value, 10) || 18) + delta;
+      sz = Math.max(8, Math.min(120, sz));
+      sizeInput.value = sz;
+      state.fontSize = sz;
+      if (previewBox) previewBox.style.fontSize = `${sz}px`;
+      saveSettings();
+    };
+
+    toolbar.querySelector('button[title="Next size up"]')?.addEventListener('click', () => updateFontSize(1));
+    toolbar.querySelector('button[title="Next size down"]')?.addEventListener('click', () => updateFontSize(-1));
+    toolbar.querySelector('[data-cmd="grow-font"]')?.addEventListener('click', () => updateFontSize(2));
+    toolbar.querySelector('[data-cmd="shrink-font"]')?.addEventListener('click', () => updateFontSize(-2));
+    sizeInput?.addEventListener('change', () => updateFontSize(0, parseInt(sizeInput.value, 10)));
+
+    // Clear Formatting
+    toolbar.querySelector('[data-cmd="clear-format"]')?.addEventListener('click', () => {
+      state.bold = false;
+      state.italic = false;
+      state.underline = false;
+      state.strikethrough = false;
+      state.charSpacing = 'normal';
+      state.textTransform = 'none';
+      state.highlightColor = 'transparent';
+      state.fontColor = '#ffffff';
+      state.rotation = 0;
+      state.flipH = false;
+      state.flipV = false;
+      state.fillType = 'solid';
+      state.outlineWidth = 0;
+      state.effectShadow = false;
+      state.effectReflection = false;
+      state.effectGlow = false;
+      state.effectBevel = false;
+
+      toolbar.querySelectorAll('.tb-icon-btn.is-active').forEach(b => b.classList.remove('is-active'));
+      toolbar.querySelector('.tb-align-group .tb-icon-btn:nth-child(2)')?.classList.add('is-active');
+      syncAllStyles();
+      saveSettings();
+    });
+
+    // B I U S Toggles
+    const toggleStyle = (btn, prop) => {
+      state[prop] = !state[prop];
+      btn.classList.toggle('is-active', state[prop]);
+      syncAllStyles();
+      saveSettings();
+    };
+    toolbar.querySelector('[data-cmd="bold"]')?.addEventListener('click', (e) => toggleStyle(e.currentTarget, 'bold'));
+    toolbar.querySelector('[data-cmd="italic"]')?.addEventListener('click', (e) => toggleStyle(e.currentTarget, 'italic'));
+    toolbar.querySelector('[data-cmd="underline"]')?.addEventListener('click', (e) => toggleStyle(e.currentTarget, 'underline'));
+    toolbar.querySelector('[data-cmd="strikethrough"]')?.addEventListener('click', (e) => toggleStyle(e.currentTarget, 'strikethrough'));
+
+    // Character Spacing
+    toolbar.querySelectorAll('[data-cmd^="spacing-"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.dataset.cmd;
+        state.charSpacing = cmd.replace('spacing-', '');
+        syncAllStyles();
+        saveSettings();
+        btn.closest('details')?.removeAttribute('open');
+      });
+    });
+
+    // Change Case
+    toolbar.querySelectorAll('[data-cmd^="case-"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.dataset.cmd;
+        if (cmd === 'case-sentence') state.textTransform = 'capitalize';
+        else if (cmd === 'case-lower') state.textTransform = 'lowercase';
+        else if (cmd === 'case-upper') state.textTransform = 'uppercase';
+        else if (cmd === 'case-title') state.textTransform = 'capitalize';
+        else state.textTransform = 'none';
+        syncAllStyles();
+        saveSettings();
+        btn.closest('details')?.removeAttribute('open');
+      });
+    });
+
+    // Color Swatches (Highlight, Font Color, Fill, Outline)
+    toolbar.querySelectorAll('.tb-swatch-btn').forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        const color = swatch.dataset.color || window.getComputedStyle(swatch).backgroundColor;
+        const panel = swatch.closest('.tb-color-panel');
+        const dropdown = swatch.closest('details.tb-dropdown');
+        const summary = dropdown?.querySelector('summary');
+
+        if (summary?.title?.includes('Highlight')) {
+          state.highlightColor = color;
+          summary.querySelector('.tb-swatch-underline').style.background = color;
+        } else if (summary?.title?.includes('Font Color')) {
+          state.fontColor = color;
+          summary.querySelector('.tb-swatch-underline').style.background = color;
+        } else if (summary?.title?.includes('Text Fill')) {
+          state.fillColor = color;
+          state.fillType = 'solid';
+        } else if (summary?.title?.includes('Text Outline')) {
+          state.outlineColor = color;
+          state.outlineWidth = state.outlineWidth || 1;
+        }
+        syncAllStyles();
+        saveSettings();
+        dropdown?.removeAttribute('open');
+      });
+    });
+
+    // Text Alignment
+    toolbar.querySelectorAll('.tb-align-group button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        toolbar.querySelectorAll('.tb-align-group button').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        state.alignment = btn.dataset.cmd.replace('align-', '');
+        syncAllStyles();
+        saveSettings();
+      });
+    });
+
+    // Rotate & Flip
+    toolbar.querySelectorAll('[data-cmd^="rotate-"], [data-cmd^="flip-"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.dataset.cmd;
+        if (cmd === 'rotate-right-90') state.rotation = (state.rotation + 90) % 360;
+        else if (cmd === 'rotate-left-90') state.rotation = (state.rotation - 90 + 360) % 360;
+        else if (cmd === 'flip-vertical') state.flipV = !state.flipV;
+        else if (cmd === 'flip-horizontal') state.flipH = !state.flipH;
+        syncAllStyles();
+        saveSettings();
+        btn.closest('details')?.removeAttribute('open');
+      });
+    });
+
+    // Text Effects
+    toolbar.querySelectorAll('[data-cmd^="effect-"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.dataset.cmd;
+        if (cmd === 'effect-shadow') state.effectShadow = !state.effectShadow;
+        else if (cmd === 'effect-glow') state.effectGlow = !state.effectGlow;
+        else if (cmd === 'effect-bevel') state.effectBevel = !state.effectBevel;
+        else if (cmd === 'effect-reflection') state.effectReflection = !state.effectReflection;
+        syncAllStyles();
+        saveSettings();
+        btn.closest('details')?.removeAttribute('open');
+      });
+    });
+
+    // Background Controls
+    const bgSwatch = document.getElementById('toolbarBackgroundColor');
+    if (bgSwatch) {
+      const onBgChange = () => {
+        state.bgColor = bgSwatch.value;
+        state.bgType = 'solid';
+        syncAllStyles();
+        saveSettings();
+      };
+      bgSwatch.addEventListener('input', onBgChange);
+      bgSwatch.addEventListener('change', onBgChange);
+
+      bgSwatch.closest('label')?.addEventListener('click', () => {
+        state.bgType = 'solid';
+        state.bgColor = bgSwatch.value;
+        syncAllStyles();
+        saveSettings();
+      });
+    }
+
+    toolbar.querySelectorAll('[data-cmd="bg-type"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.dataset.value.toLowerCase();
+        if (type === 'picture' || type === 'video') {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = type === 'video' ? 'video/*' : 'image/*';
+          input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            if (type === 'video') {
+              state.bgType = 'video';
+              state.bgVideoBlobUrl = url;
+              saveMediaBlob('bgVideo', file);
+            } else {
+              state.bgType = 'picture';
+              state.bgImageBlobUrl = url;
+              saveMediaBlob('bgImage', file);
+            }
+            syncAllStyles();
+            saveSettings();
+          };
+          input.click();
+        }
+        btn.closest('details')?.removeAttribute('open');
+      });
+    });
+
+    // Entry & Exit Animation Menus
+    toolbar.querySelectorAll('.tb-animation-menu .tb-menu-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.dataset.cmd;
+        const val = btn.dataset.value;
+        if (cmd === 'entry-animation') state.entryAnimation = val;
+        else if (cmd === 'exit-animation') state.exitAnimation = val;
+
+        btn.closest('.tb-animation-menu').querySelectorAll('.tb-menu-item').forEach(i => i.classList.remove('is-selected'));
+        btn.classList.add('is-selected');
+        saveSettings();
+        btn.closest('details')?.removeAttribute('open');
+      });
+    });
+  }
+
+  /* ==========================================================
+     9. BIBLE VERSE PICKER ENGINE
+     ========================================================== */
+  function setupBibleVersePicker() {
+    const bookGrid = document.querySelector('.ib-book-grid');
+    const johnChaptersContainer = document.querySelector('.ib-john-chapters');
+    const selectedStateLabel = document.querySelector('.ib-selected-state');
+    const quoteResults = document.querySelector('.ib-quote-results');
+    const referencePreview = document.querySelector('.ib-reference-preview');
+    const fetchBtn = document.querySelector('.ib-fetch-btn');
+
+    if (!bookGrid) return;
+    bookGrid.innerHTML = '';
+
+    // Render 66 book labels by category
+    let prevCat = '';
+    let currentCategoryGroup = null;
+
+    BIBLE_BOOKS.forEach(book => {
+      if (book.cat !== prevCat) {
+        currentCategoryGroup = document.createElement('div');
+        currentCategoryGroup.className = `ib-book-category-group category-${book.cat}`;
+        bookGrid.appendChild(currentCategoryGroup);
+        prevCat = book.cat;
+      }
+      const label = document.createElement('label');
+      label.className = `ib-book-label category-${book.cat}`;
+      label.textContent = book.abbr;
+      label.title = book.name;
+      label.setAttribute('aria-label', book.name);
+
+      label.addEventListener('click', () => {
+        state.selectedBook = book.name;
+        state.selectedChapter = 1;
+        state.selectedVerses = [1];
+        renderChapterAndVerseGrids(book);
+        updateVerseSelectionState();
+      });
+
+      currentCategoryGroup.appendChild(label);
+    });
+
+    function renderChapterAndVerseGrids(book) {
+      if (!johnChaptersContainer) return;
+      johnChaptersContainer.style.display = 'block';
+      johnChaptersContainer.innerHTML = '';
+
+      // Chapter Label & Grid
+      const chapLabel = document.createElement('span');
+      chapLabel.className = 'ib-verse-section-label';
+      chapLabel.textContent = `${book.name} Chapters (${book.chapters})`;
+      johnChaptersContainer.appendChild(chapLabel);
+
+      const chapGrid = document.createElement('div');
+      chapGrid.className = 'ib-chapter-grid';
+
+      for (let c = 1; c <= book.chapters; c++) {
+        const cBtn = document.createElement('button');
+        cBtn.type = 'button';
+        cBtn.className = 'ib-chapter-label';
+        cBtn.textContent = c;
+        if (c === state.selectedChapter) {
+          cBtn.style.background = 'var(--ib-navy)';
+          cBtn.style.color = '#fff';
+        }
+        cBtn.addEventListener('click', () => {
+          state.selectedChapter = c;
+          chapGrid.querySelectorAll('.ib-chapter-label').forEach(b => {
+            b.style.background = '#fff';
+            b.style.color = 'var(--ib-text)';
+          });
+          cBtn.style.background = 'var(--ib-navy)';
+          cBtn.style.color = '#fff';
+          renderVersesGrid(book, c);
+          updateVerseSelectionState();
+        });
+        chapGrid.appendChild(cBtn);
+      }
+      johnChaptersContainer.appendChild(chapGrid);
+
+      renderVersesGrid(book, state.selectedChapter);
+    }
+
+    function renderVersesGrid(book, chapter) {
+      const existingVerseSection = johnChaptersContainer.querySelectorAll('.ib-verse-section-label-v, .ib-verse-grid');
+      existingVerseSection.forEach(el => el.remove());
+
+      const verseLabel = document.createElement('span');
+      verseLabel.className = 'ib-verse-section-label ib-verse-section-label-v';
+      verseLabel.textContent = `${book.name} ${chapter} Verses`;
+      johnChaptersContainer.appendChild(verseLabel);
+
+      const verseGrid = document.createElement('div');
+      verseGrid.className = 'ib-verse-grid';
+
+      const totalVerses = (book.name === 'John' && chapter === 3) ? 36 : 30;
+      for (let v = 1; v <= totalVerses; v++) {
+        const vLabel = document.createElement('label');
+        vLabel.className = 'ib-verse-label';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = v;
+        if (state.selectedVerses.includes(v)) checkbox.checked = true;
+
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) {
+            if (!state.selectedVerses.includes(v)) state.selectedVerses.push(v);
+          } else {
+            state.selectedVerses = state.selectedVerses.filter(item => item !== v);
+          }
+          state.selectedVerses.sort((a, b) => a - b);
+          updateVerseSelectionState();
+        });
+
+        vLabel.appendChild(checkbox);
+        vLabel.appendChild(document.createTextNode(` ${v}`));
+        verseGrid.appendChild(vLabel);
+      }
+      johnChaptersContainer.appendChild(verseGrid);
+    }
+
+    function updateVerseSelectionState() {
+      const vStr = state.selectedVerses.length > 0 ? (
+        state.selectedVerses.length === 1 ? `:${state.selectedVerses[0]}` :
+        `:${Math.min(...state.selectedVerses)}-${Math.max(...state.selectedVerses)}`
+      ) : '';
+      const ref = `${state.selectedBook} ${state.selectedChapter}${vStr}`;
+      if (selectedStateLabel) selectedStateLabel.textContent = `Selected reference: ${ref}`;
+      if (referencePreview) referencePreview.textContent = ref;
+    }
+
+    // Fetch Scripture button
+    if (fetchBtn) {
+      fetchBtn.addEventListener('click', async () => {
+        const vStr = state.selectedVerses.length > 0 ? `${Math.min(...state.selectedVerses)}-${Math.max(...state.selectedVerses)}` : '1-5';
+        const ref = `${state.selectedBook} ${state.selectedChapter}:${vStr}`;
+        fetchBtn.textContent = 'Fetching…';
+
+        try {
+          const res = await fetch(`https://bible-api.com/${encodeURIComponent(ref)}`);
+          if (!res.ok) throw new Error('API offline');
+          const data = await res.json();
+          if (data.verses && data.verses.length > 0) {
+            quoteResults.innerHTML = '';
+            data.verses.forEach(v => {
+              const p = document.createElement('span');
+              p.className = 'ib-verse-paragraph';
+              p.textContent = `${v.book_name} ${v.chapter}:${v.verse} ${v.text.trim()}`;
+              p.addEventListener('click', () => {
+                quoteResults.querySelectorAll('.ib-verse-paragraph').forEach(el => el.classList.remove('is-selected'));
+                p.classList.add('is-selected');
+                present(p.textContent, parseInt(durationInput?.value || '30', 10));
+              });
+              quoteResults.appendChild(p);
+            });
+            quoteResults.style.display = 'block';
+          }
+        } catch (err) {
+          // Offline fallback
+          quoteResults.innerHTML = `
+            <span class="ib-verse-paragraph">${state.selectedBook} ${state.selectedChapter}:1 For God so loved the world, that He gave His only begotten Son.</span>
+            <span class="ib-verse-paragraph">${state.selectedBook} ${state.selectedChapter}:2 That whosoever believeth in Him should not perish, but have everlasting life.</span>
+          `;
+          quoteResults.style.display = 'block';
+        } finally {
+          fetchBtn.textContent = 'Fetch';
+        }
+      });
+    }
+
+    // Mode tabs (Quote vs Refer)
+    document.getElementById('ibVerseQuote')?.addEventListener('change', () => {
+      state.verseMode = 'quote';
+    });
+    document.getElementById('ibVerseRefer')?.addEventListener('change', () => {
+      state.verseMode = 'refer';
+    });
+
+    // Initialize with John
+    const defaultBook = BIBLE_BOOKS.find(b => b.name === 'John') || BIBLE_BOOKS[0];
+    renderChapterAndVerseGrids(defaultBook);
+    updateVerseSelectionState();
+  }
+
+  /* ==========================================================
+     10. TIMER ENGINE
+     ========================================================== */
+  function getFormattedTimerString() {
+    const subTab = document.querySelector('input[name="ib-timer-subtab"]:checked')?.id || 'ibTimeNow';
+    if (subTab === 'ibTimeNow') {
+      const now = new Date();
+      let h = now.getHours();
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${String(h).padStart(2, '0')}:${m}:${s} ${ampm}`;
+    } else if (subTab === 'ibCountdown') {
+      const now = new Date();
+      const hh = parseInt(document.querySelector('[data-cmd="countdown-hh"]')?.value || '24', 10);
+      const mm = parseInt(document.querySelector('[data-cmd="countdown-mm"]')?.value || '0', 10);
+      const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh % 24, mm, 0);
+      let diffSec = Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000));
+      const hours = Math.floor(diffSec / 3600);
+      const mins = Math.floor((diffSec % 3600) / 60);
+      const secs = diffSec % 60;
+      return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    } else {
+      const totalSec = Math.floor(state.pomodoroMs / 1000);
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+  }
+
+  function startTimerLoop() {
+    setInterval(() => {
+      const activeTab = document.querySelector('input[name="ib-main-tab"]:checked')?.id;
+      if (activeTab === 'ibTabTimer' || state.presentedAsTimer) {
+        const str = getFormattedTimerString();
+        if (activeTab === 'ibTabTimer' && state.presentationState !== 'PLAYING') {
+          previewBox.textContent = str;
+        }
+        if (state.presentationWindow && !state.presentationWindow.closed && state.presentedAsTimer) {
+          const content = state.presentationWindow.document.getElementById('content');
+          if (content) content.textContent = str;
+        }
+      }
+    }, 250);
+  }
+
+  /* ==========================================================
+     11. AUTOCOMPLETE FOR TEXT INPUT
+     ========================================================== */
+  function setupAutocomplete() {
+    if (!textarea || !autocompleteContainer) return;
+
+    textarea.addEventListener('input', () => {
+      const val = textarea.value;
+      const parts = val.split(',');
+      const current = parts[parts.length - 1].trimStart();
+
+      if (current.length < 1) {
+        clearSuggestions();
+        return;
+      }
+
+      const matches = BIBLE_BOOKS.map(b => b.name).filter(name =>
+        name.toLowerCase().startsWith(current.toLowerCase())
+      );
+
+      if (matches.length > 0) {
+        showSuggestions(matches);
+      } else {
+        clearSuggestions();
+      }
+    });
+
+    textarea.addEventListener('keydown', (e) => {
+      if (!suggestionsDiv) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          present(textarea.value, parseInt(durationInput?.value || '30', 10));
+        }
+        return;
+      }
+
+      const items = suggestionsDiv.querySelectorAll('.suggestion-item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeSuggestionIndex = (activeSuggestionIndex + 1) % items.length;
+        updateSuggestionActive(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeSuggestionIndex = (activeSuggestionIndex - 1 + items.length) % items.length;
+        updateSuggestionActive(items);
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        const pick = activeSuggestionIndex >= 0 ? items[activeSuggestionIndex].textContent : items[0]?.textContent;
+        if (pick) acceptSuggestion(pick);
+      } else if (e.key === 'Escape') {
+        clearSuggestions();
+      }
+    });
+  }
+
+  function showSuggestions(list) {
+    clearSuggestions();
+    suggestionsDiv = document.createElement('div');
+    suggestionsDiv.id = 'autocomplete-suggestions';
+    list.forEach(bookName => {
+      const item = document.createElement('div');
+      item.className = 'suggestion-item';
+      item.textContent = bookName;
+      item.addEventListener('click', () => acceptSuggestion(bookName));
+      suggestionsDiv.appendChild(item);
+    });
+    autocompleteContainer.appendChild(suggestionsDiv);
+    activeSuggestionIndex = -1;
+  }
+
+  function clearSuggestions() {
+    if (suggestionsDiv) {
+      suggestionsDiv.remove();
+      suggestionsDiv = null;
+    }
+  }
+
+  function acceptSuggestion(bookName) {
+    const text = textarea.value;
+    const lastComma = text.lastIndexOf(',');
+    const base = lastComma === -1 ? '' : text.substring(0, lastComma + 1) + ' ';
+    textarea.value = `${base.trim()} ${bookName} `.trimStart();
+    clearSuggestions();
+    textarea.focus();
+  }
+
+  function updateSuggestionActive(items) {
+    items.forEach((item, idx) => item.classList.toggle('active', idx === activeSuggestionIndex));
+  }
+
+  /* ==========================================================
+     12. LYRICS & MEDIA TAB BEHAVIORS
+     ========================================================== */
+  function setupLyricsAndMedia() {
+    // Lyrics Stanza click
+    document.querySelectorAll('.ib-stanza-item').forEach(item => {
+      item.addEventListener('click', () => {
+        present(item.textContent.trim(), parseInt(durationInput?.value || '30', 10));
+      });
+    });
+
+    // Media File click
+    document.querySelectorAll('.ib-media-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const thumb = document.querySelector('.ib-preview-thumb');
+        if (thumb) thumb.style.background = 'linear-gradient(135deg, #1c3f5f, #e8823c)';
+      });
+    });
+  }
+
+  /* ==========================================================
+     13. PERSISTENCE & INITIALIZATION
+     ========================================================== */
+  function saveSettings() {
+    try {
+      const data = {
+        fontFamily: state.fontFamily,
+        fontSize: state.fontSize,
+        bold: state.bold,
+        italic: state.italic,
+        underline: state.underline,
+        strikethrough: state.strikethrough,
+        charSpacing: state.charSpacing,
+        textTransform: state.textTransform,
+        highlightColor: state.highlightColor,
+        fontColor: state.fontColor,
+        alignment: state.alignment,
+        rotation: state.rotation,
+        bgColor: state.bgColor,
+        bgType: state.bgType,
+        entryAnimation: state.entryAnimation,
+        exitAnimation: state.exitAnimation
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {}
+  }
+
+  function loadSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (saved.fontFamily) state.fontFamily = saved.fontFamily;
+      if (saved.fontSize) state.fontSize = saved.fontSize;
+      if (saved.bold !== undefined) state.bold = saved.bold;
+      if (saved.italic !== undefined) state.italic = saved.italic;
+      if (saved.underline !== undefined) state.underline = saved.underline;
+      if (saved.fontColor) state.fontColor = saved.fontColor;
+      if (saved.bgColor) state.bgColor = saved.bgColor;
+      if (saved.bgType) state.bgType = saved.bgType;
+      if (saved.alignment) state.alignment = saved.alignment;
+      if (saved.entryAnimation) state.entryAnimation = saved.entryAnimation;
+      if (saved.exitAnimation) state.exitAnimation = saved.exitAnimation;
+
+      const bgSwatch = document.getElementById('toolbarBackgroundColor');
+      if (bgSwatch && state.bgColor) bgSwatch.value = state.bgColor;
+    } catch (e) {}
+  }
+
+  // Presentation Shared Controls Actions
+  function setupPresentationControls() {
+    // Play/Pause Action
+    playCheckbox?.addEventListener('change', () => {
+      if (playCheckbox.checked) {
+        if (state.presentationState === 'PAUSED') {
+          resumePresentation();
+        } else {
+          present(null, parseInt(durationInput?.value || '30', 10));
+        }
+      } else {
+        pausePresentation();
+      }
+    });
+
+    // Hide Button
+    hideBtn?.addEventListener('click', () => hidePresentation());
+
+    // Global spacebar shortcut for play/pause when not in text input
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        const tag = document.activeElement?.tagName?.toLowerCase();
+        if (tag !== 'input' && tag !== 'textarea' && tag !== 'select') {
+          e.preventDefault();
+          if (state.presentationState === 'PLAYING') pausePresentation();
+          else if (state.presentationState === 'PAUSED') resumePresentation();
+          else present(null, parseInt(durationInput?.value || '30', 10));
+        }
+      }
+    });
+  }
+
+  // Startup Orchestrator
+  document.addEventListener('DOMContentLoaded', async () => {
+    loadSettings();
+    setupDropdownMutualExclusivity();
+    setupToolbarCommands();
+    setupPresentationControls();
+    setupAutocomplete();
+    setupBibleVersePicker();
+    setupLyricsAndMedia();
+    startTimerLoop();
+
+    // Restore media from DB
+    const bgImage = await loadMediaBlob('bgImage');
+    if (bgImage) state.bgImageBlobUrl = URL.createObjectURL(bgImage);
+    const bgVideo = await loadMediaBlob('bgVideo');
+    if (bgVideo) state.bgVideoBlobUrl = URL.createObjectURL(bgVideo);
+
+    syncAllStyles();
+  });
+
+})();
+</script>
+
+</body>
+</html>
