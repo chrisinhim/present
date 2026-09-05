@@ -9,19 +9,22 @@ import {
   SAMPLE_VERSES_DB,
 } from '../../../models/bible-data';
 import { BibleBook } from '../../../models/presentation.models';
+import { HistorySectionComponent } from '../../history-section/history-section.component';
 
 @Component({
   selector: 'app-verse-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HistorySectionComponent],
   template: `
-    <div class="flex flex-col gap-4">
-      <!-- MODE TOGGLE & BIBLE TRANSLATION DROPDOWN -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+      <!-- LEFT: VERSE SELECTION & CONTROLS -->
+      <div class="md:col-span-7 flex flex-col gap-4 min-w-0">
+        <!-- MODE TOGGLE & BIBLE TRANSLATION DROPDOWN -->
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
         <div class="flex items-center gap-3">
           <!-- Mode Toggle -->
           <div class="flex items-center gap-1.5">
-            <span class="text-xs font-semibold text-slate-400">Mode:</span>
+            <!-- <span class="text-xs font-semibold text-slate-400">Mode:</span> -->
             <div class="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700">
               <button
                 (click)="verseMode.set('QUOTE')"
@@ -52,7 +55,7 @@ import { BibleBook } from '../../../models/presentation.models';
 
           <!-- Bible Translation Dropdown -->
           <div class="flex items-center gap-1.5">
-            <span class="text-xs font-semibold text-slate-400">Translation:</span>
+            <!-- <span class="text-xs font-semibold text-slate-400">Translation:</span> -->
             <select
               [ngModel]="selectedTranslation()"
               (ngModelChange)="onTranslationChange($event)"
@@ -65,10 +68,20 @@ import { BibleBook } from '../../../models/presentation.models';
           </div>
         </div>
 
-        <div
+        <!-- <div
           class="text-xs font-semibold text-sky-400 bg-sky-950/40 px-3 py-1 rounded-full border border-sky-800/50"
         >
           Selected: {{ selectedReferenceString() || 'None' }}@if (verseMode() === 'QUOTE') { ({{ selectedTranslation() }})}
+        </div> -->
+        <!-- ACTION BUTTONS -->
+        <div class="flex items-center justify-end gap-2 ml-auto">
+          <button
+            (click)="presentVerse()"
+            [disabled]="!selectedBook() || !selectedChapter()"
+            class="px-5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white font-bold text-sm transition-colors shadow-lg cursor-pointer"
+          >
+            Present Verse
+          </button>
         </div>
       </div>
 
@@ -253,15 +266,11 @@ import { BibleBook } from '../../../models/presentation.models';
         </div>
       }
 
-      <!-- ACTION BUTTONS -->
-      <div class="flex justify-end gap-2">
-        <button
-          (click)="presentVerse()"
-          [disabled]="!selectedBook() || !selectedChapter()"
-          class="px-5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white font-bold text-sm transition-colors shadow-lg"
-        >
-          Present Verse
-        </button>
+      </div>
+
+      <!-- RIGHT: VERSE-SPECIFIC HISTORY SECTION -->
+      <div class="md:col-span-5">
+        <app-history-section [tab]="'VERSE'"></app-history-section>
       </div>
     </div>
   `,

@@ -11,9 +11,9 @@ import { PresentationStateService } from '../../services/presentation-state.serv
     <button
       (click)="state.hide()"
       title="Hide Content (Esc)"
-      class="w-9 h-9 rounded bg-[#13324b] hover:bg-[#0e2437] text-white flex items-center justify-center text-sm font-bold shadow-xs transition-colors cursor-pointer shrink-0"
+      class="w-20 h-5 rounded bg-[#13324b] hover:bg-[#0e2437] text-white flex items-center justify-center text-sm font-bold shadow-xs transition-colors cursor-pointer shrink-0"
     >
-      <span>✕</span>
+      <span>HIDE (ESC)</span>
     </button>
   `,
 })

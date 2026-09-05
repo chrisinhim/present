@@ -127,7 +127,7 @@ import { StyleCompilerService } from '../../../core/styles/style-compiler.servic
                   }
 
                   @case ('TIMER') {
-                    <div [ngStyle]="s.typography" class="tabular-nums font-mono tracking-wider">
+                    <div [ngStyle]="timerTypography()" class="tabular-nums font-mono tracking-wider">
                       {{ timerString() }}
                     </div>
                   }
@@ -220,19 +220,71 @@ export class PresentationCanvasComponent implements OnInit, OnDestroy {
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
       } else if (m > 0) {
         return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      } else if (totalSeconds < 10) {
+        return `${s}`;
       } else {
         return `${String(s).padStart(2, '0')}`;
       }
     }
 
     if (c.timerMode === 'pomodoro') {
-      const totalSec = Math.max(0, c.timerRemaining || 0);
-      const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
-      const s = String(totalSec % 60).padStart(2, '0');
+      const duration = c.timerDurationSeconds ?? (c.timerRemaining || 0);
+      const start = c.timerStartTimestamp || 0;
+      if (!start) {
+        const totalSec = Math.max(0, c.timerRemaining ?? duration);
+        const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
+        const s = String(totalSec % 60).padStart(2, '0');
+        return `${m}:${s}`;
+      }
+      const elapsed = Math.floor((tick - start) / 1000);
+      let currentSec = 0;
+      if (c.timerCountUp) {
+        currentSec = Math.min(duration, Math.max(0, elapsed));
+      } else {
+        currentSec = Math.max(0, duration - elapsed);
+      }
+      const m = String(Math.floor(currentSec / 60)).padStart(2, '0');
+      const s = String(currentSec % 60).padStart(2, '0');
       return `${m}:${s}`;
     }
 
     return c.timerTarget || '00:00:00';
+  });
+
+  readonly isCountdownUnder10 = computed(() => {
+    const c = this.content();
+    if (c.type !== 'TIMER' || c.timerMode !== 'countdown') return false;
+
+    if (c.timerTargetTimestamp) {
+      const diff = c.timerTargetTimestamp - this.liveTick();
+      const totalSeconds = Math.floor(diff / 1000);
+      return totalSeconds < 10;
+    }
+
+    const override = this.timerOverride();
+    if (override) {
+      return /^\d$/.test(override.trim());
+    }
+
+    return false;
+  });
+
+  readonly timerTypography = computed(() => {
+    const base = this.computedStyles().typography;
+    if (this.isCountdownUnder10()) {
+      const baseFontSize = (this.typography().fontSize || 48) * this.scale();
+      const doubleFontSize = Math.round(baseFontSize * 2);
+      const res: Record<string, string | number> = {
+        ...base,
+        fontSize: `${doubleFontSize}px`,
+      };
+      if (base['lineHeight']) {
+        const baseLineHeight = (this.typography().lineSpacing || this.typography().fontSize || 48) * this.scale();
+        res['lineHeight'] = `${Math.round(baseLineHeight * 2)}px`;
+      }
+      return res;
+    }
+    return base;
   });
 
   readonly computedStyles = computed(() =>

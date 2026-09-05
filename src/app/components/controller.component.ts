@@ -30,23 +30,23 @@ import { MainTabType } from '../models/presentation.models';
   template: `
     <div class="min-h-screen bg-[#f1f5f9] flex flex-col items-center p-3 sm:p-6 font-sans text-slate-800">
       <!-- MAIN CONTAINER -->
-      <div class="w-full max-w-4xl flex flex-col gap-3">
+      <div class="w-full max-w-4xl flex flex-col gap-1">
         <!-- 1. LIVE PREVIEW CONTAINER -->
         <section aria-label="Live Preview Section">
           <app-live-preview></app-live-preview>
         </section>
 
-        <!-- 2. FORMATTING TOOLBAR RIBBON (NO TABS, COMPACT ROWS) -->
+        <!-- 2. SEEKBAR & HIDE ACTION BAR (Directly below Live Preview) -->
+        <section aria-label="Seekbar and Hide Actions">
+          <app-common-actions></app-common-actions>
+        </section>
+
+        <!-- 3. FORMATTING TOOLBAR RIBBON (NO TABS, COMPACT ROWS) -->
         <section aria-label="Formatting Toolbar">
           <app-formatting-toolbar></app-formatting-toolbar>
         </section>
 
-        <!-- 3. COMMON ACTIONS BAR -->
-        <section aria-label="Common Actions Bar">
-          <app-common-actions></app-common-actions>
-        </section>
-
-        <!-- 4. INPUT BOX WITH SEGMENTED TABS -->
+        <!-- 4. INPUT BOX WITH SEGMENTED TABS (FULL WIDTH) -->
         <section aria-label="Input Panels" class="relative z-20 bg-white border border-slate-200 rounded-lg shadow-xs flex flex-col">
           <!-- FULL WIDTH 5-SEGMENT TAB BAR -->
           <div class="grid grid-cols-5 border-b border-slate-200 bg-white rounded-t-lg overflow-hidden">
@@ -67,7 +67,7 @@ import { MainTabType } from '../models/presentation.models';
           </div>
 
           <!-- TAB CONTENT PANEL -->
-          <div class="p-3 sm:p-4 bg-white min-h-[80px] rounded-b-lg">
+          <div class="p-3 sm:p-4 bg-white min-h-[80px]">
             @switch (state.activeTab()) {
               @case ('TEXT') {
                 <app-text-panel></app-text-panel>
@@ -86,38 +86,38 @@ import { MainTabType } from '../models/presentation.models';
               }
             }
           </div>
-        </section>
 
-        <!-- SUBTLE FOOTER CONTROLS (DESIGN & HISTORY) -->
-        <footer class="flex items-center justify-between text-[11px] text-slate-400 px-1 pt-1">
-          <div class="flex items-center gap-3">
-            <button
-              (click)="exportDesign()"
-              title="Save Design JSON"
-              class="hover:text-slate-600 transition-colors"
-            >
-              💾 Save Design
-            </button>
-            <span>&bull;</span>
-            <label
-              title="Load Design JSON"
-              class="hover:text-slate-600 cursor-pointer transition-colors"
-            >
-              📂 Load Design
-              <input type="file" accept=".json" (change)="importDesign($event)" class="hidden" />
-            </label>
-            @if (state.history().length > 0) {
-              <span>&bull;</span>
+          <!-- FOOTER CONTROLS: SAVE / LOAD DESIGN & BRANDING -->
+          <div class="flex items-center justify-between text-[11px] text-slate-400 px-3.5 py-2 border-t border-slate-100 bg-slate-50/50 rounded-b-lg">
+            <div class="flex items-center gap-3">
               <button
-                (click)="state.clearHistory()"
-                class="hover:text-rose-500 transition-colors"
+                (click)="exportDesign()"
+                title="Save Design JSON"
+                class="hover:text-slate-600 transition-colors cursor-pointer"
               >
-                Clear History ({{ state.history().length }})
+                💾 Save Design
               </button>
-            }
+              <span>&bull;</span>
+              <label
+                title="Load Design JSON"
+                class="hover:text-slate-600 cursor-pointer transition-colors"
+              >
+                📂 Load Design
+                <input type="file" accept=".json" (change)="importDesign($event)" class="hidden" />
+              </label>
+              @if (state.history().length > 0) {
+                <span>&bull;</span>
+                <button
+                  (click)="state.clearHistory()"
+                  class="hover:text-rose-500 transition-colors cursor-pointer"
+                >
+                  Clear All History ({{ state.history().length }})
+                </button>
+              }
+            </div>
+            <span class="opacity-60 font-mono">Present v5 &bull; Angular 22</span>
           </div>
-          <span class="opacity-60 font-mono">Present v5 &bull; Angular 22</span>
-        </footer>
+        </section>
       </div>
     </div>
   `,

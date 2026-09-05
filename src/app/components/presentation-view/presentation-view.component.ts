@@ -284,13 +284,30 @@ export class PresentationViewComponent implements OnInit, OnDestroy {
         this.liveTimeString.set(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
       } else if (m > 0) {
         this.liveTimeString.set(`${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+      } else if (diffSec < 10) {
+        this.liveTimeString.set(`${s}`);
       } else {
         this.liveTimeString.set(`${String(s).padStart(2, '0')}`);
       }
     } else if (content.timerMode === 'pomodoro') {
-      const totalSec = Math.max(0, content.timerRemaining || 0);
-      const pm = String(Math.floor(totalSec / 60)).padStart(2, '0');
-      const ps = String(totalSec % 60).padStart(2, '0');
+      const duration = content.timerDurationSeconds || 0;
+      const start = content.timerStartTimestamp || 0;
+      if (!start) {
+        const totalSec = Math.max(0, content.timerRemaining ?? duration);
+        const pm = String(Math.floor(totalSec / 60)).padStart(2, '0');
+        const ps = String(totalSec % 60).padStart(2, '0');
+        this.liveTimeString.set(`${pm}:${ps}`);
+        return;
+      }
+      const elapsed = Math.floor((Date.now() - start) / 1000);
+      let currentSec = 0;
+      if (content.timerCountUp) {
+        currentSec = Math.min(duration, Math.max(0, elapsed));
+      } else {
+        currentSec = Math.max(0, duration - elapsed);
+      }
+      const pm = String(Math.floor(currentSec / 60)).padStart(2, '0');
+      const ps = String(currentSec % 60).padStart(2, '0');
       this.liveTimeString.set(`${pm}:${ps}`);
     }
   }

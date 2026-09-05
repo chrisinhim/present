@@ -5,53 +5,72 @@ import { PresentationStateService } from '../../../services/presentation-state.s
 import { BIBLE_BOOKS } from '../../../models/bible-data';
 import { BibleBook } from '../../../models/presentation.models';
 
+import { PresentDurationControlsComponent } from '../../common-actions/present-duration-controls.component';
+import { HistorySectionComponent } from '../../history-section/history-section.component';
+
 @Component({
   selector: 'app-text-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    PresentDurationControlsComponent,
+    HistorySectionComponent,
+  ],
   template: `
-    <div class="relative flex flex-col gap-2">
-      <div class="relative w-full">
-        <textarea
-          #textArea
-          [(ngModel)]="textInput"
-          (ngModelChange)="onTextChange($event)"
-          (keydown)="onKeyDown($event)"
-          (blur)="onBlur()"
-          placeholder="Write any text ..."
-          rows="2"
-          class="w-full bg-white border border-slate-200 rounded-md p-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-[#13324b] focus:ring-1 focus:ring-[#13324b] focus:outline-none resize-none leading-normal transition-colors"
-        ></textarea>
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+      <!-- LEFT: INPUT & PRESENT/DURATION CONTROLS -->
+      <div class="md:col-span-7 flex items-start gap-2.5">
+        <div class="relative flex-1 min-w-0">
+          <textarea
+            #textArea
+            [(ngModel)]="textInput"
+            (ngModelChange)="onTextChange($event)"
+            (keydown)="onKeyDown($event)"
+            (blur)="onBlur()"
+            placeholder="Write any text ..."
+            rows="2"
+            class="w-full bg-white border border-slate-200 rounded-md p-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-[#13324b] focus:ring-1 focus:ring-[#13324b] focus:outline-none resize-none leading-normal transition-colors"
+          ></textarea>
 
-        <!-- AUTOCOMPLETE DROPDOWN OVERLAY -->
-        @if (showSuggestions() && suggestions().length > 0) {
-          <div
-            class="absolute left-0 top-full mt-1 z-50 w-72 max-h-56 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-y-auto p-1 text-slate-700"
-          >
+          <!-- AUTOCOMPLETE DROPDOWN OVERLAY -->
+          @if (showSuggestions() && suggestions().length > 0) {
             <div
-              class="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100"
+              class="absolute left-0 top-full mt-1 z-50 w-72 max-h-56 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-y-auto p-1 text-slate-700"
             >
-              Bible Books (Tab / Enter to select)
-            </div>
-            @for (book of suggestions(); track book; let i = $index) {
               <div
-                (mousedown)="selectSuggestion(book.name)"
-                [ngClass]="
-                  i === selectedIndex()
-                    ? 'bg-[#13324b] text-white font-bold'
-                    : 'hover:bg-slate-100 text-slate-700'
-                "
-                class="px-3 py-1.5 text-xs rounded-lg cursor-pointer flex items-center justify-between transition-colors"
+                class="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100"
               >
-                <div class="flex items-center gap-2">
-                  <span>📖</span>
-                  <span>{{ book.name }}</span>
-                </div>
-                <span class="text-[10px] opacity-75 font-mono">{{ book.abbrev }}</span>
+                Bible Books (Tab / Enter to select)
               </div>
-            }
-          </div>
-        }
+              @for (book of suggestions(); track book; let i = $index) {
+                <div
+                  (mousedown)="selectSuggestion(book.name)"
+                  [ngClass]="
+                    i === selectedIndex()
+                      ? 'bg-[#13324b] text-white font-bold'
+                      : 'hover:bg-slate-100 text-slate-700'
+                  "
+                  class="px-3 py-1.5 text-xs rounded-lg cursor-pointer flex items-center justify-between transition-colors"
+                >
+                  <div class="flex items-center gap-2">
+                    <span>📖</span>
+                    <span>{{ book.name }}</span>
+                  </div>
+                  <span class="text-[10px] opacity-75 font-mono">{{ book.abbrev }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- PRESENT / PAUSE & DURATION CONTROLS -->
+        <app-present-duration-controls />
+      </div>
+
+      <!-- RIGHT: TEXT-SPECIFIC HISTORY SECTION -->
+      <div class="md:col-span-5">
+        <app-history-section [tab]="'TEXT'"></app-history-section>
       </div>
     </div>
   `,

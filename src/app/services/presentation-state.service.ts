@@ -705,7 +705,18 @@ export class PresentationStateService {
 
     if (content.type === 'TEXT') summary = (content.text || '').substring(0, 40) || 'Plain Text';
     else if (content.type === 'VERSE') summary = content.verseRef || content.verseQuote?.substring(0, 40) || 'Verse';
-    else if (content.type === 'TIMER') summary = `Timer: ${content.timerMode || 'Clock'}`;
+    else if (content.type === 'TIMER') {
+      if (content.timerMode === 'pomodoro') {
+        const total = content.timerDurationSeconds || 0;
+        const m = String(Math.floor(total / 60)).padStart(2, '0');
+        const s = String(total % 60).padStart(2, '0');
+        summary = `Pomodoro: ${m}:${s}${content.timerCountUp ? ' (Count Up)' : ''}`;
+      } else if (content.timerMode === 'countdown') {
+        summary = `Countdown: ${content.timerTarget || 'Target'}`;
+      } else {
+        summary = `Clock: ${content.timerClockFormat || '12'}-Hour`;
+      }
+    }
     else if (content.type === 'LYRICS') summary = `${content.lyricsSongTitle || 'Song'} - ${content.lyricsStanzaTitle || 'Stanza'}`;
     else if (content.type === 'MEDIA') summary = `Media: ${this.background().mediaName || 'File'}`;
 
@@ -730,6 +741,39 @@ export class PresentationStateService {
 
   clearHistory() {
     this.history.set([]);
+  }
+
+  clearHistoryForTab(tab: MainTabType) {
+    this.history.update((list) => list.filter((item) => item.tab !== tab));
+  }
+
+  presentHistoryItem(item: HistoryItem) {
+    if (item.styles) {
+      this.updateTypography(item.styles);
+    }
+    const content = { ...item.content };
+    if (content.type === 'TIMER') {
+      const now = Date.now();
+      if (content.timerMode === 'pomodoro') {
+        const dur = content.timerDurationSeconds || 0;
+        content.timerStartTimestamp = now;
+        content.timerTargetTimestamp = now + dur * 1000;
+        content.timerRemaining = dur;
+      } else if (content.timerMode === 'countdown') {
+        if (content.timerTargetTimestamp && content.timerTargetTimestamp <= now) {
+          const targetDate = new Date(content.timerTargetTimestamp);
+          const nowDate = new Date(now);
+          targetDate.setFullYear(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
+          if (targetDate.getTime() <= now) {
+            targetDate.setDate(targetDate.getDate() + 1);
+          }
+          content.timerTargetTimestamp = targetDate.getTime();
+        }
+      }
+    }
+    this.activeContent.set(content);
+    this.activeTab.set(item.tab);
+    this.present();
   }
 
   // --- Formatting Helpers ---
