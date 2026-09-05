@@ -1,7 +1,5 @@
-
-
-#Ignore vscode AI rules
-.github\instructions\codacy.instructions.md
+# Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
 
 # Playwright
 node_modules/
@@ -11,3 +9,10 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 .env
+
+# Python
+venv/
+
+# Angular & Build
+.angular/
+dist/

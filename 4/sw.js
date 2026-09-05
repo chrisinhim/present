@@ -1,4 +1,4 @@
-const CACHE_NAME = 'present-app-v3';
+const CACHE_NAME = 'present-app-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -31,11 +31,6 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Bypass caching on localhost for hot-reloading development
-  if (self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1') {
-    return;
-  }
-
   // Navigation requests: return cached index.html if offline
   if (event.request.mode === 'navigate') {
     event.respondWith(
