@@ -24,6 +24,7 @@ import { FontManagerService } from './font-manager.service';
 const DEFAULT_TYPOGRAPHY: TypographySettings = {
   fontFamily: 'Aptos',
   fontSize: 48,
+  lineSpacing: 58,
   bold: false,
   italic: false,
   underline: false,
@@ -131,6 +132,7 @@ export class PresentationStateService {
   readonly durationSeconds = signal<number>(0);
   readonly remainingSeconds = signal<number>(0);
   readonly isPresented = signal<boolean>(false);
+  readonly isExiting = signal<boolean>(false);
   readonly isPaused = signal<boolean>(false);
   readonly activeContent = signal<PresentationState['activeContent']>({
     type: 'TEXT',
@@ -553,6 +555,7 @@ export class PresentationStateService {
       this.activeContent.update((c) => ({ ...c, ...contentOverride }));
     }
 
+    this.isExiting.set(false);
     this.isPresented.set(true);
     this.isPaused.set(false);
 
@@ -598,7 +601,8 @@ export class PresentationStateService {
   }
 
   hide() {
-    this.isPresented.set(false);
+    if (!this.isPresented() || this.isExiting()) return;
+    this.isExiting.set(true);
     this.isPaused.set(false);
     this.remainingSeconds.set(0);
     if (this.timerInterval) {
@@ -606,16 +610,24 @@ export class PresentationStateService {
       this.timerInterval = null;
     }
 
-    // If active content was a timer, reset runtime timestamps so timers halt completely everywhere
-    if (this.activeContent().type === 'TIMER') {
-      this.activeContent.update((c) => ({
-        ...c,
-        timerTargetTimestamp: undefined,
-        timerStartTimestamp: undefined,
-      }));
-    }
-
     this.broadcastSync();
+
+    const duration = this.animationDurationMs() || 400;
+    setTimeout(() => {
+      this.isPresented.set(false);
+      this.isExiting.set(false);
+
+      // If active content was a timer, reset runtime timestamps so timers halt completely everywhere
+      if (this.activeContent().type === 'TIMER') {
+        this.activeContent.update((c) => ({
+          ...c,
+          timerTargetTimestamp: undefined,
+          timerStartTimestamp: undefined,
+        }));
+      }
+
+      this.broadcastSync();
+    }, duration);
   }
 
   private startCountdown() {
@@ -675,6 +687,7 @@ export class PresentationStateService {
         exitAnimation: this.exitAnimation(),
         animationDurationMs: this.animationDurationMs(),
         isPresented: this.isPresented(),
+        isExiting: this.isExiting(),
         isPaused: this.isPaused(),
         activeContent: this.activeContent(),
         durationSeconds: this.durationSeconds(),
@@ -740,6 +753,9 @@ export class PresentationStateService {
     if (isPositionAdjustment) {
       this.broadcastPositionUpdate();
     }
+    if (this.isPresented()) {
+      this.broadcastSync();
+    }
   }
 
   broadcastPositionUpdate() {
@@ -761,6 +777,9 @@ export class PresentationStateService {
 
   updateBackground(partial: Partial<PresentationBackground>) {
     this.background.update((prev) => ({ ...prev, ...partial }));
+    if (this.isPresented()) {
+      this.broadcastSync();
+    }
   }
 
   // --- Video Playback Controls ---

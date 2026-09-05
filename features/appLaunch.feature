@@ -1,73 +1,85 @@
-Feature: Initial launch screen look and feel                                                                                                                                                                                                                                                     
-      As a presenter                                                                                                                                                                                                                                                                                 
-      I want the presentation controller to initialize with a clean, default state                                                                                                                                                                                                                   
-      So that I can immediately start creating or presenting slides without layout glitches                                                                                                                                                                                                          
-                                                                                                                                                                                                                                                                                                     
-      Background:                                                                                                                                                                                                                                                                                    
-        Given the user navigates to the presentation controller application                                                                                                                                                                                                                          
-        And the page finishes loading                                                                                                                                                                                                                                                                
-                                                                                                                                                                                                                                                                                                     
-      # -------------------------------------------------------------                                                                                                                                                                                                                                
-      # Main Layout & Structure                                                                                                                                                                                                                                                                      
-      # -------------------------------------------------------------                                                                                                                                                                                                                                
-      Scenario: Verify the initial layout and presence of core components                                                                                                                                                                                                                            
-        Then the live preview screen should be visible at the top                                                                                                                                                                                                                                    
-        And the text formatting toolbar should be visible                                                                                                                                                                                                                                            
-        And the shared presentation action bar should be displayed                                                                                                                                                                                                                                   
-        And the presentation input box should be visible                                                                                                                                                                                                                                             
-        And there should be no unexpected horizontal scrollbar on the viewport                                                                                                                                                                                                                       
-                                                                                                                                                                                                                                                                                                     
-      # -------------------------------------------------------------                                                                                                                                                                                                                                
-      # Shared Presentation Controls Initial State                                                                                                                                                                                                                                                   
-      # -------------------------------------------------------------                                                                                                                                                                                                                                
-      Scenario: Shared presentation controls initialize in their default state                                                                                                                                                                                                                       
-        Then the "Play/Pause" presentation button should be visible and set to "Play"                                                                                                                                                                                                                
-        And the seek/duration bar should be visible and set to "0"                                                                                                                                                                                                                                   
-        And the duration input field should display the default duration                                                                                                                                                                                                                             
-        And the "Hide" presentation button should be visible and enabled                                                                                                                                                                                                                             
-        And the shared controls should appear in the order: Play/Pause, Seek Bar, Duration Input, Hide                                                                                                                                                                                               
-                                                                                                                                                                                                                                                                                                     
-      # -------------------------------------------------------------                                                                                                                                                                                                                                
-      # Toolbar & Dropdowns Initial State                                                                                                                                                                                                                                                            
-      # -------------------------------------------------------------                                                                                                                                                                                                                                
-      Scenario: Text formatting toolbar defaults                                                                                                                                                                                                                                                     
-        Then all toolbar dropdown menus should be closed by default                                                                                                                                                                                                                                  
-        And the default font family and size should be selected                                                                                                                                                                                                                                      
-        And the default entry animation should be set to "none"                                                                                                                                                                                                                                      
-        And the default exit animation should be set to "none"                                                                                                                                                                                                                                       
-        And the solid background color picker should show the default background color                                                                                                                                                                                                               
-                                                                                                                                                                                                                                                                                                     
-      # -------------------------------------------------------------                                                                                                                                                                                                                                
-      # Input Box Tabs & Default Selection                                                                                                                                                                                                                                                           
-      # -------------------------------------------------------------                                                                                                                                                                                                                                
-      Scenario: Presentation input box tab navigation defaults                                                                                                                                                                                                                                       
-        Then the tabs "TEXT", "VERSE", "TIMER", "LYRICS", and "MEDIA" should be visible                                                                                                                                                                                                              
-        And the "TEXT" tab should be active by default                                                                                                                                                                                                                                               
-        And the text input textarea should be empty and focused                                                                                                                                                                                                                                      
-        And tab panels for "VERSE", "TIMER", "LYRICS", and "MEDIA" should be hidden                                                                                                                                                                                                                  
-                                                                                                                                                                                                                                                                                                     
-      # -------------------------------------------------------------                                                                                                                                                                                                                                
-      # Verse Picker Tab Initial Configuration                                                                                                                                                                                                                                                       
-      # -------------------------------------------------------------                                                                                                                                                                                                                                
-      Scenario: Verse tab defaults when selected                                                                                                                                                                                                                                                     
-        When the user clicks on the "VERSE" tab                                                                                                                                                                                                                                                      
-        Then the "QUOTE" mode should be selected by default                                                                                                                                                                                                                                          
-        And all 66 Bible books should be displayed with abbreviated labels                                                                                                                                                                                                                           
-        And each Bible book should have its full name present in the title attribute                                                                                                                                                                                                                 
-        And the book grid and chapter grid should not contain internal scrollbars                                                                                                                                                                                                                    
-                                                                                                                                                                                                                                                                                                     
-      # -------------------------------------------------------------                                                                                                                                                                                                                                
-      # Responsive & Viewport Clamping on Launch                                                                                                                                                                                                                                                     
-      # -------------------------------------------------------------                                                                                                                                                                                                                                
-      Scenario Outline: Layout adapts gracefully across different viewport resolutions                                                                                                                                                                                                               
-        Given the browser viewport is resized to "<width>" by "<height>"                                                                                                                                                                                                                             
-        When the page is reloaded                                                                                                                                                                                                                                                                    
-        Then the toolbar should wrap without horizontal overflow                                                                                                                                                                                                                                     
-        And all primary controls should remain within the visible viewport bounds                                                                                                                                                                                                                    
-                                                                                                                                                                                                                                                                                                     
-        Examples:                                                                                                                                                                                                                                                                                    
-          | width | height |                                                                                                                                                                                                                                                                         
-          | 1920  | 1080   |                                                                                                                                                                                                                                                                         
-          | 1366  | 768    |                                                                                                                                                                                                                                                                         
-          | 1024  | 768    |                                                                                                                                                                                                                                                                         
-          | 768   | 1024   |  
+Feature: Initial launch screen look and feel
+      As a presenter
+      I want the presentation controller to initialize with a clean, default state
+      So that I can immediately start creating or presenting slides without layout glitches
+
+      Background:
+        Given the user navigates to the presentation controller application
+        And the page finishes loading
+
+      # -------------------------------------------------------------
+      # Head Bar and buttons
+      # -------------------------------------------------------------
+      Scenario: Verify the head bar
+        Then the Head Bar should be visible
+        And the "Presentation Controller" title should be visible
+        And the "Theme" selection button should be visible
+        And the "Save Design" button should be visible
+        And the "Load Design" button should be visible
+        And there should be no unexpected horizontal scrollbar on the viewport
+
+
+      # -------------------------------------------------------------
+      # Main Layout & Structure
+      # -------------------------------------------------------------
+      Scenario: Verify the initial layout and presence of core components
+        Then the live preview screen should be visible at the top
+        And the text formatting toolbar should be visible
+        And the shared presentation action bar should be displayed
+        And the presentation input box should be visible
+        And there should be no unexpected horizontal scrollbar on the viewport
+
+      # -------------------------------------------------------------
+      # Shared Presentation Controls Initial State
+      # -------------------------------------------------------------
+      Scenario: Shared presentation controls initialize in their default state
+        Then the "Play/Pause" presentation button should be visible and set to "Play"
+        And the seek/duration bar should be visible and set to "0"
+        And the duration input field should display the default duration
+        And the "Hide" presentation button should be visible and enabled
+        And the shared controls should appear in the order: Play/Pause, Seek Bar, Duration Input, Hide
+
+      # -------------------------------------------------------------
+      # Toolbar & Dropdowns Initial State
+      # -------------------------------------------------------------
+      Scenario: Text formatting toolbar defaults
+        Then all toolbar dropdown menus should be closed by default
+        And the default font family and size should be selected
+        And the default entry animation should be set to "none"
+        And the default exit animation should be set to "none"
+        And the solid background color picker should show the default background color
+
+      # -------------------------------------------------------------
+      # Input Box Tabs & Default Selection
+      # -------------------------------------------------------------
+      Scenario: Presentation input box tab navigation defaults
+        Then the tabs "TEXT", "VERSE", "TIMER", "LYRICS", and "MEDIA" should be visible
+        And the "TEXT" tab should be active by default
+        And the text input textarea should be empty and focused
+        And tab panels for "VERSE", "TIMER", "LYRICS", and "MEDIA" should be hidden
+
+      # -------------------------------------------------------------
+      # Verse Picker Tab Initial Configuration
+      # -------------------------------------------------------------
+      Scenario: Verse tab defaults when selected
+        When the user clicks on the "VERSE" tab
+        Then the "QUOTE" mode should be selected by default
+        And all 66 Bible books should be displayed with abbreviated labels
+        And each Bible book should have its full name present in the title attribute
+        And the book grid and chapter grid should not contain internal scrollbars
+
+      # -------------------------------------------------------------
+      # Responsive & Viewport Clamping on Launch
+      # -------------------------------------------------------------
+      Scenario Outline: Layout adapts gracefully across different viewport resolutions
+        Given the browser viewport is resized to "<width>" by "<height>"
+        When the page is reloaded
+        Then the toolbar should wrap without horizontal overflow
+        And all primary controls should remain within the visible viewport bounds
+
+        Examples:
+ | width | height |
+ | 1920  | 1080   |
+ | 1366  | 768    |
+ | 1024  | 768    |
+ | 768   | 1024   |

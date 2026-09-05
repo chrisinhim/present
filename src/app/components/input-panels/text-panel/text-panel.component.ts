@@ -10,27 +10,26 @@ import { BibleBook } from '../../../models/presentation.models';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="relative flex flex-col gap-3">
-      <div class="relative">
+    <div class="relative flex flex-col gap-2">
+      <div class="relative w-full">
         <textarea
           #textArea
           [(ngModel)]="textInput"
           (ngModelChange)="onTextChange($event)"
           (keydown)="onKeyDown($event)"
           (blur)="onBlur()"
-          placeholder="Type presentation text, announcements, or Bible books (e.g. Genesis, 1 Cor, Rom 8:28)..."
-          rows="5"
-          class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl p-4 text-slate-100 placeholder:text-slate-500 focus:ring-2 focus:ring-sky-500 focus:outline-none resize-y text-base leading-relaxed"
-        >
-        </textarea>
+          placeholder="Write any text ..."
+          rows="2"
+          class="w-full bg-white border border-slate-200 rounded-md p-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-[#13324b] focus:ring-1 focus:ring-[#13324b] focus:outline-none resize-none leading-normal transition-colors"
+        ></textarea>
 
         <!-- AUTOCOMPLETE DROPDOWN OVERLAY -->
         @if (showSuggestions() && suggestions().length > 0) {
           <div
-            class="absolute left-4 top-16 z-30 w-72 max-h-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-y-auto p-1 text-slate-200"
+            class="absolute left-0 top-full mt-1 z-50 w-72 max-h-56 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-y-auto p-1 text-slate-700"
           >
             <div
-              class="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800"
+              class="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100"
             >
               Bible Books (Tab / Enter to select)
             </div>
@@ -39,8 +38,8 @@ import { BibleBook } from '../../../models/presentation.models';
                 (mousedown)="selectSuggestion(book.name)"
                 [ngClass]="
                   i === selectedIndex()
-                    ? 'bg-sky-600 text-white font-bold'
-                    : 'hover:bg-slate-800 text-slate-300'
+                    ? 'bg-[#13324b] text-white font-bold'
+                    : 'hover:bg-slate-100 text-slate-700'
                 "
                 class="px-3 py-1.5 text-xs rounded-lg cursor-pointer flex items-center justify-between transition-colors"
               >
@@ -53,32 +52,6 @@ import { BibleBook } from '../../../models/presentation.models';
             }
           </div>
         }
-      </div>
-
-      <div class="flex items-center justify-between text-xs text-slate-400">
-        <div class="flex items-center gap-2">
-          <span
-            >Hint:
-            <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono"
-              >Tab</kbd
-            >
-            to complete,
-            <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono"
-              >Shift+Enter</kbd
-            >
-            for newline,
-            <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono"
-              >Enter</kbd
-            >
-            to Present</span
-          >
-        </div>
-        <button
-          (click)="presentNow()"
-          class="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold transition-colors"
-        >
-          Present Text
-        </button>
       </div>
     </div>
   `,
@@ -163,6 +136,19 @@ export class TextPanelComponent {
   }
 
   onKeyDown(event: KeyboardEvent) {
+    // ESCAPE: Immediately hide presentation, prevent browser defaults, and blur textarea
+    if (event.key === 'Escape' || event.code === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.showSuggestions.set(false);
+      this.state.hide();
+      setTimeout(() => {
+        this.textAreaRef()?.nativeElement?.blur();
+        document.body.focus();
+      }, 0);
+      return;
+    }
+
     const isOpen = this.showSuggestions() && this.suggestions().length > 0;
 
     if (isOpen) {
@@ -178,25 +164,33 @@ export class TextPanelComponent {
         const prev = (this.selectedIndex() - 1 + list.length) % list.length;
         this.selectedIndex.set(prev);
         return;
-      } else if (event.key === 'Tab' || (event.key === 'Enter' && !event.shiftKey)) {
-        // Tab or Enter chooses the currently highlighted item (defaults to 1st option)
+      } else if (event.key === 'Tab') {
+        // Tab chooses the currently highlighted item (per UI hint: "Tab to complete")
         event.preventDefault();
         const chosen = this.suggestions()[this.selectedIndex()];
         if (chosen) {
           this.selectSuggestion(chosen.name);
         }
         return;
-      } else if (event.key === 'Escape') {
-        this.showSuggestions.set(false);
-        return;
       }
     }
 
-    // Default Enter when no autocomplete is active -> Present
+    // Default Enter when no autocomplete navigation is active -> Present text and blur
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
+      event.stopPropagation();
       this.presentNow();
     }
+  }
+
+  presentNow() {
+    this.showSuggestions.set(false);
+    const text = this.textInput().trim();
+    this.state.present({ type: 'TEXT', text });
+    setTimeout(() => {
+      this.textAreaRef()?.nativeElement?.blur();
+      document.body.focus();
+    }, 0);
   }
 
   selectSuggestion(bookName: string) {
@@ -235,12 +229,5 @@ export class TextPanelComponent {
     setTimeout(() => {
       this.showSuggestions.set(false);
     }, 200);
-  }
-
-  presentNow() {
-    this.state.present({
-      type: 'TEXT',
-      text: this.textInput(),
-    });
   }
 }

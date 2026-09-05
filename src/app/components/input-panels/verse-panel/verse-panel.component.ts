@@ -68,7 +68,7 @@ import { BibleBook } from '../../../models/presentation.models';
         <div
           class="text-xs font-semibold text-sky-400 bg-sky-950/40 px-3 py-1 rounded-full border border-sky-800/50"
         >
-          Selected: {{ selectedReferenceString() || 'None' }} ({{ selectedTranslation() }})
+          Selected: {{ selectedReferenceString() || 'None' }}@if (verseMode() === 'QUOTE') { ({{ selectedTranslation() }})}
         </div>
       </div>
 
@@ -603,9 +603,10 @@ export class VersePanelComponent {
     if (mode === 'REFER') {
       this.state.present({
         type: 'VERSE',
-        verseRef: ref,
+        verseMode: 'REFER',
+        verseRef: rawRef,
         verseQuote: '',
-        text: ref,
+        text: rawRef,
       });
     } else {
       const items = this.selectedVerseItems();

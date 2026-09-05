@@ -259,6 +259,7 @@ export interface HighlightSettings {
 export interface TypographySettings {
   fontFamily: string;
   fontSize: number; // 8 to 120
+  lineSpacing?: number; // line-height in px (default ~58)
   bold: boolean;
   italic: boolean;
   underline: boolean;
@@ -358,6 +359,7 @@ export interface PresentationState {
   activeContent: {
     type: MainTabType;
     text?: string;
+    verseMode?: 'QUOTE' | 'REFER';
     verseRef?: string;
     verseQuote?: string;
     timerMode?: 'time-now' | 'countdown' | 'pomodoro';

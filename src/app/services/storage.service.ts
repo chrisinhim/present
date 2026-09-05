@@ -9,8 +9,22 @@ export class StorageService {
   private readonly STORE_NAME = 'mediaStore';
   private dbPromise: Promise<IDBDatabase> | null = null;
 
+  async requestPersistence(): Promise<boolean> {
+    if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
+      try {
+        const isPersisted = await navigator.storage.persist();
+        return isPersisted;
+      } catch (e) {
+        console.warn('Storage persistence request failed:', e);
+      }
+    }
+    return false;
+  }
+
   private initDB(): Promise<IDBDatabase> {
     if (this.dbPromise) return this.dbPromise;
+
+    this.requestPersistence().catch(() => {});
 
     this.dbPromise = new Promise((resolve, reject) => {
       if (typeof window === 'undefined' || !window.indexedDB) {
