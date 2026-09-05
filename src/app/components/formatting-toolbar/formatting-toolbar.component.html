@@ -1,0 +1,1330 @@
+<div
+  class="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl flex flex-col overflow-hidden text-slate-200"
+>
+  <!-- 1. RIBBON TABS HEADER -->
+  <div
+    class="flex items-center gap-1 bg-slate-950 px-3 pt-2 border-b border-slate-800 select-none overflow-x-auto scrollbar-none whitespace-nowrap"
+  >
+    <button
+      (click)="activeRibbonTab.set('home')"
+      [ngClass]="
+        activeRibbonTab() === 'home'
+          ? 'bg-slate-900 text-sky-400 font-bold border-b-2 border-sky-500'
+          : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'
+      "
+      class="px-4 py-1.5 text-xs rounded-t-lg transition-colors flex items-center gap-1.5 shrink-0"
+    >
+      <span>🔤</span>
+      <span>Font</span>
+    </button>
+
+    <button
+      (click)="activeRibbonTab.set('effects')"
+      [ngClass]="
+        activeRibbonTab() === 'effects'
+          ? 'bg-slate-900 text-sky-400 font-bold border-b-2 border-sky-500'
+          : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'
+      "
+      class="px-4 py-1.5 text-xs rounded-t-lg transition-colors flex items-center gap-1.5 shrink-0"
+    >
+      <span>✨</span>
+      <span>Effects</span>
+      @if (hasActiveEffects()) {
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+      }
+    </button>
+
+    <button
+      (click)="activeRibbonTab.set('layout')"
+      [ngClass]="
+        activeRibbonTab() === 'layout'
+          ? 'bg-slate-900 text-sky-400 font-bold border-b-2 border-sky-500'
+          : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'
+      "
+      class="px-4 py-1.5 text-xs rounded-t-lg transition-colors flex items-center gap-1.5 shrink-0"
+    >
+      <span>📐</span>
+      <span>Position</span>
+    </button>
+
+    <button
+      (click)="activeRibbonTab.set('animations')"
+      [ngClass]="
+        activeRibbonTab() === 'animations'
+          ? 'bg-slate-900 text-sky-400 font-bold border-b-2 border-sky-500'
+          : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'
+      "
+      class="px-4 py-1.5 text-xs rounded-t-lg transition-colors flex items-center gap-1.5 shrink-0"
+    >
+      <span>🎬</span>
+      <span>Animation</span>
+    </button>
+  </div>
+
+  <!-- 2. RIBBON COMMAND BAR -->
+  <div class="p-3 bg-slate-900 min-h-[72px] flex items-center overflow-x-auto scrollbar-thin">
+    <!-- TAB 1: HOME & FONT COMMANDS -->
+    @if (activeRibbonTab() === 'home') {
+      <div class="flex flex-nowrap sm:flex-wrap items-center gap-3 min-w-max sm:min-w-0">
+        <!-- FONT FAMILY & ADD FONT -->
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider"
+            >Font Family</span
+          >
+          <div class="flex items-center gap-1">
+            <select
+              [ngModel]="state.typography().fontFamily"
+              (ngModelChange)="updateFontFamily($event)"
+              class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-200 focus:outline-none cursor-pointer max-w-[140px] truncate"
+            >
+              @for (font of state.availableFontFamilies(); track font) {
+                <option [value]="font">
+                  {{ font }}
+                </option>
+              }
+            </select>
+            <button
+              (click)="showFontModal.set(true)"
+              title="Add Google or Local Font"
+              class="px-2 py-1 bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 border border-sky-500/40 rounded-lg text-xs font-bold transition-colors"
+            >
+              + Font
+            </button>
+          </div>
+        </div>
+        <div class="h-10 w-px bg-slate-800"></div>
+        <!-- FONT SIZE & STEPPERS -->
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider"
+            >Size</span
+          >
+          <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700 p-0.5">
+            <input
+              type="number"
+              min="8"
+              max="120"
+              [ngModel]="state.typography().fontSize"
+              (ngModelChange)="updateFontSize($event)"
+              class="w-11 bg-transparent text-center text-xs font-bold text-slate-100 focus:outline-none"
+            />
+            <div class="flex flex-col border-l border-slate-700 px-0.5">
+              <button
+                (click)="adjustFontSize(1)"
+                title="Increase font size"
+                class="text-[9px] text-slate-400 hover:text-white px-1 leading-none"
+              >
+                ▲
+              </button>
+              <button
+                (click)="adjustFontSize(-1)"
+                title="Decrease font size"
+                class="text-[9px] text-slate-400 hover:text-white px-1 leading-none"
+              >
+                ▼
+              </button>
+            </div>
+            <div class="flex border-l border-slate-700 ml-1">
+              <button
+                (click)="adjustFontSize(2)"
+                title="Grow Font (2pt)"
+                class="px-1.5 py-0.5 text-xs font-bold text-slate-300 hover:bg-slate-700 rounded-l"
+              >
+                A▲
+              </button>
+              <button
+                (click)="adjustFontSize(-2)"
+                title="Shrink Font (2pt)"
+                class="px-1.5 py-0.5 text-xs font-bold text-slate-300 hover:bg-slate-700 rounded-r"
+              >
+                A▼
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="h-10 w-px bg-slate-800"></div>
+        <!-- BOLD, ITALIC, UNDERLINE, STRIKETHROUGH -->
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider"
+            >Style</span
+          >
+          <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700 p-0.5">
+            <button
+              (click)="toggleStyle('bold')"
+              [ngClass]="
+                state.typography().bold
+                  ? 'bg-sky-600 text-white font-bold'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-700'
+              "
+              title="Bold (Ctrl+B)"
+              class="w-7 h-7 rounded text-xs flex items-center justify-center font-bold"
+            >
+              B
+            </button>
+            <button
+              (click)="toggleStyle('italic')"
+              [ngClass]="
+                state.typography().italic
+                  ? 'bg-sky-600 text-white font-bold'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-700'
+              "
+              title="Italic (Ctrl+I)"
+              class="w-7 h-7 rounded text-xs flex items-center justify-center italic font-serif"
+            >
+              I
+            </button>
+            <button
+              (click)="toggleStyle('underline')"
+              [ngClass]="
+                state.typography().underline
+                  ? 'bg-sky-600 text-white font-bold'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-700'
+              "
+              title="Underline (Ctrl+U)"
+              class="w-7 h-7 rounded text-xs flex items-center justify-center underline"
+            >
+              U
+            </button>
+            <button
+              (click)="toggleStyle('strikethrough')"
+              [ngClass]="
+                state.typography().strikethrough
+                  ? 'bg-sky-600 text-white font-bold'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-700'
+              "
+              title="Strikethrough"
+              class="w-7 h-7 rounded text-xs flex items-center justify-center line-through"
+            >
+              S
+            </button>
+          </div>
+        </div>
+        <div class="h-10 w-px bg-slate-800"></div>
+        <!-- SPACING & CASE -->
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider"
+            >Text Case</span
+          >
+          <div class="flex items-center gap-1.5">
+            <select
+              [ngModel]="state.typography().caseTransform"
+              (ngModelChange)="updateCase($event)"
+              title="Change Case"
+              class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-300 focus:outline-none"
+            >
+              <option value="none">Sentence case</option>
+              <option value="lowercase">lowercase</option>
+              <option value="uppercase">UPPERCASE</option>
+              <option value="capitalize">Capitalize Each Word</option>
+              <option value="toggle">tOGGLE cASE</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider"
+            >Spacing</span
+          >
+          <div class="flex items-center gap-1.5">
+            <select
+              [ngModel]="state.typography().letterSpacing"
+              (ngModelChange)="updateLetterSpacing($event)"
+              title="Character Spacing"
+              class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-300 focus:outline-none"
+            >
+              <option [value]="-2">Very Tight (-2px)</option>
+              <option [value]="-1">Tight (-1px)</option>
+              <option [value]="0">Normal (0px)</option>
+              <option [value]="2">Loose (+2px)</option>
+              <option [value]="4">Very Loose (+4px)</option>
+            </select>
+          </div>
+        </div>
+        <div class="h-10 w-px bg-slate-800"></div>
+      </div>
+    }
+
+    <!-- TAB 2: TEXT EFFECTS & STROKE COMMANDS -->
+    @if (activeRibbonTab() === 'effects') {
+      <div class="flex flex-wrap items-center gap-4">
+        <!-- COLORS & HIGHLIGHT & BACKGROUND -->
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <!-- Font Color -->
+            <div
+              class="flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-0.5"
+              title="Font Color"
+            >
+              <span class="text-xs text-slate-400">Color:</span>
+              <input
+                type="color"
+                [value]="fontColorValue()"
+                (input)="onFontColorInput($event)"
+                class="w-5 h-5 rounded cursor-pointer bg-transparent border-0"
+              />
+            </div>
+            <!-- Highlight Button (Triggers Solid, Gradient, Picture, Video Modal) -->
+            <button
+              (click)="openHighlightModal()"
+              [ngClass]="
+                hasActiveHighlight()
+                  ? 'bg-amber-600/30 border-amber-500/50 text-amber-300 font-bold'
+                  : 'bg-slate-800 border-slate-700 text-slate-300'
+              "
+              title="Text Highlight (Solid Color, Gradient, Picture, Video)"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs transition-colors"
+            >
+              <span>🖍️</span>
+              <span>Highlight</span>
+              @if (hasActiveHighlight()) {
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              }
+            </button>
+            <!-- Background Button (Triggers Solid Color, Gradient, Picture, Video Modal) -->
+            <button
+              (click)="openBgModal()"
+              [ngClass]="
+                hasActiveBg()
+                  ? 'bg-sky-600/30 border-sky-500/50 text-sky-300 font-bold'
+                  : 'bg-slate-800 border-slate-700 text-slate-300'
+              "
+              title="Presentation Background (Solid Color, Gradient, Picture, Video)"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs transition-colors"
+            >
+              <span>🖼️</span>
+              <span>Background</span>
+              @if (hasActiveBg()) {
+                <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+              }
+            </button>
+          </div>
+        </div>
+        <div class="h-10 w-px bg-slate-800"></div>
+        <!-- RESET FORMATTING
+        <div class="flex flex-col justify-end">
+          <button (click)="state.clearFormatting()" title="Reset All Typography & Formatting"
+            class="px-2.5 py-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center gap-1">
+            <span class="line-through font-bold">A</span>
+          </button>
+        </div> -->
+        <!-- DROP SHADOW -->
+        <div class="flex flex-col gap-1.5 p-2 bg-slate-800/60 rounded-xl border border-slate-700">
+          <div class="flex items-center justify-between gap-3">
+            <label
+              class="text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                [ngModel]="state.typography().effects.shadow.enabled"
+                (ngModelChange)="updateShadowEnabled($event)"
+                class="rounded bg-slate-900 border-slate-700 text-sky-600"
+              />
+              <span>Drop Shadow</span>
+            </label>
+            @if (state.typography().effects.shadow.enabled) {
+              <input
+                type="color"
+                [value]="state.typography().effects.shadow.color || '#000000'"
+                (input)="updateShadowColor($event)"
+                class="w-4 h-4 rounded cursor-pointer bg-transparent border-0"
+              />
+            }
+          </div>
+          @if (state.typography().effects.shadow.enabled) {
+            <div class="flex items-center gap-3 text-[11px] text-slate-400">
+              <div class="flex items-center gap-1">
+                <span>Dist:</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="30"
+                  [ngModel]="state.typography().effects.shadow.distance"
+                  (ngModelChange)="updateShadowDistance($event)"
+                  class="w-16 accent-sky-500"
+                />
+                <span class="font-mono text-slate-300"
+                  >{{ state.typography().effects.shadow.distance }}px</span
+                >
+              </div>
+              <div class="flex items-center gap-1">
+                <span>Blur:</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="30"
+                  [ngModel]="state.typography().effects.shadow.blur"
+                  (ngModelChange)="updateShadowBlur($event)"
+                  class="w-16 accent-sky-500"
+                />
+                <span class="font-mono text-slate-300"
+                  >{{ state.typography().effects.shadow.blur }}px</span
+                >
+              </div>
+            </div>
+          }
+        </div>
+        <!-- TEXT OUTLINE / STROKE -->
+        <div class="flex flex-col gap-1.5 p-2 bg-slate-800/60 rounded-xl border border-slate-700">
+          <div class="flex items-center justify-between gap-3">
+            <label
+              class="text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                [ngModel]="state.typography().textOutlineEnabled"
+                (ngModelChange)="updateOutlineEnabled($event)"
+                class="rounded bg-slate-900 border-slate-700 text-sky-600"
+              />
+              <span>Outline / Stroke</span>
+            </label>
+            @if (state.typography().textOutlineEnabled) {
+              <input
+                type="color"
+                [value]="state.typography().textOutlineColor || '#000000'"
+                (input)="updateOutlineColor($event)"
+                class="w-4 h-4 rounded cursor-pointer bg-transparent border-0"
+              />
+            }
+          </div>
+          @if (state.typography().textOutlineEnabled) {
+            <div class="flex items-center gap-2 text-[11px] text-slate-400">
+              <span>Weight:</span>
+              <input
+                type="range"
+                min="1"
+                max="12"
+                [ngModel]="state.typography().textOutlineWeight"
+                (ngModelChange)="updateOutlineWeight($event)"
+                class="w-20 accent-sky-500"
+              />
+              <span class="font-mono text-slate-300"
+                >{{ state.typography().textOutlineWeight }}px</span
+              >
+            </div>
+          }
+        </div>
+        <!-- GLOW AURA -->
+        <div class="flex flex-col gap-1.5 p-2 bg-slate-800/60 rounded-xl border border-slate-700">
+          <div class="flex items-center justify-between gap-3">
+            <label
+              class="text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                [ngModel]="state.typography().effects.glow.enabled"
+                (ngModelChange)="updateGlowEnabled($event)"
+                class="rounded bg-slate-900 border-slate-700 text-sky-600"
+              />
+              <span>Glow Aura</span>
+            </label>
+            @if (state.typography().effects.glow.enabled) {
+              <input
+                type="color"
+                [value]="state.typography().effects.glow.color || '#38bdf8'"
+                (input)="updateGlowColor($event)"
+                class="w-4 h-4 rounded cursor-pointer bg-transparent border-0"
+              />
+            }
+          </div>
+          @if (state.typography().effects.glow.enabled) {
+            <div class="flex items-center gap-2 text-[11px] text-slate-400">
+              <span>Radius:</span>
+              <input
+                type="range"
+                min="2"
+                max="40"
+                [ngModel]="state.typography().effects.glow.radius"
+                (ngModelChange)="updateGlowRadius($event)"
+                class="w-20 accent-sky-500"
+              />
+              <span class="font-mono text-slate-300"
+                >{{ state.typography().effects.glow.radius }}px</span
+              >
+            </div>
+          }
+        </div>
+        <div class="h-10 w-px bg-slate-800"></div>
+        <!-- RESET FORMATTING -->
+        <div class="flex flex-col justify-end">
+          <button
+            (click)="state.clearFormatting()"
+            title="Reset All Typography & Formatting"
+            class="px-2.5 py-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center gap-1"
+          >
+            <span class="line-through font-bold">A</span>
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 3: POSITION & ALIGNMENT COMMANDS -->
+    @if (activeRibbonTab() === 'layout') {
+      <div class="w-full flex items-center gap-3">
+        <!-- HORIZONTAL ALIGNMENT -->
+        <div class="flex flex-col gap-1 shrink-0">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider"
+            >Horizontal</span
+          >
+          <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700 p-0.5">
+            <button
+              (click)="setAlignment('left')"
+              [ngClass]="
+                state.typography().alignment === 'left'
+                  ? 'bg-sky-600 text-white font-bold'
+                  : 'text-slate-400 hover:text-white'
+              "
+              title="Align Left"
+              class="w-7 h-7 rounded text-xs flex items-center justify-center"
+            >
+              ⇤
+            </button>
+            <button
+              (click)="setAlignment('center')"
+              [ngClass]="
+                state.typography().alignment === 'center'
+                  ? 'bg-sky-600 text-white font-bold'
+                  : 'text-slate-400 hover:text-white'
+              "
+              title="Align Center"
+              class="w-7 h-7 rounded text-xs flex items-center justify-center"
+            >
+              ⬌
+            </button>
+            <button
+              (click)="setAlignment('right')"
+              [ngClass]="
+                state.typography().alignment === 'right'
+                  ? 'bg-sky-600 text-white font-bold'
+                  : 'text-slate-400 hover:text-white'
+              "
+              title="Align Right"
+              class="w-7 h-7 rounded text-xs flex items-center justify-center"
+            >
+              ⇥
+            </button>
+          </div>
+        </div>
+        <div class="h-10 w-px bg-slate-800 shrink-0"></div>
+        <!-- VERTICAL ALIGNMENT -->
+        <div class="flex flex-col gap-1 shrink-0">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider"
+            >Vertical</span
+          >
+          <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700 p-0.5">
+            <button
+              (click)="setVerticalAlignment('top')"
+              [ngClass]="
+                state.typography().verticalAlignment === 'top'
+                  ? 'bg-sky-600 text-white font-bold'
+                  : 'text-slate-400 hover:text-white'
+              "
+              title="Align Top"
+              class="w-7 h-7 rounded text-xs flex items-center justify-center"
+            >
+              ⤒
+            </button>
+            <button
+              (click)="setVerticalAlignment('middle')"
+              [ngClass]="
+                state.typography().verticalAlignment === 'middle'
+                  ? 'bg-sky-600 text-white font-bold'
+                  : 'text-slate-400 hover:text-white'
+              "
+              title="Align Middle"
+              class="w-7 h-7 rounded text-xs flex items-center justify-center"
+            >
+              ⬍
+            </button>
+            <button
+              (click)="setVerticalAlignment('bottom')"
+              [ngClass]="
+                state.typography().verticalAlignment === 'bottom'
+                  ? 'bg-sky-600 text-white font-bold'
+                  : 'text-slate-400 hover:text-white'
+              "
+              title="Align Bottom"
+              class="w-7 h-7 rounded text-xs flex items-center justify-center"
+            >
+              ⤓
+            </button>
+          </div>
+        </div>
+        <div class="h-10 w-px bg-slate-800 shrink-0"></div>
+        <!-- ROTATION & FLIP -->
+        <div class="flex flex-col gap-1 shrink-0">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider"
+            >Rotate & Flip</span
+          >
+          <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700 p-0.5">
+            <button
+              (click)="rotate(90)"
+              title="Rotate Right 90°"
+              class="px-1.5 py-1 text-xs text-slate-300 hover:bg-slate-700 rounded"
+            >
+              ↷ 90°
+            </button>
+            <button
+              (click)="rotate(-90)"
+              title="Rotate Left 90°"
+              class="px-1.5 py-1 text-xs text-slate-300 hover:bg-slate-700 rounded"
+            >
+              ↶ 90°
+            </button>
+            <button
+              (click)="toggleFlip('H')"
+              [ngClass]="
+                state.typography().flipH
+                  ? 'bg-sky-600 text-white'
+                  : 'text-slate-400 hover:bg-slate-700'
+              "
+              title="Flip Horizontal"
+              class="px-1.5 py-1 text-xs rounded"
+            >
+              ⇄
+            </button>
+            <button
+              (click)="toggleFlip('V')"
+              [ngClass]="
+                state.typography().flipV
+                  ? 'bg-sky-600 text-white'
+                  : 'text-slate-400 hover:bg-slate-700'
+              "
+              title="Flip Vertical"
+              class="px-1.5 py-1 text-xs rounded"
+            >
+              ⇅
+            </button>
+          </div>
+        </div>
+        <div class="h-10 w-px bg-slate-800 shrink-0"></div>
+        <!-- FINE POSITION ADJUSTMENT (EXPANDS TO FILL ALL AVAILABLE HORIZONTAL SPACE) -->
+        <div
+          class="flex-1 flex flex-col gap-1.5 p-2 bg-slate-800/60 rounded-xl border border-slate-700"
+        >
+          <!-- Range X -->
+          <div class="flex items-center gap-2 text-xs w-full">
+            <span class="text-[10px] text-slate-400 font-semibold w-14 shrink-0 whitespace-nowrap"
+              >Offset X:</span
+            >
+            <input
+              type="range"
+              min="-500"
+              max="500"
+              step="1"
+              [ngModel]="state.typography().offsetX"
+              (ngModelChange)="setOffset('X', $event)"
+              title="Horizontal Offset (-500px to +500px)"
+              class="flex-1 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500 w-full"
+            />
+            <span class="font-mono text-[11px] text-sky-400 w-12 shrink-0 text-right"
+              >{{ state.typography().offsetX }}px</span
+            >
+          </div>
+          <!-- Range Y -->
+          <div class="flex items-center gap-2 text-xs w-full">
+            <span class="text-[10px] text-slate-400 font-semibold w-14 shrink-0 whitespace-nowrap"
+              >Offset Y:</span
+            >
+            <input
+              type="range"
+              min="-500"
+              max="500"
+              step="1"
+              [ngModel]="state.typography().offsetY"
+              (ngModelChange)="setOffset('Y', $event)"
+              title="Vertical Offset (-500px to +500px)"
+              class="flex-1 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500 w-full"
+            />
+            <span class="font-mono text-[11px] text-sky-400 w-12 shrink-0 text-right"
+              >{{ state.typography().offsetY }}px</span
+            >
+          </div>
+        </div>
+        <div class="h-10 w-px bg-slate-800 shrink-0"></div>
+        <!-- RESET POSITION, ROTATION & FLIP BUTTON -->
+        <div class="flex flex-col justify-end shrink-0">
+          <button
+            (click)="resetLayoutAndTransforms()"
+            title="Reset Position (0,0), Rotation (0°), Flipping, and Alignment (Center)"
+            class="px-2.5 py-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap"
+          >
+            <span class="text-sm font-bold">⟲</span>
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 4: ANIMATIONS & TIMING COMMANDS -->
+    @if (activeRibbonTab() === 'animations') {
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- ENTRY ANIMATION -->
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider"
+            >Entry Animation</span
+          >
+          <select
+            [ngModel]="state.entryAnimation()"
+            (ngModelChange)="state.entryAnimation.set($event)"
+            class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none cursor-pointer"
+          >
+            <option value="none">None</option>
+            <option value="fade-in">✨ Fade In</option>
+            <option value="slide-top">⬇️ Slide In (Top)</option>
+            <option value="slide-bottom">⬆️ Slide In (Bottom)</option>
+            <option value="slide-left">⬅️ Slide In (Right to Left)</option>
+            <option value="slide-right">➡️ Slide In (Left to Right)</option>
+            <option value="zoom-in">🔍 Zoom In</option>
+            <option value="zoom-in-bounce">🏀 Zoom In (Bounce)</option>
+            <option value="flip-x">🔄 Flip In (Horizontal X)</option>
+            <option value="flip-y">🔃 Flip In (Vertical Y)</option>
+            <option value="blur-in">🌫️ Blur Focus In</option>
+            <option value="rotate-in">💫 Rotate Spin In</option>
+            <option value="exp-h">↔️ Expand Horizontal</option>
+            <option value="exp-v">↕️ Expand Vertical</option>
+            <option value="wipe-right">👉 Wipe Right</option>
+          </select>
+        </div>
+        <div class="h-10 w-px bg-slate-800"></div>
+        <!-- EXIT ANIMATION -->
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider"
+            >Exit Animation</span
+          >
+          <select
+            [ngModel]="state.exitAnimation()"
+            (ngModelChange)="state.exitAnimation.set($event)"
+            class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none cursor-pointer"
+          >
+            <option value="none">None</option>
+            <option value="fade-out">✨ Fade Out</option>
+            <option value="slide-bottom">⬇️ Slide Out (Bottom)</option>
+            <option value="slide-top">⬆️ Slide Out (Top)</option>
+            <option value="slide-left">⬅️ Slide Out (Left)</option>
+            <option value="slide-right">➡️ Slide Out (Right)</option>
+            <option value="zoom-out">🔍 Zoom Out</option>
+            <option value="flip-x-out">🔄 Flip Out (Horizontal X)</option>
+            <option value="flip-y-out">🔃 Flip Out (Vertical Y)</option>
+            <option value="blur-out">🌫️ Blur Dissolve Out</option>
+            <option value="rotate-out">💫 Rotate Spin Out</option>
+            <option value="con-h">↔️ Contract Horizontal</option>
+            <option value="con-v">↕️ Contract Vertical</option>
+            <option value="wipe-left">👈 Wipe Left</option>
+          </select>
+        </div>
+        <div class="h-10 w-px bg-slate-800"></div>
+        <!-- ANIMATION DURATION (MS) -->
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider"
+            >Transition Speed (ms)</span
+          >
+          <div
+            class="flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-0.5"
+          >
+            <input
+              type="number"
+              min="50"
+              max="10000"
+              step="50"
+              [ngModel]="state.animationDurationMs()"
+              (ngModelChange)="updateAnimDuration($event)"
+              title="Animation duration in milliseconds"
+              class="w-14 bg-transparent text-center text-xs font-bold text-sky-400 focus:outline-none"
+            />
+            <span class="text-[10px] text-slate-400 font-mono">ms</span>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ADD CUSTOM FONTS MODAL -->
+@if (showFontModal()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div
+      class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl p-6 flex flex-col gap-5 text-slate-100"
+    >
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🔤</span>
+          <h3 class="text-base font-bold">Add Custom Fonts</h3>
+        </div>
+        <button (click)="showFontModal.set(false)" class="text-slate-400 hover:text-white text-lg">
+          ✕
+        </button>
+      </div>
+      <!-- TAB NAVIGATION IN MODAL -->
+      <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <button
+          (click)="fontModalTab.set('google')"
+          [ngClass]="
+            fontModalTab() === 'google'
+              ? 'bg-sky-600 text-white font-bold'
+              : 'text-slate-400 hover:text-white'
+          "
+          class="flex-1 py-1.5 text-xs rounded-lg transition-colors"
+        >
+          Google Fonts
+        </button>
+        <button
+          (click)="fontModalTab.set('local')"
+          [ngClass]="
+            fontModalTab() === 'local'
+              ? 'bg-sky-600 text-white font-bold'
+              : 'text-slate-400 hover:text-white'
+          "
+          class="flex-1 py-1.5 text-xs rounded-lg transition-colors"
+        >
+          Upload Local Font File (.ttf/.otf/.woff2)
+        </button>
+      </div>
+      <!-- GOOGLE FONTS SECTION -->
+      @if (fontModalTab() === 'google') {
+        <div class="flex flex-col gap-3">
+          <label class="text-xs text-slate-400"
+            >Google Font Family Name (e.g. <i>Cinzel</i>, <i>Bebas Neue</i>, <i>Caveat</i>,
+            <i>Orbitron</i>):</label
+          >
+          <div class="flex gap-2">
+            <input
+              type="text"
+              [(ngModel)]="googleFontNameInput"
+              placeholder="Enter exact Google Font name..."
+              class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+            />
+            <button
+              (click)="addGoogleFont()"
+              [disabled]="!googleFontNameInput.trim()"
+              class="px-4 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 rounded-lg text-xs font-bold text-white transition-colors"
+            >
+              Add & Apply
+            </button>
+          </div>
+          <!-- Quick Popular Google Font Suggestions -->
+          <div class="flex flex-col gap-1.5 mt-2">
+            <span class="text-[11px] text-slate-500 font-semibold uppercase"
+              >Popular Suggestions:</span
+            >
+            <div class="flex flex-wrap gap-1.5">
+              @for (suggestion of popularGoogleFonts; track suggestion) {
+                <button
+                  (click)="quickAddGoogleFont(suggestion)"
+                  class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-md text-[11px] text-slate-300"
+                >
+                  + {{ suggestion }}
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      }
+      <!-- LOCAL FONT FILE UPLOAD SECTION -->
+      @if (fontModalTab() === 'local') {
+        <div class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-slate-400">Custom Font Display Name (optional):</label>
+            <input
+              type="text"
+              [(ngModel)]="localFontNameInput"
+              placeholder="e.g. MyCustomChurchFont"
+              class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none"
+            />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-xs text-slate-400"
+              >Select Font File (.ttf, .otf, .woff, .woff2):</label
+            >
+            <input
+              #fontFileInput
+              type="file"
+              accept=".ttf,.otf,.woff,.woff2"
+              (change)="onLocalFontFileSelected($event)"
+              class="bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 cursor-pointer"
+            />
+          </div>
+        </div>
+      }
+      <!-- INSTALLED CUSTOM FONTS LIST -->
+      @if (state.customFonts().length > 0) {
+        <div class="flex flex-col gap-2 pt-3 border-t border-slate-800">
+          <span class="text-[11px] font-bold text-slate-400 uppercase"
+            >Installed Custom Fonts:</span
+          >
+          <div class="max-h-32 overflow-y-auto flex flex-col gap-1.5 p-1">
+            @for (f of state.customFonts(); track f) {
+              <div
+                class="flex items-center justify-between bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs"
+              >
+                <span class="font-medium text-slate-200" [style.font-family]="f.name"
+                  >{{ f.name }}
+                  <span class="text-[10px] text-slate-500">({{ f.source }})</span></span
+                >
+                <div class="flex items-center gap-2">
+                  <button
+                    (click)="updateFontFamily(f.name)"
+                    class="text-sky-400 hover:underline text-[11px]"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    (click)="state.removeCustomFont(f.id)"
+                    class="text-rose-400 hover:text-rose-300 text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- TEXT HIGHLIGHT FLOATING & DRAGGABLE PALETTE (NON-BLOCKING, NO BLUR) -->
+@if (showHighlightModal()) {
+  <div
+    [style.left.px]="highlightModalPos().x"
+    [style.top.px]="highlightModalPos().y"
+    class="fixed z-50 w-80 sm:w-96 bg-slate-900/95 border-2 border-slate-700 rounded-2xl shadow-2xl p-4 flex flex-col gap-4 text-slate-100 select-none"
+  >
+    <!-- Draggable Window Header -->
+    <div
+      (mousedown)="startDragHighlightModal($event)"
+      class="flex items-center justify-between border-b border-slate-800 pb-2 cursor-grab active:cursor-grabbing"
+    >
+      <div class="flex items-center gap-2">
+        <span class="text-lg">🖍️</span>
+        <h3 class="text-sm font-bold tracking-wide">Text Highlight Options</h3>
+      </div>
+      <div class="flex items-center gap-1">
+        <span class="text-[10px] text-slate-500 font-mono">⠿ drag</span>
+        <button
+          (click)="showHighlightModal.set(false)"
+          class="text-slate-400 hover:text-white text-base ml-2"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+    <!-- Mode Selector Tabs (Solid, Gradient, Picture, Video) -->
+    <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto">
+      <button
+        (click)="setHighlightType('solid')"
+        [ngClass]="
+          highlightTab() === 'solid'
+            ? 'bg-sky-600 text-white font-bold'
+            : 'text-slate-400 hover:text-white'
+        "
+        class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5"
+      >
+        Solid
+      </button>
+      <button
+        (click)="setHighlightType('gradient')"
+        [ngClass]="
+          highlightTab() === 'gradient'
+            ? 'bg-sky-600 text-white font-bold'
+            : 'text-slate-400 hover:text-white'
+        "
+        class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5"
+      >
+        Gradient
+      </button>
+      <button
+        (click)="setHighlightType('picture')"
+        [ngClass]="
+          highlightTab() === 'picture'
+            ? 'bg-sky-600 text-white font-bold'
+            : 'text-slate-400 hover:text-white'
+        "
+        class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5"
+      >
+        Picture
+      </button>
+      <button
+        (click)="setHighlightType('video')"
+        [ngClass]="
+          highlightTab() === 'video'
+            ? 'bg-sky-600 text-white font-bold'
+            : 'text-slate-400 hover:text-white'
+        "
+        class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5"
+      >
+        Video
+      </button>
+    </div>
+    <!-- TAB 1: SOLID COLOR HIGHLIGHT -->
+    @if (highlightTab() === 'solid') {
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center gap-3">
+          <label class="text-xs text-slate-400">Choose Color:</label>
+          <input
+            type="color"
+            [value]="state.typography().highlight?.color || '#FACC15'"
+            (input)="updateHighlightSolid($any($event.target).value)"
+            class="w-7 h-7 rounded-lg cursor-pointer bg-transparent border-0"
+          />
+        </div>
+        <!-- Quick Palette -->
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase">Popular Swatches:</span>
+          <div class="flex flex-wrap gap-1.5">
+            @for (
+              col of [
+                '#FACC15',
+                '#F87171',
+                '#4ADE80',
+                '#38BDF8',
+                '#C084FC',
+                '#FB923C',
+                '#FFFFFF',
+                '#000000',
+              ];
+              track col
+            ) {
+              <button
+                (click)="updateHighlightSolid(col)"
+                [style.background-color]="col"
+                class="w-5 h-5 rounded-full border border-slate-700 hover:scale-110 transition-transform"
+              ></button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+    <!-- TAB 2: GRADIENT HIGHLIGHT -->
+    @if (highlightTab() === 'gradient') {
+      <div class="flex flex-col gap-2">
+        <label class="text-xs text-slate-400">Select Preset Gradient:</label>
+        <div class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto p-0.5">
+          @for (grad of popularGradients; track grad) {
+            <button
+              (click)="updateHighlightGradient(grad)"
+              [style.background-image]="grad"
+              [ngClass]="
+                state.typography().highlight?.gradient === grad
+                  ? 'ring-2 ring-sky-400 scale-[1.02]'
+                  : 'opacity-80 hover:opacity-100'
+              "
+              class="h-8 rounded-lg shadow border border-slate-700 transition-all flex items-center justify-center font-bold text-[11px] text-white drop-shadow"
+            >
+              Preset
+            </button>
+          }
+        </div>
+      </div>
+    }
+    <!-- TAB 3: PICTURE HIGHLIGHT -->
+    @if (highlightTab() === 'picture') {
+      <div class="flex flex-col gap-2">
+        <label class="text-xs text-slate-400">Upload Texture / Picture:</label>
+        <input
+          type="file"
+          accept="image/*"
+          (change)="onHighlightMediaSelected($event, 'picture')"
+          class="bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-300 file:mr-2 file:py-0.5 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 cursor-pointer"
+        />
+        @if (
+          state.typography().highlight?.type === 'picture' && state.typography().highlight?.mediaUrl
+        ) {
+          <div
+            class="flex items-center gap-2 p-1.5 bg-slate-950 rounded-lg border border-slate-800"
+          >
+            <img
+              [src]="state.typography().highlight?.mediaUrl"
+              class="w-12 h-8 object-cover rounded"
+              alt="Selected highlight"
+            />
+            <span class="text-[11px] text-slate-300 truncate">{{
+              state.typography().highlight?.mediaName || 'Custom Picture'
+            }}</span>
+          </div>
+        }
+      </div>
+    }
+    <!-- TAB 4: VIDEO HIGHLIGHT -->
+    @if (highlightTab() === 'video') {
+      <div class="flex flex-col gap-2">
+        <label class="text-xs text-slate-400">Upload Looping Video:</label>
+        <input
+          type="file"
+          accept="video/*"
+          (change)="onHighlightMediaSelected($event, 'video')"
+          class="bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-300 file:mr-2 file:py-0.5 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 cursor-pointer"
+        />
+        @if (
+          state.typography().highlight?.type === 'video' && state.typography().highlight?.mediaUrl
+        ) {
+          <div
+            class="flex items-center gap-2 p-1.5 bg-slate-950 rounded-lg border border-slate-800"
+          >
+            <video
+              [src]="state.typography().highlight?.mediaUrl"
+              class="w-12 h-8 object-cover rounded"
+              autoplay
+              loop
+              muted
+            ></video>
+            <span class="text-[11px] text-slate-300 truncate">{{
+              state.typography().highlight?.mediaName || 'Custom Looping Video'
+            }}</span>
+          </div>
+        }
+      </div>
+    }
+    <!-- PADDING & CORNER RADIUS ADJUSTMENTS -->
+    @if (highlightTab() !== 'none') {
+      <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-[10px] text-slate-400">
+            <span>Padding</span>
+            <span>{{ state.typography().highlight?.padding ?? 8 }}px</span>
+          </div>
+          <input
+            type="range"
+            min="2"
+            max="32"
+            [ngModel]="state.typography().highlight?.padding ?? 8"
+            (ngModelChange)="updateHighlightPadding($event)"
+            class="accent-sky-500 h-1.5"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-[10px] text-slate-400">
+            <span>Radius</span>
+            <span>{{ state.typography().highlight?.borderRadius ?? 8 }}px</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="32"
+            [ngModel]="state.typography().highlight?.borderRadius ?? 8"
+            (ngModelChange)="updateHighlightRadius($event)"
+            class="accent-sky-500 h-1.5"
+          />
+        </div>
+      </div>
+    }
+    <!-- Bottom Actions -->
+    <div class="flex items-center justify-between pt-1 border-t border-slate-800/80">
+      <button
+        (click)="clearHighlight(); showHighlightModal.set(false)"
+        class="px-2.5 py-1 text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 rounded-lg text-xs font-semibold"
+      >
+        Clear
+      </button>
+      <button
+        (click)="showHighlightModal.set(false)"
+        class="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition-colors"
+      >
+        Done
+      </button>
+    </div>
+  </div>
+}
+
+<!-- PRESENTATION BACKGROUND FLOATING & DRAGGABLE PALETTE (NON-BLOCKING, NO BLUR) -->
+@if (showBgModal()) {
+  <div
+    [style.left.px]="bgModalPos().x"
+    [style.top.px]="bgModalPos().y"
+    class="fixed z-50 w-80 sm:w-96 bg-slate-900/95 border-2 border-slate-700 rounded-2xl shadow-2xl p-4 flex flex-col gap-4 text-slate-100 select-none"
+  >
+    <!-- Draggable Window Header -->
+    <div
+      (mousedown)="startDragBgModal($event)"
+      class="flex items-center justify-between border-b border-slate-800 pb-2 cursor-grab active:cursor-grabbing"
+    >
+      <div class="flex items-center gap-2">
+        <span class="text-lg">🖼️</span>
+        <h3 class="text-sm font-bold tracking-wide">Background Options</h3>
+      </div>
+      <div class="flex items-center gap-1">
+        <span class="text-[10px] text-slate-500 font-mono">⠿ drag</span>
+        <button
+          (click)="showBgModal.set(false)"
+          class="text-slate-400 hover:text-white text-base ml-2"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+    <!-- Mode Selector Tabs (Solid, Gradient, Picture, Video) -->
+    <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto">
+      <button
+        (click)="setBgType('solid')"
+        [ngClass]="
+          bgTab() === 'solid'
+            ? 'bg-sky-600 text-white font-bold'
+            : 'text-slate-400 hover:text-white'
+        "
+        class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5"
+      >
+        Solid
+      </button>
+      <button
+        (click)="setBgType('gradient')"
+        [ngClass]="
+          bgTab() === 'gradient'
+            ? 'bg-sky-600 text-white font-bold'
+            : 'text-slate-400 hover:text-white'
+        "
+        class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5"
+      >
+        Gradient
+      </button>
+      <button
+        (click)="setBgType('picture')"
+        [ngClass]="
+          bgTab() === 'picture'
+            ? 'bg-sky-600 text-white font-bold'
+            : 'text-slate-400 hover:text-white'
+        "
+        class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5"
+      >
+        Picture
+      </button>
+      <button
+        (click)="setBgType('video')"
+        [ngClass]="
+          bgTab() === 'video'
+            ? 'bg-sky-600 text-white font-bold'
+            : 'text-slate-400 hover:text-white'
+        "
+        class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5"
+      >
+        Video
+      </button>
+    </div>
+    <!-- TAB 1: SOLID COLOR BACKGROUND -->
+    @if (bgTab() === 'solid') {
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center gap-3">
+          <label class="text-xs text-slate-400">Choose Color:</label>
+          <input
+            type="color"
+            [value]="state.background().color || '#000000'"
+            (input)="updateBgSolid($any($event.target).value)"
+            class="w-7 h-7 rounded-lg cursor-pointer bg-transparent border-0"
+          />
+        </div>
+        <!-- Quick Palette -->
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-slate-500 font-semibold uppercase">Popular Swatches:</span>
+          <div class="flex flex-wrap gap-1.5">
+            @for (
+              col of [
+                '#000000',
+                '#0F172A',
+                '#1E1B4B',
+                '#1E3A8A',
+                '#064E3B',
+                '#4C1D95',
+                '#831843',
+                '#18181B',
+              ];
+              track col
+            ) {
+              <button
+                (click)="updateBgSolid(col)"
+                [style.background-color]="col"
+                class="w-5 h-5 rounded-full border border-slate-700 hover:scale-110 transition-transform"
+              ></button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+    <!-- TAB 2: GRADIENT BACKGROUND -->
+    @if (bgTab() === 'gradient') {
+      <div class="flex flex-col gap-2">
+        <label class="text-xs text-slate-400">Select Preset Gradient:</label>
+        <div class="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto p-0.5">
+          @for (grad of popularGradients; track grad) {
+            <button
+              (click)="updateBgGradient(grad)"
+              [style.background-image]="grad"
+              [ngClass]="
+                state.background().gradient === grad
+                  ? 'ring-2 ring-sky-400 scale-[1.02]'
+                  : 'opacity-80 hover:opacity-100'
+              "
+              class="h-8 rounded-lg shadow border border-slate-700 transition-all flex items-center justify-center font-bold text-[11px] text-white drop-shadow"
+            >
+              Preset
+            </button>
+          }
+        </div>
+      </div>
+    }
+    <!-- TAB 3: PICTURE BACKGROUND -->
+    @if (bgTab() === 'picture') {
+      <div class="flex flex-col gap-2">
+        <label class="text-xs text-slate-400">Upload Background Picture:</label>
+        <input
+          type="file"
+          accept="image/*"
+          (change)="onBgMediaSelected($event, 'picture')"
+          class="bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-300 file:mr-2 file:py-0.5 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 cursor-pointer"
+        />
+        @if (state.background().type === 'picture' && state.background().mediaUrl) {
+          <div
+            class="flex items-center gap-2 p-1.5 bg-slate-950 rounded-lg border border-slate-800"
+          >
+            <img
+              [src]="state.background().mediaUrl"
+              class="w-12 h-8 object-cover rounded"
+              alt="Selected background"
+            />
+            <span class="text-[11px] text-slate-300 truncate">{{
+              state.background().mediaName || 'Custom Picture'
+            }}</span>
+          </div>
+        }
+      </div>
+    }
+    <!-- TAB 4: VIDEO BACKGROUND -->
+    @if (bgTab() === 'video') {
+      <div class="flex flex-col gap-2">
+        <label class="text-xs text-slate-400">Upload Looping Video Background:</label>
+        <input
+          type="file"
+          accept="video/*"
+          (change)="onBgMediaSelected($event, 'video')"
+          class="bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-300 file:mr-2 file:py-0.5 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 cursor-pointer"
+        />
+        @if (state.background().type === 'video' && state.background().mediaUrl) {
+          <div
+            class="flex items-center gap-2 p-1.5 bg-slate-950 rounded-lg border border-slate-800"
+          >
+            <video
+              [src]="state.background().mediaUrl"
+              class="w-12 h-8 object-cover rounded"
+              autoplay
+              loop
+              muted
+            ></video>
+            <span class="text-[11px] text-slate-300 truncate">{{
+              state.background().mediaName || 'Custom Looping Video'
+            }}</span>
+          </div>
+        }
+      </div>
+    }
+    <!-- Bottom Actions -->
+    <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+      <button
+        (click)="clearBg(); showBgModal.set(false)"
+        class="px-2.5 py-1 text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 rounded-lg text-xs font-semibold"
+      >
+        Reset Default
+      </button>
+      <button
+        (click)="showBgModal.set(false)"
+        class="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition-colors"
+      >
+        Done
+      </button>
+    </div>
+  </div>
+}
