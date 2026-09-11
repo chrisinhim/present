@@ -16,7 +16,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
         class="h-7 px-2 flex items-center gap-1 hover:bg-slate-100 text-xs text-slate-700 transition-colors"
       >
         <span class="font-serif font-bold">A</span>
-        <span>Text Fill</span>
+        <span>Fill</span>
         <span class="text-[9px] text-slate-400">▾</span>
       </button>
 

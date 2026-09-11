@@ -1,4 +1,4 @@
-import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PresentationStateService } from '../../../services/presentation-state.service';
@@ -10,260 +10,59 @@ import {
 } from '../../../models/bible-data';
 import { BibleBook } from '../../../models/presentation.models';
 import { HistorySectionComponent } from '../../history-section/history-section.component';
+import { VerseToolbarComponent } from './verse-toolbar.component';
+import { VerseReferencePickerComponent } from './verse-reference-picker.component';
+import { SelectedVersesListComponent } from './selected-verses-list.component';
 
 @Component({
   selector: 'app-verse-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, HistorySectionComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    HistorySectionComponent,
+    VerseToolbarComponent,
+    VerseReferencePickerComponent,
+    SelectedVersesListComponent,
+  ],
   template: `
     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
       <!-- LEFT: VERSE SELECTION & CONTROLS -->
       <div class="md:col-span-7 flex flex-col gap-4 min-w-0">
-        <!-- MODE TOGGLE & BIBLE TRANSLATION DROPDOWN -->
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
-        <div class="flex items-center gap-3">
-          <!-- Mode Toggle -->
-          <div class="flex items-center gap-1.5">
-            <!-- <span class="text-xs font-semibold text-slate-400">Mode:</span> -->
-            <div class="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700">
-              <button
-                (click)="verseMode.set('QUOTE')"
-                [ngClass]="
-                  verseMode() === 'QUOTE'
-                    ? 'bg-sky-600 text-white font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
-                "
-                class="px-3 py-1 text-xs rounded-md transition-colors"
-              >
-                QUOTE
-              </button>
-              <button
-                (click)="verseMode.set('REFER')"
-                [ngClass]="
-                  verseMode() === 'REFER'
-                    ? 'bg-sky-600 text-white font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
-                "
-                class="px-3 py-1 text-xs rounded-md transition-colors"
-              >
-                REFER
-              </button>
-            </div>
-          </div>
+        <app-verse-toolbar
+          [mode]="verseMode()"
+          [translation]="selectedTranslation()"
+          [translations]="bibleTranslations"
+          [canPresent]="!!selectedBook() && !!selectedChapter()"
+          (modeChange)="verseMode.set($event)"
+          (translationChange)="onTranslationChange($event)"
+          (present)="presentVerse()"
+        ></app-verse-toolbar>
 
-          <div class="h-6 w-px bg-slate-800"></div>
+      <app-verse-reference-picker
+        [books]="allBooks"
+        [categoryClasses]="categoryClasses"
+        [selectedBook]="selectedBook()"
+        [chapters]="chapterList()"
+        [selectedChapter]="selectedChapter()"
+        [verses]="verseList()"
+        [selectedVerses]="selectedVerses()"
+        (bookSelected)="selectBook($event)"
+        (chapterSelected)="selectChapter($event)"
+        (verseMouseDown)="onVerseMouseDown($event.verse, $event.event)"
+        (verseMouseEnter)="onVerseMouseEnter($event.verse, $event.event)"
+        (verseMouseUp)="onVerseMouseUp()"
+        (versesCleared)="clearVerseSelection()"
+      ></app-verse-reference-picker>
 
-          <!-- Bible Translation Dropdown -->
-          <div class="flex items-center gap-1.5">
-            <!-- <span class="text-xs font-semibold text-slate-400">Translation:</span> -->
-            <select
-              [ngModel]="selectedTranslation()"
-              (ngModelChange)="onTranslationChange($event)"
-              class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold text-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-            >
-              @for (t of bibleTranslations; track t) {
-                <option [value]="t.id">{{ t.abbrev }} - {{ t.name }}</option>
-              }
-            </select>
-          </div>
-        </div>
-
-        <!-- <div
-          class="text-xs font-semibold text-sky-400 bg-sky-950/40 px-3 py-1 rounded-full border border-sky-800/50"
-        >
-          Selected: {{ selectedReferenceString() || 'None' }}@if (verseMode() === 'QUOTE') { ({{ selectedTranslation() }})}
-        </div> -->
-        <!-- ACTION BUTTONS -->
-        <div class="flex items-center justify-end gap-2 ml-auto">
-          <button
-            (click)="presentVerse()"
-            [disabled]="!selectedBook() || !selectedChapter()"
-            class="px-5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white font-bold text-sm transition-colors shadow-lg cursor-pointer"
-          >
-            Present Verse
-          </button>
-        </div>
-      </div>
-
-      <!-- 66 BOOKS SINGLE LINE HORIZONTALLY SCROLLABLE -->
-      <div class="flex flex-col gap-1.5">
-        <div
-          class="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400"
-        >
-          <span>Select Book (66 Books &bull; Scroll Horizontally)</span>
-        </div>
-        <div
-          #bookScrollContainer
-          (wheel)="onBookContainerWheel($event)"
-          class="flex items-center gap-1 overflow-x-auto p-1.5 bg-slate-950/60 rounded-xl border border-slate-800 scrollbar-thin scrollbar-thumb-slate-700 select-none whitespace-nowrap"
-        >
-          @for (book of allBooks; track book) {
-            <button
-              (click)="selectBook(book)"
-              [title]="book.name + ' (' + book.category + ' - ' + book.chapters + ' ch)'"
-              [ngClass]="[
-                selectedBook()?.id === book.id
-                  ? 'ring-2 ring-sky-400 bg-sky-600 text-white font-bold scale-105 z-10 shadow-md'
-                  : 'opacity-85 hover:opacity-100 hover:scale-105',
-                categoryClasses[book.category],
-              ]"
-              class="px-2 py-0.5 rounded text-[11px] font-medium border text-center transition-all shrink-0 cursor-pointer"
-            >
-              {{ book.abbrev }}
-            </button>
-          }
-        </div>
-      </div>
-
-      <!-- CHAPTERS SINGLE LINE HORIZONTALLY SCROLLABLE -->
-      @if (selectedBook()) {
-        <div class="flex flex-col gap-1.5">
-          <div
-            class="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400"
-          >
-            <span
-              >{{ selectedBook()?.name }} Chapters ({{ selectedBook()?.chapters }} &bull; Scroll
-              Horizontally)</span
-            >
-          </div>
-          <div
-            #chapterScrollContainer
-            (wheel)="onChapterContainerWheel($event)"
-            class="flex items-center gap-1 overflow-x-auto p-1.5 bg-slate-950/60 rounded-xl border border-slate-800 scrollbar-thin scrollbar-thumb-slate-700 select-none whitespace-nowrap"
-          >
-            @for (ch of chapterList(); track ch) {
-              <button
-                (click)="selectChapter(ch)"
-                [title]="selectedBook()?.name + ' Chapter ' + ch"
-                [ngClass]="
-                  selectedChapter() === ch
-                    ? 'bg-sky-600 text-white font-bold ring-2 ring-sky-400 scale-105 shadow-md'
-                    : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700 hover:text-white'
-                "
-                class="min-w-[28px] h-6 px-1.5 rounded text-[11px] font-medium border border-slate-700/60 flex items-center justify-center transition-all shrink-0 cursor-pointer"
-              >
-                {{ ch }}
-              </button>
-            }
-          </div>
-        </div>
-      }
-
-      <!-- VERSES SINGLE LINE HORIZONTALLY SCROLLABLE -->
-      @if (selectedChapter()) {
-        <div class="flex flex-col gap-1.5">
-          <div
-            class="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400"
-          >
-            <span>
-              Verses in Chapter {{ selectedChapter() }}
-              <span class="text-slate-500 font-normal ml-1"
-                >(Drag, Shift+Click for range, Ctrl+Click for multi)</span
-              >
-            </span>
-            <button
-              (click)="clearVerseSelection()"
-              class="text-[10px] text-slate-400 hover:text-rose-400 font-semibold cursor-pointer"
-            >
-              ✕ Clear Verses
-            </button>
-          </div>
-          <div
-            #verseScrollContainer
-            (wheel)="onVerseContainerWheel($event)"
-            (mouseleave)="onVerseMouseUp()"
-            class="flex items-center gap-1 overflow-x-auto p-1.5 bg-slate-950/60 rounded-xl border border-slate-800 scrollbar-thin scrollbar-thumb-slate-700 select-none whitespace-nowrap"
-          >
-            @for (v of verseList(); track v) {
-              <button
-                (mousedown)="onVerseMouseDown(v, $event)"
-                (mouseenter)="onVerseMouseEnter(v, $event)"
-                (mouseup)="onVerseMouseUp()"
-                [title]="selectedBook()?.name + ' ' + selectedChapter() + ':' + v"
-                [ngClass]="
-                  isVerseSelected(v)
-                    ? 'bg-emerald-600 text-white font-bold ring-2 ring-emerald-400 scale-105 shadow-md'
-                    : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700 hover:text-white'
-                "
-                class="min-w-[28px] h-6 px-1.5 rounded text-[11px] font-medium border border-slate-700/60 flex items-center justify-center transition-all shrink-0 cursor-pointer user-select-none"
-              >
-                {{ v }}
-              </button>
-            }
-          </div>
-        </div>
-      }
-
-      <!-- SCRIPTURE QUOTE FETCH & PRESENT (VERTICAL LIST OF VERSES) -->
       @if (verseMode() === 'QUOTE') {
-        <div class="flex flex-col gap-2 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold text-slate-300"
-                >Scripture Verses List ({{ selectedVerseItems().length }} selected)</span
-              >
-              <span class="text-[10px] text-slate-500"
-                >Click any verse below to present it individually</span
-              >
-            </div>
-            @if (selectedVerseItems().length > 1) {
-              <button
-                (click)="presentAllSelectedVerses()"
-                class="px-3 py-1 bg-sky-600/30 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-500/40 text-xs font-bold rounded-lg transition-colors"
-              >
-                ▶ Present All (Combined)
-              </button>
-            }
-          </div>
-          <!-- Vertical List of Individual Selected Verses -->
-          @if (selectedVerseItems().length > 0) {
-            <div class="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1">
-              @for (item of selectedVerseItems(); track item) {
-                <div
-                  (click)="presentSingleVerse(item)"
-                  [ngClass]="
-                    state.activeContent().verseRef === item.ref && state.isPresented()
-                      ? 'border-sky-500 bg-sky-950/40 ring-1 ring-sky-400'
-                      : 'border-slate-800 bg-slate-900 hover:border-slate-700'
-                  "
-                  class="p-3 rounded-xl border cursor-pointer transition-all flex flex-col gap-1.5 group"
-                >
-                  <div class="flex items-center justify-between">
-                    <span
-                      class="text-xs font-bold text-sky-400 font-mono flex items-center gap-1.5"
-                    >
-                      <span
-                        class="w-2 h-2 rounded-full"
-                        [ngClass]="
-                          state.activeContent().verseRef === item.ref && state.isPresented()
-                            ? 'bg-emerald-400 animate-pulse'
-                            : 'bg-slate-600'
-                        "
-                      ></span>
-                      {{ item.ref }}
-                    </span>
-                    <button
-                      (click)="presentSingleVerse(item); $event.stopPropagation()"
-                      class="px-2.5 py-0.5 rounded bg-slate-800 group-hover:bg-sky-600 text-slate-300 group-hover:text-white text-[11px] font-semibold transition-colors flex items-center gap-1"
-                    >
-                      <span>▶ Present</span>
-                    </button>
-                  </div>
-                  <p class="text-slate-200 text-sm leading-relaxed">{{ item.text }}</p>
-                </div>
-              }
-            </div>
-          }
-          <!-- Empty selection placeholder -->
-          @if (selectedVerseItems().length === 0) {
-            <div
-              class="p-6 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl"
-            >
-              Select one or more verses above (click, drag, or Shift/Ctrl click) to preview and
-              present them here.
-            </div>
-          }
-        </div>
+        <app-selected-verses-list
+          [items]="selectedVerseItems()"
+          [activeVerseRef]="state.activeContent().verseRef"
+          [isPresented]="state.isPresented()"
+          (verseSelected)="presentSingleVerse($event)"
+          (presentAll)="presentAllSelectedVerses()"
+        ></app-selected-verses-list>
       }
 
       </div>
@@ -277,13 +76,6 @@ import { HistorySectionComponent } from '../../history-section/history-section.c
 })
 export class VersePanelComponent {
   state = inject(PresentationStateService);
-
-  readonly bookScrollContainerRef =
-    viewChild.required<ElementRef<HTMLDivElement>>('bookScrollContainer');
-  readonly chapterScrollContainerRef =
-    viewChild.required<ElementRef<HTMLDivElement>>('chapterScrollContainer');
-  readonly verseScrollContainerRef =
-    viewChild.required<ElementRef<HTMLDivElement>>('verseScrollContainer');
 
   allBooks = BIBLE_BOOKS;
   categoryClasses = CATEGORY_COLORS;
@@ -317,30 +109,6 @@ export class VersePanelComponent {
   private dragAnchorVerse: number | null = null;
   private dragInitialSelection: number[] = [];
   private lastClickedVerse: number | null = null;
-
-  onBookContainerWheel(event: WheelEvent) {
-    const bookScrollContainerRef = this.bookScrollContainerRef();
-    if (bookScrollContainerRef?.nativeElement) {
-      event.preventDefault();
-      bookScrollContainerRef.nativeElement.scrollLeft += event.deltaY || event.deltaX;
-    }
-  }
-
-  onChapterContainerWheel(event: WheelEvent) {
-    const chapterScrollContainerRef = this.chapterScrollContainerRef();
-    if (chapterScrollContainerRef?.nativeElement) {
-      event.preventDefault();
-      chapterScrollContainerRef.nativeElement.scrollLeft += event.deltaY || event.deltaX;
-    }
-  }
-
-  onVerseContainerWheel(event: WheelEvent) {
-    const verseScrollContainerRef = this.verseScrollContainerRef();
-    if (verseScrollContainerRef?.nativeElement) {
-      event.preventDefault();
-      verseScrollContainerRef.nativeElement.scrollLeft += event.deltaY || event.deltaX;
-    }
-  }
 
   chapterList = computed(() => {
     const b = this.selectedBook();

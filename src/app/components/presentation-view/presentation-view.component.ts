@@ -81,6 +81,9 @@ export class PresentationViewComponent implements OnInit, OnDestroy {
   private fontManager = inject(FontManagerService);
   private broadcastChannel: BroadcastChannel | null = null;
   private exitTimer: any = null;
+  private backgroundObjectUrl = '';
+  private highlightObjectUrl = '';
+  private activeContentObjectUrl = '';
 
   isPresented = signal<boolean>(false);
   isExiting = signal<boolean>(false);
@@ -155,11 +158,23 @@ export class PresentationViewComponent implements OnInit, OnDestroy {
       this.broadcastChannel.onmessage = (event) => {
         if (event.data?.type === 'SYNC_STATE' && event.data.state) {
           const s = event.data.state;
+          const media = event.data.media || {};
           if (s.typography) {
-            this.typography.set(s.typography);
+            const highlightUrl = this.replaceObjectUrl('highlight', media.highlightBlob);
+            this.typography.set({
+              ...s.typography,
+              highlight: highlightUrl
+                ? { ...s.typography.highlight, mediaUrl: highlightUrl }
+                : s.typography.highlight,
+            });
             this.ensureFont(s.typography.fontFamily, s.customFonts);
           }
-          if (s.background) this.background.set(s.background);
+          if (s.background) {
+            const backgroundUrl = this.replaceObjectUrl('background', media.backgroundBlob);
+            this.background.set(
+              backgroundUrl ? { ...s.background, mediaUrl: backgroundUrl } : s.background,
+            );
+          }
           if (s.container) this.container.set(s.container);
           if (s.entryAnimation) this.entryAnimation.set(s.entryAnimation);
           if (s.exitAnimation) this.exitAnimation.set(s.exitAnimation);
@@ -184,7 +199,12 @@ export class PresentationViewComponent implements OnInit, OnDestroy {
           }
 
           if (typeof s.isPaused === 'boolean') this.isPaused.set(s.isPaused);
-          if (s.activeContent) this.activeContent.set(s.activeContent);
+          if (s.activeContent) {
+            const activeContentUrl = this.replaceObjectUrl('activeContent', media.activeContentBlob);
+            this.activeContent.set(
+              activeContentUrl ? { ...s.activeContent, mediaUrl: activeContentUrl } : s.activeContent,
+            );
+          }
           if (s.customFonts) this.syncCustomFonts(s.customFonts);
         } else if (event.data?.type === 'SYNC_POSITION' && event.data.position) {
           const p = event.data.position;
@@ -207,9 +227,27 @@ export class PresentationViewComponent implements OnInit, OnDestroy {
     }
   }
 
+  private replaceObjectUrl(kind: 'background' | 'highlight' | 'activeContent', blob?: Blob): string {
+    const currentUrl =
+      kind === 'background'
+        ? this.backgroundObjectUrl
+        : kind === 'highlight'
+          ? this.highlightObjectUrl
+          : this.activeContentObjectUrl;
+    if (currentUrl) URL.revokeObjectURL(currentUrl);
+    const nextUrl = blob ? URL.createObjectURL(blob) : '';
+    if (kind === 'background') this.backgroundObjectUrl = nextUrl;
+    else if (kind === 'highlight') this.highlightObjectUrl = nextUrl;
+    else this.activeContentObjectUrl = nextUrl;
+    return nextUrl;
+  }
+
   ngOnDestroy() {
     if (this.liveTimerInterval) clearInterval(this.liveTimerInterval);
     if (this.exitTimer) clearTimeout(this.exitTimer);
+    this.replaceObjectUrl('background');
+    this.replaceObjectUrl('highlight');
+    this.replaceObjectUrl('activeContent');
     if (this.broadcastChannel) {
       this.broadcastChannel.close();
       this.broadcastChannel = null;

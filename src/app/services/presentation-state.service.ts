@@ -677,11 +677,30 @@ export class PresentationStateService {
 
   broadcastSync() {
     if (!this.broadcastChannel) return;
+    const mediaForUrl = (url: string, name?: string) =>
+      this.mediaFiles().find((item) => item.dataUrl === url || (!!name && item.name === name));
+    const backgroundMedia = mediaForUrl(this.background().mediaUrl, this.background().mediaName);
+    const highlightMedia = mediaForUrl(
+      this.typography().highlight.mediaUrl,
+      this.typography().highlight.mediaName,
+    );
+    const activeContentMedia = mediaForUrl(this.activeContent().mediaUrl || '');
+
+    const background = backgroundMedia
+      ? { ...this.background(), mediaUrl: '' }
+      : this.background();
+    const typography = highlightMedia
+      ? { ...this.typography(), highlight: { ...this.typography().highlight, mediaUrl: '' } }
+      : this.typography();
+    const activeContent = activeContentMedia
+      ? { ...this.activeContent(), mediaUrl: '' }
+      : this.activeContent();
+
     this.broadcastChannel.postMessage({
       type: 'SYNC_STATE',
       state: {
-        typography: this.typography(),
-        background: this.background(),
+        typography,
+        background,
         container: this.container(),
         entryAnimation: this.entryAnimation(),
         exitAnimation: this.exitAnimation(),
@@ -689,10 +708,15 @@ export class PresentationStateService {
         isPresented: this.isPresented(),
         isExiting: this.isExiting(),
         isPaused: this.isPaused(),
-        activeContent: this.activeContent(),
+        activeContent,
         durationSeconds: this.durationSeconds(),
         remainingSeconds: this.remainingSeconds(),
         customFonts: this.customFonts(),
+      },
+      media: {
+        backgroundBlob: backgroundMedia?.blob,
+        highlightBlob: highlightMedia?.blob,
+        activeContentBlob: activeContentMedia?.blob,
       },
     });
   }
