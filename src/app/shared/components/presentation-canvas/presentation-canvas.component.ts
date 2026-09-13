@@ -70,7 +70,7 @@ import { StyleCompilerService } from '../../../core/styles/style-compiler.servic
         >
           <div
             [ngClass]="[
-              'max-w-5xl relative',
+              'relative',
               isExit ? s.exitAnimationClass : s.entryAnimationClass
             ]"
             [ngStyle]="s.contentBox"
