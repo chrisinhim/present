@@ -11,6 +11,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
     (click)="toggle()"
     [ngClass]="state.typography().underline ? 'bg-sky-100 text-sky-700 font-bold border-sky-300' : 'text-slate-700 hover:bg-slate-100 border-transparent'"
     title="Underline (Ctrl+U)"
+    aria-label="Underline (Ctrl+U)"
     class="h-7 w-6 rounded border text-xs flex items-center justify-center underline transition-colors"
   >U</button>`,
 })

@@ -385,3 +385,94 @@ export interface PresentationState {
   history: HistoryItem[];
   customFonts?: CustomFont[];
 }
+
+// --- BroadcastChannel Sync Message Contracts ---
+
+export type VideoPlaybackAction = 'PLAY' | 'PAUSE' | 'SEEK' | 'LOOP' | 'VOLUME' | 'MUTE';
+
+export interface VideoActionMessage {
+  type: 'VIDEO_ACTION';
+  action: VideoPlaybackAction;
+  currentTime?: number;
+  loop?: boolean;
+  volume?: number;
+  muted?: boolean;
+}
+
+export interface SyncPositionPayload {
+  offsetX: number;
+  offsetY: number;
+  alignment: TextAlignment;
+  verticalAlignment: VerticalAlignment;
+  rotationAngle: number;
+  flipH: boolean;
+  flipV: boolean;
+}
+
+export interface SyncPositionMessage {
+  type: 'SYNC_POSITION';
+  position: SyncPositionPayload;
+}
+
+export interface SyncStateMessage {
+  type: 'SYNC_STATE';
+  state: {
+    typography: TypographySettings;
+    background: PresentationBackground;
+    container: ContainerStyle;
+    entryAnimation: EntryAnimation;
+    exitAnimation: ExitAnimation;
+    animationDurationMs: number;
+    isPresented: boolean;
+    isExiting: boolean;
+    isPaused: boolean;
+    activeContent: PresentationState['activeContent'];
+    durationSeconds: number;
+    remainingSeconds: number;
+    customFonts: CustomFont[];
+  };
+  media?: {
+    backgroundBlob?: Blob;
+    highlightBlob?: Blob;
+    activeContentBlob?: Blob;
+  };
+}
+
+export interface RequestStateMessage {
+  type: 'REQUEST_STATE';
+}
+
+export interface PopupClosedMessage {
+  type: 'POPUP_CLOSED';
+}
+
+export interface PopupGeometryMessage {
+  type: 'POPUP_GEOMETRY';
+  geometry: { width: number; height: number; x: number; y: number };
+}
+
+export interface TogglePlayPauseMessage {
+  type: 'TOGGLE_PLAY_PAUSE';
+}
+
+export interface HidePresentationMessage {
+  type: 'HIDE_PRESENTATION';
+}
+
+export interface VideoTimeUpdateMessage {
+  type: 'VIDEO_TIME_UPDATE';
+  currentTime: number;
+  duration: number;
+  paused?: boolean;
+}
+
+export type PresentationBroadcastMessage =
+  | SyncStateMessage
+  | SyncPositionMessage
+  | VideoActionMessage
+  | RequestStateMessage
+  | PopupClosedMessage
+  | PopupGeometryMessage
+  | TogglePlayPauseMessage
+  | HidePresentationMessage
+  | VideoTimeUpdateMessage;

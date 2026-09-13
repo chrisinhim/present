@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HideButtonComponent } from './hide-button.component';
 import { PresentationStateService } from '../../services/presentation-state.service';
@@ -34,12 +34,12 @@ import { PresentationStateService } from '../../services/presentation-state.serv
 export class CommonActionsComponent {
   readonly state = inject(PresentationStateService);
 
-  progressPercent(): number {
+  readonly progressPercent = computed(() => {
     const total = this.state.durationSeconds();
     if (total <= 0) return 0;
     const remaining = this.state.remainingSeconds();
     return Math.max(0, Math.min(100, ((total - remaining) / total) * 100));
-  }
+  });
 
   onSeekbarClick(event: MouseEvent) {
     const target = event.currentTarget as HTMLElement;

@@ -1,10 +1,11 @@
-import { Component, ElementRef, input, output, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, input, output, viewChild } from '@angular/core';
 import { BibleBook } from '../../../models/presentation.models';
 import { VerseButtonComponent, VersePointerEvent } from './verse-button.component';
 
 @Component({
   selector: 'app-verse-panel-list',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [VerseButtonComponent],
   template: `
     @if (book(); as selectedBook) {

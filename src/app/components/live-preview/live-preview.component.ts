@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PresentationStateService } from '../../services/presentation-state.service';
 import { PresentationCanvasComponent } from '../../shared/components/presentation-canvas/presentation-canvas.component';
-import { OnAirBadgeComponent } from '../../features/controller/preview/on-air-badge.component';
+import { OnAirBadgeComponent } from './on-air-badge.component';
 
 @Component({
   selector: 'app-live-preview',

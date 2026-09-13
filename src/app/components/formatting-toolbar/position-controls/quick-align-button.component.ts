@@ -25,6 +25,7 @@ interface AlignCell {
             <button
               (click)="setAlign(cell.v, cell.h)"
               [title]="cell.title"
+              [attr.aria-label]="cell.title"
               [ngClass]="
                 isActive(cell.v, cell.h)
                   ? 'bg-sky-100 text-sky-700 border-sky-300'

@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface SelectedVerseItem {
@@ -10,6 +10,7 @@ export interface SelectedVerseItem {
 @Component({
   selector: 'app-selected-verses-list',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `
     <div class="flex flex-col gap-2 bg-slate-950/60 p-3 rounded-xl border border-slate-800">

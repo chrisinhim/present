@@ -16,3 +16,7 @@ venv/
 # Angular & Build
 .angular/
 dist/
+/browser/
+*.js.map
+*.css.map
+~$*.pptx

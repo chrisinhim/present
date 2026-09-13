@@ -1,10 +1,11 @@
-import { Component, ElementRef, input, output, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, input, output, viewChild } from '@angular/core';
 import { BibleBook } from '../../../models/presentation.models';
 import { BookButtonComponent } from './book-button.component';
 
 @Component({
   selector: 'app-book-panel',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [BookButtonComponent],
   template: `
     <div class="flex flex-col gap-1.5">

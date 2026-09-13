@@ -13,6 +13,7 @@ import { ExitAnimation } from '../../../models/presentation.models';
       <button
         (click)="isOpen.set(!isOpen())"
         title="Exit Animation"
+        aria-label="Exit Animation"
         class="h-7 px-2 flex items-center gap-1 rounded hover:bg-slate-100 text-xs text-slate-700 transition-colors"
       >
         <span>↘</span>

@@ -13,6 +13,7 @@ import { TypographySettings } from '../../../models/presentation.models';
       <button
         (click)="isOpen.set(!isOpen())"
         title="Change Case (Aa)"
+        aria-label="Change Case (Aa)"
         class="h-7 px-1.5 flex items-center gap-0.5 rounded hover:bg-slate-100 text-xs font-semibold text-slate-700 transition-colors"
       >
         <span>Aa</span>

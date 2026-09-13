@@ -11,6 +11,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
     <button
       (click)="state.clearFormatting()"
       title="Clear All Formatting"
+      aria-label="Clear All Formatting"
       class="relative h-7 w-7 flex items-center justify-center rounded hover:bg-slate-100 text-slate-700 transition-colors"
     >
       <span class="text-xs font-serif font-bold">A</span>

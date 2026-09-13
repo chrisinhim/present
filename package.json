@@ -23,8 +23,9 @@
     "@angular/compiler": "^22.1.5",
     "@angular/compiler-cli": "^22.1.5",
     "@tailwindcss/postcss": "^4.0.0",
+    "@types/jasmine": "^6.0.0",
     "postcss": "^8.5.0",
     "tailwindcss": "^4.0.0",
-    "typescript": "6.0.3"
+    "typescript": "~5.7.2"
   }
 }

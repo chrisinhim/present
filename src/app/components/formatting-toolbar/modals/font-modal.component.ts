@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, HostListener, inject, signal, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PresentationStateService } from '../../../services/presentation-state.service';
@@ -12,14 +12,17 @@ import { FontManagerService } from '../../../services/font-manager.service';
   template: `
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="font-modal-title"
         class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl p-6 flex flex-col gap-5 text-slate-100"
       >
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <div class="flex items-center gap-2">
-            <span class="text-xl">🔤</span>
-            <h3 class="text-base font-bold">Add Custom Fonts</h3>
+            <span class="text-xl" aria-hidden="true">🔤</span>
+            <h3 id="font-modal-title" class="text-base font-bold">Add Custom Fonts</h3>
           </div>
-          <button (click)="close.emit()" class="text-slate-400 hover:text-white text-lg">
+          <button (click)="close.emit()" aria-label="Close modal" class="text-slate-400 hover:text-white text-lg">
             ✕
           </button>
         </div>
@@ -125,7 +128,7 @@ import { FontManagerService } from '../../../services/font-manager.service';
               >Installed Custom Fonts:</span
             >
             <div class="max-h-32 overflow-y-auto flex flex-col gap-1.5 p-1">
-              @for (f of state.customFonts(); track f) {
+              @for (f of state.customFonts(); track f.id) {
                 <div
                   class="flex items-center justify-between bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs"
                 >
@@ -160,6 +163,11 @@ export class FontModalComponent {
   readonly state = inject(PresentationStateService);
   readonly fontManager = inject(FontManagerService);
   readonly close = output<void>();
+
+  @HostListener('window:keydown.escape')
+  handleEscape() {
+    this.close.emit();
+  }
 
   fontModalTab = signal<'google' | 'local'>('google');
   googleFontNameInput = '';

@@ -13,6 +13,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
       <button
         (click)="isOpen.set(!isOpen())"
         title="Text Outline / Stroke"
+        aria-label="Text Outline / Stroke"
         [ngClass]="state.typography().textOutlineEnabled ? 'text-sky-700 font-semibold' : 'text-slate-700'"
         class="h-7 px-2 flex items-center gap-1 rounded hover:bg-slate-100 text-xs transition-colors"
       >
@@ -38,6 +39,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
             </label>
             <input
               type="color"
+              aria-label="Outline color"
               [value]="state.typography().textOutlineColor || '#000000'"
               (input)="updateOutlineColor($event)"
               class="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
@@ -48,6 +50,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
             <span>Weight:</span>
             <input
               type="range"
+              aria-label="Outline weight"
               min="1"
               max="12"
               [ngModel]="state.typography().textOutlineWeight"

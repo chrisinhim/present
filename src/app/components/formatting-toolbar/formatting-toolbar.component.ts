@@ -14,7 +14,6 @@ import { LetterSpacingButtonComponent } from './font-controls/letter-spacing-but
 import { LineSpacingButtonComponent } from './font-controls/line-spacing-button.component';
 
 // Effects Controls
-import { ColorPickerButtonComponent } from './effects-controls/color-picker-button.component';
 import { HighlightButtonComponent } from './effects-controls/highlight-button.component';
 import { BackgroundButtonComponent } from './effects-controls/background-button.component';
 import { TextFillButtonComponent } from './effects-controls/text-fill-button.component';
@@ -52,7 +51,6 @@ import { BackgroundModalComponent } from './modals/background-modal.component';
     TextCaseButtonComponent,
     LetterSpacingButtonComponent,
     LineSpacingButtonComponent,
-    ColorPickerButtonComponent,
     HighlightButtonComponent,
     BackgroundButtonComponent,
     TextFillButtonComponent,

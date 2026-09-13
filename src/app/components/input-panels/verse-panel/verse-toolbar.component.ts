@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 export type VerseMode = 'QUOTE' | 'REFER';
@@ -12,6 +12,7 @@ export interface BibleTranslationOption {
 @Component({
   selector: 'app-verse-toolbar',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule],
   template: `
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">

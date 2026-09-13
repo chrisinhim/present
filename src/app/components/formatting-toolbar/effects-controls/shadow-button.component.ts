@@ -23,6 +23,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
         @if (state.typography().effects.shadow.enabled) {
           <input
             type="color"
+            aria-label="Drop shadow color"
             [value]="state.typography().effects.shadow.color || '#000000'"
             (input)="updateShadowColor($event)"
             class="w-4 h-4 rounded cursor-pointer bg-transparent border-0"
@@ -35,6 +36,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
             <span>Dist:</span>
             <input
               type="range"
+              aria-label="Drop shadow distance"
               min="0"
               max="30"
               [ngModel]="state.typography().effects.shadow.distance"
@@ -47,6 +49,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
             <span>Blur:</span>
             <input
               type="range"
+              aria-label="Drop shadow blur"
               min="0"
               max="30"
               [ngModel]="state.typography().effects.shadow.blur"

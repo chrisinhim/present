@@ -1,10 +1,11 @@
-import { Component, ElementRef, input, output, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, input, output, viewChild } from '@angular/core';
 import { BibleBook } from '../../../models/presentation.models';
 import { ChapterButtonComponent } from './chapter-button.component';
 
 @Component({
   selector: 'app-chapter-panel',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ChapterButtonComponent],
   template: `
     @if (book(); as selectedBook) {

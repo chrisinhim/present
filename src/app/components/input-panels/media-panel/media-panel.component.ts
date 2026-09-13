@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PresentationStateService } from '../../../services/presentation-state.service';
@@ -7,6 +7,7 @@ import { MediaFileItem } from '../../../models/presentation.models';
 @Component({
   selector: 'app-media-panel',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   template: `
     <div class="flex flex-col gap-4">
@@ -55,7 +56,7 @@ import { MediaFileItem } from '../../../models/presentation.models';
           </div>
 
           <!-- 2. MEDIA ITEMS TILES -->
-          @for (item of state.mediaFiles(); track item) {
+          @for (item of state.mediaFiles(); track item.id) {
             <div
               (click)="selectMedia(item)"
               [ngClass]="
@@ -137,7 +138,7 @@ import { MediaFileItem } from '../../../models/presentation.models';
             </button>
             <!-- Current Time / Duration -->
             <span class="text-xs font-mono text-slate-300 w-24 text-center">
-              {{ formatTime(state.videoCurrentTime()) }} / {{ formatTime(state.videoDuration()) }}
+              {{ formattedCurrentTime() }} / {{ formattedDuration() }}
             </span>
             <!-- Seek Scrubber -->
             <input
@@ -222,7 +223,10 @@ import { MediaFileItem } from '../../../models/presentation.models';
   `,
 })
 export class MediaPanelComponent {
-  state = inject(PresentationStateService);
+  readonly state = inject(PresentationStateService);
+
+  readonly formattedCurrentTime = computed(() => this.formatTime(this.state.videoCurrentTime()));
+  readonly formattedDuration = computed(() => this.formatTime(this.state.videoDuration()));
 
   onDragOver(e: DragEvent) {
     e.preventDefault();

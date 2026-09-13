@@ -126,10 +126,4 @@ export class HistorySectionComponent {
         return 'bg-slate-100 text-slate-700';
     }
   }
-
-  formatTime(timestamp: number): string {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
 }

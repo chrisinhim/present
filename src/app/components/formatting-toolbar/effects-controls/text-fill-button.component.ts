@@ -12,11 +12,12 @@ import { PresentationStateService } from '../../../services/presentation-state.s
       <button
         (click)="isOpen.set(!isOpen())"
         title="Text Fill Color & Gradient"
+        aria-label="Text Fill Color & Gradient"
         [ngClass]="isOpen() ? 'border-b-2 border-slate-900 font-semibold' : 'border-b-2 border-transparent'"
         class="h-7 px-2 flex items-center gap-1 hover:bg-slate-100 text-xs text-slate-700 transition-colors"
       >
         <span class="font-serif font-bold">A</span>
-        <span>Fill</span>
+        <!-- <span>Fill</span> -->
         <span class="text-[9px] text-slate-400">▾</span>
       </button>
 

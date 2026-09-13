@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { BibleBook } from '../../../models/presentation.models';
 import { BookPanelComponent } from './book-panel.component';
 import { ChapterPanelComponent } from './chapter-panel.component';
@@ -8,6 +8,7 @@ import { VersePointerEvent } from './verse-button.component';
 @Component({
   selector: 'app-verse-reference-picker',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [BookPanelComponent, ChapterPanelComponent, VersePanelListComponent],
   template: `
     <app-book-panel

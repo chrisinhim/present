@@ -11,6 +11,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
     (click)="toggle()"
     [ngClass]="state.typography().bold ? 'bg-sky-100 text-sky-700 font-bold border-sky-300' : 'text-slate-700 hover:bg-slate-100 border-transparent'"
     title="Bold (Ctrl+B)"
+    aria-label="Bold (Ctrl+B)"
     class="h-7 w-6 rounded border text-xs flex items-center justify-center font-bold transition-colors"
   >B</button>`,
 })
