@@ -156,8 +156,19 @@ export class StorageService {
     if (typeof window === 'undefined' || !window.localStorage) return;
     try {
       localStorage.setItem(key, JSON.stringify(value));
-    } catch (e) {
+    } catch (e: any) {
       console.warn('LocalStorage save error:', e);
+      if (e?.name === 'QuotaExceededError' || e?.code === 22 || e?.code === 1014) {
+        try {
+          if (key === 'presentationSettings_v3' && typeof value === 'object' && value !== null) {
+            const pruned = { ...(value as any), history: [] };
+            localStorage.setItem(key, JSON.stringify(pruned));
+            console.warn('LocalStorage quota recovered by pruning presentation history.');
+          }
+        } catch (innerErr) {
+          console.warn('Failed to recover from LocalStorage QuotaExceededError:', innerErr);
+        }
+      }
     }
   }
 }
