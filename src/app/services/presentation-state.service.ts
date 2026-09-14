@@ -103,14 +103,19 @@ const SETTINGS_STORAGE_KEY = 'presentationSettings_v3';
 const FONTS_STORAGE_KEY = 'presentation_custom_fonts';
 const GEOMETRY_STORAGE_KEY = 'pres_geom';
 
-function sanitizeBlobUrl(url?: string): string {
-  return url && url.startsWith('blob:') ? '' : (url || '');
+function sanitizeMediaUrl(url?: string): string {
+  if (!url) return '';
+  // Never persist ephemeral blob: URLs or quota-busting data: URLs into localStorage
+  if (url.startsWith('blob:') || url.startsWith('data:') || url.length > 500) {
+    return '';
+  }
+  return url;
 }
 
 function sanitizeBackground(bg: PresentationBackground): PresentationBackground {
   return {
     ...bg,
-    mediaUrl: sanitizeBlobUrl(bg.mediaUrl),
+    mediaUrl: sanitizeMediaUrl(bg.mediaUrl),
   };
 }
 
@@ -120,7 +125,7 @@ function sanitizeTypography<T extends Partial<TypographySettings>>(typo: T): T {
     highlight: typo.highlight
       ? {
           ...typo.highlight,
-          mediaUrl: sanitizeBlobUrl(typo.highlight.mediaUrl),
+          mediaUrl: sanitizeMediaUrl(typo.highlight.mediaUrl),
         }
       : typo.highlight,
   };
@@ -314,7 +319,7 @@ export class PresentationStateService {
         ...item,
         content: {
           ...item.content,
-          mediaUrl: sanitizeBlobUrl(item.content.mediaUrl),
+          mediaUrl: sanitizeMediaUrl(item.content.mediaUrl),
         },
         styles: item.styles ? sanitizeTypography(item.styles) : item.styles,
       }));
@@ -481,7 +486,7 @@ export class PresentationStateService {
         ...item,
         content: {
           ...item.content,
-          mediaUrl: sanitizeBlobUrl(item.content?.mediaUrl),
+          mediaUrl: sanitizeMediaUrl(item.content?.mediaUrl),
         },
         styles: item.styles ? sanitizeTypography(item.styles) : item.styles,
       }));

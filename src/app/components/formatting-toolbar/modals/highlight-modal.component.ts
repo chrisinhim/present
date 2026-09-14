@@ -366,22 +366,25 @@ export class HighlightModalComponent {
     });
   }
 
-  onHighlightMediaSelected(e: Event, mode: 'picture' | 'video') {
+  async onHighlightMediaSelected(e: Event, mode: 'picture' | 'video') {
     const input = e.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
     const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = () => {
+    try {
+      const mediaItem = await this.state.addMediaFile(file);
       this.state.updateTypography({
         highlight: {
           ...this.state.typography().highlight,
           type: mode,
-          mediaUrl: reader.result as string,
-          mediaName: file.name,
+          mediaUrl: mediaItem.dataUrl || '',
+          mediaName: mediaItem.name,
         },
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Failed to add highlight media file:', err);
+    } finally {
+      input.value = '';
+    }
   }
 
   clearHighlight() {
