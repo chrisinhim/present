@@ -646,7 +646,11 @@ export class PresentationStateService {
   async addMediaFile(file: File): Promise<MediaFileItem> {
     const id = 'media_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     const type: 'image' | 'video' = file.type.startsWith('video') ? 'video' : 'image';
-    await this.storage.saveMedia(id, file.name, type, file);
+    try {
+      await this.storage.saveMedia(id, file.name, type, file);
+    } catch (e) {
+      console.warn('Could not persist media to IndexedDB:', e);
+    }
 
     const mediaItem: MediaFileItem = {
       id,
