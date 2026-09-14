@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, HostListener, inject, signal, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PresentationStateService } from '../../../services/presentation-state.service';
@@ -10,6 +10,9 @@ import { PresentationStateService } from '../../../services/presentation-state.s
   imports: [CommonModule, FormsModule],
   template: `
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="background-modal-title"
       [style.left.px]="bgModalPos().x"
       [style.top.px]="bgModalPos().y"
       class="fixed z-50 w-80 sm:w-96 bg-slate-900/95 border-2 border-slate-700 rounded-2xl shadow-2xl p-4 flex flex-col gap-4 text-slate-100 select-none"
@@ -20,12 +23,12 @@ import { PresentationStateService } from '../../../services/presentation-state.s
         class="flex items-center justify-between border-b border-slate-800 pb-2 cursor-grab active:cursor-grabbing"
       >
         <div class="flex items-center gap-2">
-          <span class="text-lg">🖼️</span>
-          <h3 class="text-sm font-bold tracking-wide">Background Options</h3>
+          <span class="text-lg" aria-hidden="true">🖼️</span>
+          <h3 id="background-modal-title" class="text-sm font-bold tracking-wide">Background Options</h3>
         </div>
         <div class="flex items-center gap-1">
           <span class="text-[10px] text-slate-500 font-mono">⠿ drag</span>
-          <button (click)="close.emit()" class="text-slate-400 hover:text-white text-base ml-2">
+          <button (click)="close.emit()" aria-label="Close modal" class="text-slate-400 hover:text-white text-base ml-2">
             ✕
           </button>
         </div>
@@ -87,7 +90,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
             <input
               type="color"
               [value]="state.background().color || '#000000'"
-              (input)="updateBgSolid($any($event.target).value)"
+              (input)="onColorInput($event)"
               class="w-7 h-7 rounded-lg cursor-pointer bg-transparent border-0"
             />
           </div>
@@ -269,6 +272,18 @@ export class BackgroundModalComponent {
       color: prev.color || '#000000',
       gradient: prev.gradient || this.popularGradients[0],
     });
+  }
+
+  @HostListener('window:keydown.escape')
+  handleEscape() {
+    this.close.emit();
+  }
+
+  onColorInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input) {
+      this.updateBgSolid(input.value);
+    }
   }
 
   updateBgSolid(color: string) {

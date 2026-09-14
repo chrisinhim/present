@@ -12,6 +12,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
       <button
         (click)="isOpen.set(!isOpen())"
         title="Rotation and Flip Options"
+        aria-label="Rotation and Flip Options"
         class="h-7 px-2 flex items-center gap-1 rounded hover:bg-slate-100 text-xs font-medium text-slate-700 transition-colors"
       >
         <span class="text-sm">⟳</span>

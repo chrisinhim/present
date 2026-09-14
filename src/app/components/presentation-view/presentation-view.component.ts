@@ -1,10 +1,12 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   HostListener,
   OnDestroy,
   OnInit,
   computed,
+  effect,
   inject,
   signal,
   viewChild,
@@ -18,6 +20,8 @@ import {
   PresentationBackground,
   PresentationState,
   TypographySettings,
+  VideoActionMessage,
+  VideoTimeUpdateMessage,
 } from '../../models/presentation.models';
 import { FontManagerService } from '../../services/font-manager.service';
 import { PresentationCanvasComponent } from '../../shared/components/presentation-canvas/presentation-canvas.component';
@@ -25,6 +29,7 @@ import { PresentationCanvasComponent } from '../../shared/components/presentatio
 @Component({
   selector: 'app-presentation-view',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, PresentationCanvasComponent],
   template: `
     <div
@@ -81,6 +86,12 @@ export class PresentationViewComponent implements OnInit, OnDestroy {
   private fontManager = inject(FontManagerService);
   private broadcastChannel: BroadcastChannel | null = null;
   private exitTimer: any = null;
+  private backgroundObjectUrl = '';
+  private highlightObjectUrl = '';
+  private activeContentObjectUrl = '';
+  private backgroundBlob?: Blob;
+  private highlightBlob?: Blob;
+  private activeContentBlob?: Blob;
 
   isPresented = signal<boolean>(false);
   isExiting = signal<boolean>(false);
@@ -144,22 +155,49 @@ export class PresentationViewComponent implements OnInit, OnDestroy {
   readonly liveTimeString = signal<string>('');
   readonly ariaAnnouncement = signal<string>('');
 
-  ngOnInit() {
-    this.updateLiveTime();
-    this.liveTimerInterval = setInterval(() => {
-      this.updateLiveTime();
-    }, 250);
+  constructor() {
+    effect(() => {
+      const isTimer = this.activeContent().type === 'TIMER';
+      if (isTimer) {
+        if (!this.liveTimerInterval) {
+          this.updateLiveTime();
+          this.liveTimerInterval = setInterval(() => {
+            this.updateLiveTime();
+          }, 250);
+        }
+      } else {
+        if (this.liveTimerInterval) {
+          clearInterval(this.liveTimerInterval);
+          this.liveTimerInterval = null;
+        }
+        this.liveTimeString.set('');
+      }
+    });
+  }
 
+  ngOnInit() {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       this.broadcastChannel = new BroadcastChannel('presentation_sync_channel');
       this.broadcastChannel.onmessage = (event) => {
         if (event.data?.type === 'SYNC_STATE' && event.data.state) {
           const s = event.data.state;
+          const media = event.data.media || {};
           if (s.typography) {
-            this.typography.set(s.typography);
+            const highlightUrl = this.replaceObjectUrl('highlight', media.highlightBlob);
+            this.typography.set({
+              ...s.typography,
+              highlight: highlightUrl
+                ? { ...s.typography.highlight, mediaUrl: highlightUrl }
+                : s.typography.highlight,
+            });
             this.ensureFont(s.typography.fontFamily, s.customFonts);
           }
-          if (s.background) this.background.set(s.background);
+          if (s.background) {
+            const backgroundUrl = this.replaceObjectUrl('background', media.backgroundBlob);
+            this.background.set(
+              backgroundUrl ? { ...s.background, mediaUrl: backgroundUrl } : s.background,
+            );
+          }
           if (s.container) this.container.set(s.container);
           if (s.entryAnimation) this.entryAnimation.set(s.entryAnimation);
           if (s.exitAnimation) this.exitAnimation.set(s.exitAnimation);
@@ -180,11 +218,18 @@ export class PresentationViewComponent implements OnInit, OnDestroy {
               this.isExiting.set(false);
               const summary = s.activeContent?.text || s.activeContent?.verseRef || 'Presentation';
               this.ariaAnnouncement.set(`Now presenting: ${summary}`);
+            } else if (wasPresented && !s.isPresented) {
+              this.ariaAnnouncement.set('Presentation cleared');
             }
           }
 
           if (typeof s.isPaused === 'boolean') this.isPaused.set(s.isPaused);
-          if (s.activeContent) this.activeContent.set(s.activeContent);
+          if (s.activeContent) {
+            const activeContentUrl = this.replaceObjectUrl('activeContent', media.activeContentBlob);
+            this.activeContent.set(
+              activeContentUrl ? { ...s.activeContent, mediaUrl: activeContentUrl } : s.activeContent,
+            );
+          }
           if (s.customFonts) this.syncCustomFonts(s.customFonts);
         } else if (event.data?.type === 'SYNC_POSITION' && event.data.position) {
           const p = event.data.position;
@@ -207,45 +252,83 @@ export class PresentationViewComponent implements OnInit, OnDestroy {
     }
   }
 
+  private replaceObjectUrl(kind: 'background' | 'highlight' | 'activeContent', blob?: Blob): string {
+    const currentUrl =
+      kind === 'background'
+        ? this.backgroundObjectUrl
+        : kind === 'highlight'
+          ? this.highlightObjectUrl
+          : this.activeContentObjectUrl;
+    const currentBlob =
+      kind === 'background'
+        ? this.backgroundBlob
+        : kind === 'highlight'
+          ? this.highlightBlob
+          : this.activeContentBlob;
+
+    if (blob && currentBlob === blob && currentUrl) {
+      return currentUrl;
+    }
+
+    if (currentUrl) URL.revokeObjectURL(currentUrl);
+    const nextUrl = blob ? URL.createObjectURL(blob) : '';
+    if (kind === 'background') {
+      this.backgroundObjectUrl = nextUrl;
+      this.backgroundBlob = blob;
+    } else if (kind === 'highlight') {
+      this.highlightObjectUrl = nextUrl;
+      this.highlightBlob = blob;
+    } else {
+      this.activeContentObjectUrl = nextUrl;
+      this.activeContentBlob = blob;
+    }
+    return nextUrl;
+  }
+
   ngOnDestroy() {
     if (this.liveTimerInterval) clearInterval(this.liveTimerInterval);
     if (this.exitTimer) clearTimeout(this.exitTimer);
+    this.replaceObjectUrl('background');
+    this.replaceObjectUrl('highlight');
+    this.replaceObjectUrl('activeContent');
     if (this.broadcastChannel) {
       this.broadcastChannel.close();
       this.broadcastChannel = null;
     }
   }
 
-  private handleExit() {
-    this.isExiting.set(true);
-    this.ariaAnnouncement.set('Presentation cleared');
-    const duration = this.animationDurationMs() || 400;
-    this.exitTimer = setTimeout(() => {
-      this.isPresented.set(false);
-      this.isExiting.set(false);
-    }, duration);
-  }
 
-  private handleVideoAction(data: any) {
+  private handleVideoAction(data: VideoActionMessage) {
     const video = this.primaryVideoRef()?.nativeElement;
     if (!video) return;
 
-    if (data.action === 'play') video.play().catch(() => {});
-    else if (data.action === 'pause') video.pause();
-    else if (data.action === 'seek' && typeof data.time === 'number') video.currentTime = data.time;
-    else if (data.action === 'loop' && typeof data.loop === 'boolean') video.loop = data.loop;
-    else if (data.action === 'volume' && typeof data.volume === 'number') video.volume = data.volume;
-    else if (data.action === 'mute' && typeof data.muted === 'boolean') video.muted = data.muted;
+    const action = data.action;
+    const seekTime = data.currentTime ?? (data as any).time;
+
+    if (action === 'PLAY' || (action as string) === 'play') {
+      video.play().catch(() => {});
+    } else if (action === 'PAUSE' || (action as string) === 'pause') {
+      video.pause();
+    } else if ((action === 'SEEK' || (action as string) === 'seek') && typeof seekTime === 'number') {
+      video.currentTime = seekTime;
+    } else if ((action === 'LOOP' || (action as string) === 'loop') && typeof data.loop === 'boolean') {
+      video.loop = data.loop;
+    } else if ((action === 'VOLUME' || (action as string) === 'volume') && typeof data.volume === 'number') {
+      video.volume = data.volume;
+    } else if ((action === 'MUTE' || (action as string) === 'mute') && typeof data.muted === 'boolean') {
+      video.muted = data.muted;
+    }
   }
 
   onVideoTimeUpdate(video: HTMLVideoElement) {
     if (!this.broadcastChannel) return;
-    this.broadcastChannel.postMessage({
+    const message: VideoTimeUpdateMessage = {
       type: 'VIDEO_TIME_UPDATE',
       currentTime: video.currentTime,
       duration: video.duration || 0,
       paused: video.paused,
-    });
+    };
+    this.broadcastChannel.postMessage(message);
   }
 
   private updateLiveTime() {

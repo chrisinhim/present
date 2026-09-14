@@ -1,5 +1,5 @@
-import { Component, HostListener, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, HostListener, inject } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PresentationStateService } from '../services/presentation-state.service';
 import { LivePreviewComponent } from './live-preview/live-preview.component';
@@ -15,6 +15,7 @@ import { MainTabType } from '../models/presentation.models';
 @Component({
   selector: 'app-controller',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
@@ -123,7 +124,8 @@ import { MainTabType } from '../models/presentation.models';
   `,
 })
 export class ControllerComponent {
-  state = inject(PresentationStateService);
+  readonly state = inject(PresentationStateService);
+  private readonly doc = inject(DOCUMENT);
 
   tabs: { id: MainTabType; label: string; icon: string }[] = [
     { id: 'TEXT', label: 'TEXT', icon: '📝' },
@@ -133,35 +135,15 @@ export class ControllerComponent {
     { id: 'MEDIA', label: 'MEDIA', icon: '🖼️' },
   ];
 
-  darkThemes = [
-    { id: 'midnight-slate', name: 'Midnight Slate', icon: '🌌' },
-    { id: 'cyber-dark', name: 'Cyberpunk Neon', icon: '⚡' },
-    { id: 'obsidian-gold', name: 'Obsidian Gold', icon: '👑' },
-    { id: 'deep-emerald', name: 'Deep Emerald', icon: '🌲' },
-    { id: 'royal-amethyst', name: 'Royal Amethyst', icon: '🔮' },
-  ];
-
-  lightThemes = [
-    { id: 'clean-light', name: 'Pure Studio', icon: '☀️' },
-    { id: 'warm-paper', name: 'Warm Parchment', icon: '📜' },
-    { id: 'nordic-snow', name: 'Nordic Frost', icon: '❄️' },
-    { id: 'lavender-breeze', name: 'Lavender Breeze', icon: '🪻' },
-    { id: 'desert-sand', name: 'Desert Sand', icon: '🏜️' },
-  ];
-
   selectTab(tabId: MainTabType) {
     this.state.switchTab(tabId);
-  }
-
-  rePresent(item: any) {
-    this.state.present(item.content);
   }
 
   exportDesign() {
     const json = this.state.exportDesignJson();
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = this.doc.createElement('a');
     a.href = url;
     a.download = `presentation_design_${Date.now()}.json`;
     a.click();
@@ -182,7 +164,7 @@ export class ControllerComponent {
 
   @HostListener('window:keydown', ['$event'])
   handleGlobalShortcuts(event: KeyboardEvent) {
-    const activeEl = document.activeElement;
+    const activeEl = this.doc.activeElement;
     const isInput =
       activeEl?.tagName === 'INPUT' ||
       activeEl?.tagName === 'TEXTAREA' ||
@@ -203,7 +185,7 @@ export class ControllerComponent {
       // If an input is focused, blur it and hide
       if (activeEl instanceof HTMLElement) {
         activeEl.blur();
-        document.body.focus();
+        this.doc.body?.focus();
       }
       this.state.hide();
       return;

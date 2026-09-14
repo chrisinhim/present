@@ -25,23 +25,24 @@ interface AlignCell {
             <button
               (click)="setAlign(cell.v, cell.h)"
               [title]="cell.title"
+              [attr.aria-label]="cell.title"
               [ngClass]="
                 isActive(cell.v, cell.h)
                   ? 'bg-sky-100 text-sky-700 border-sky-300'
                   : 'text-slate-500 hover:bg-slate-100 border-transparent'
               "
-              class="w-4.5 h-4 sm:w-5 sm:h-4.5 rounded border flex items-center justify-center transition-colors cursor-pointer"
+              class="w-7 h-7 rounded border flex items-center justify-center transition-colors cursor-pointer"
             >
               @if (cell.h === 'left') {
-                <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                   <path d="M3 5h18v2H3V5zm0 4h12v2H3V9zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/>
                 </svg>
               } @else if (cell.h === 'center') {
-                <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                   <path d="M3 5h18v2H3V5zm3 4h12v2H6V9zm-3 4h18v2H3v-2zm3 4h12v2H6v-2z"/>
                 </svg>
               } @else {
-                <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                   <path d="M3 5h18v2H3V5zm6 4h12v2H9V9zm-6 4h18v2H3v-2zm6 4h12v2H9v-2z"/>
                 </svg>
               }

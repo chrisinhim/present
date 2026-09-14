@@ -26,6 +26,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
           <button
             (click)="adjustOffsetX(1)"
             title="Nudge right"
+            aria-label="Nudge right"
             class="text-[7px] text-slate-500 hover:text-slate-900 px-0.5 leading-none hover:bg-slate-100 cursor-pointer"
           >
             ▲
@@ -33,6 +34,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
           <button
             (click)="adjustOffsetX(-1)"
             title="Nudge left"
+            aria-label="Nudge left"
             class="text-[7px] text-slate-500 hover:text-slate-900 px-0.5 leading-none hover:bg-slate-100 cursor-pointer"
           >
             ▼

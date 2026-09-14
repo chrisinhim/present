@@ -20,7 +20,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
           [ngModel]="state.typography().lineSpacing || 58"
           (ngModelChange)="updateLineSpacing($event)"
           title="Line Spacing (px)"
-          class="w-7 text-center text-xs font-medium text-slate-800 focus:outline-none"
+          class="w-8 sm:w-9 text-center pl-1.5 pr-1 text-xs font-medium text-slate-800 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <div class="flex flex-col border-l border-slate-200 h-full justify-center">
           <button

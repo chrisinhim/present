@@ -23,6 +23,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
         @if (state.typography().effects.glow.enabled) {
           <input
             type="color"
+            aria-label="Glow color"
             [value]="state.typography().effects.glow.color || '#38bdf8'"
             (input)="updateGlowColor($event)"
             class="w-4 h-4 rounded cursor-pointer bg-transparent border-0"
@@ -34,6 +35,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
           <span>Radius:</span>
           <input
             type="range"
+            aria-label="Glow radius"
             min="2"
             max="40"
             [ngModel]="state.typography().effects.glow.radius"

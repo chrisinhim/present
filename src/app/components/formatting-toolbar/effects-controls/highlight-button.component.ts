@@ -11,6 +11,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
     <button
       (click)="openModal.emit()"
       title="Text Highlight Color"
+      aria-label="Text Highlight Color"
       class="h-7 px-1.5 flex items-center gap-1 rounded hover:bg-slate-100 transition-colors"
     >
       <div class="flex flex-col items-center leading-none">

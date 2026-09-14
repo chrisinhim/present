@@ -5,13 +5,15 @@ import { PresentationStateService } from '../../services/presentation-state.serv
 // Font Controls
 import { FontFamilyButtonComponent } from './font-controls/font-family-button.component';
 import { FontSizeButtonComponent } from './font-controls/font-size-button.component';
-import { FontStyleButtonsComponent } from './font-controls/font-style-buttons.component';
+import { BoldButtonComponent } from './font-controls/bold-button.component';
+import { ItalicButtonComponent } from './font-controls/italic-button.component';
+import { UnderlineButtonComponent } from './font-controls/underline-button.component';
+import { StrikethroughButtonComponent } from './font-controls/strikethrough-button.component';
 import { TextCaseButtonComponent } from './font-controls/text-case-button.component';
 import { LetterSpacingButtonComponent } from './font-controls/letter-spacing-button.component';
 import { LineSpacingButtonComponent } from './font-controls/line-spacing-button.component';
 
 // Effects Controls
-import { ColorPickerButtonComponent } from './effects-controls/color-picker-button.component';
 import { HighlightButtonComponent } from './effects-controls/highlight-button.component';
 import { BackgroundButtonComponent } from './effects-controls/background-button.component';
 import { TextFillButtonComponent } from './effects-controls/text-fill-button.component';
@@ -42,11 +44,13 @@ import { BackgroundModalComponent } from './modals/background-modal.component';
     CommonModule,
     FontFamilyButtonComponent,
     FontSizeButtonComponent,
-    FontStyleButtonsComponent,
+    BoldButtonComponent,
+    ItalicButtonComponent,
+    UnderlineButtonComponent,
+    StrikethroughButtonComponent,
     TextCaseButtonComponent,
     LetterSpacingButtonComponent,
     LineSpacingButtonComponent,
-    ColorPickerButtonComponent,
     HighlightButtonComponent,
     BackgroundButtonComponent,
     TextFillButtonComponent,

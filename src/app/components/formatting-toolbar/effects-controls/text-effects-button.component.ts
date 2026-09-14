@@ -13,10 +13,11 @@ import { PresentationStateService } from '../../../services/presentation-state.s
       <button
         (click)="isOpen.set(!isOpen())"
         title="Text Effects (Shadow & Glow)"
+        aria-label="Text Effects (Shadow & Glow)"
         class="h-7 px-2 flex items-center gap-1 rounded hover:bg-slate-100 text-xs text-slate-700 transition-colors"
       >
         <span class="font-serif font-bold">A</span>
-        <span>Text Effects</span>
+        <span>Effects</span>
         <span class="text-[9px] text-slate-400">▾</span>
       </button>
 

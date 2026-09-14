@@ -11,6 +11,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
     <button
       (click)="openModal.emit()"
       title="Presentation Background (Color, Gradient, Image, Video)"
+      aria-label="Presentation Background (Color, Gradient, Image, Video)"
       class="h-7 px-2 flex items-center gap-1 rounded hover:bg-slate-100 text-xs text-slate-700 transition-colors"
     >
       <span class="text-sm">▨</span>

@@ -1,9 +1,9 @@
 import {
   Component,
   ChangeDetectionStrategy,
-  OnInit,
-  OnDestroy,
+  DestroyRef,
   computed,
+  effect,
   inject,
   input,
   signal,
@@ -32,7 +32,7 @@ import { StyleCompilerService } from '../../../core/styles/style-compiler.servic
     @let isExit = isExiting();
 
     <div
-      class="relative w-full h-full overflow-hidden select-none"
+      class="relative w-full h-full overflow-hidden"
       [ngStyle]="s.background"
     >
       <!-- BACKGROUND VIDEO (when background type is video) -->
@@ -52,9 +52,10 @@ import { StyleCompilerService } from '../../../core/styles/style-compiler.servic
         <div class="relative z-10 w-full h-full flex items-center justify-center p-4">
           @if (background().type === 'video' && background().mediaUrl) {
             <!-- Rendered by background video layer -->
-          } @else if (background().mediaUrl) {
+          } @else if (background().mediaUrl && !mediaImageError()) {
             <img
               [src]="background().mediaUrl"
+              (error)="onMediaImageError()"
               alt="Media Presentation"
               class="max-w-full max-h-full object-contain drop-shadow-2xl rounded-lg"
             />
@@ -156,20 +157,10 @@ import { StyleCompilerService } from '../../../core/styles/style-compiler.servic
     </div>
   `,
 })
-export class PresentationCanvasComponent implements OnInit, OnDestroy {
+export class PresentationCanvasComponent {
   private readonly compiler = inject(StyleCompilerService);
-  private liveInterval: any = null;
+  private liveInterval: ReturnType<typeof setInterval> | null = null;
   readonly liveTick = signal<number>(Date.now());
-
-  ngOnInit() {
-    this.liveInterval = setInterval(() => {
-      this.liveTick.set(Date.now());
-    }, 250);
-  }
-
-  ngOnDestroy() {
-    if (this.liveInterval) clearInterval(this.liveInterval);
-  }
 
   // Inputs
   readonly typography = input.required<TypographySettings>();
@@ -186,6 +177,44 @@ export class PresentationCanvasComponent implements OnInit, OnDestroy {
   readonly animationDurationMs = input<number>(400);
   readonly placeholderText = input<string>('');
   readonly timerOverride = input<string>('');
+
+  readonly mediaImageError = signal<boolean>(false);
+
+  constructor() {
+    effect(() => {
+      // Whenever background mediaUrl changes, reset image error state
+      this.background().mediaUrl;
+      this.mediaImageError.set(false);
+    });
+
+    effect(() => {
+      const isTimer = this.content().type === 'TIMER';
+      if (isTimer) {
+        if (!this.liveInterval) {
+          this.liveTick.set(Date.now());
+          this.liveInterval = setInterval(() => {
+            this.liveTick.set(Date.now());
+          }, 250);
+        }
+      } else {
+        if (this.liveInterval) {
+          clearInterval(this.liveInterval);
+          this.liveInterval = null;
+        }
+      }
+    });
+
+    inject(DestroyRef).onDestroy(() => {
+      if (this.liveInterval) {
+        clearInterval(this.liveInterval);
+        this.liveInterval = null;
+      }
+    });
+  }
+
+  onMediaImageError() {
+    this.mediaImageError.set(true);
+  }
 
   readonly animDurationString = computed(() => `${this.animationDurationMs()}ms`);
 

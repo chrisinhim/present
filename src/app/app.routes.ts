@@ -1,9 +1,19 @@
 import { Routes } from '@angular/router';
-import { ControllerComponent } from './components/controller.component';
-import { PresentationViewComponent } from './components/presentation-view/presentation-view.component';
 
 export const routes: Routes = [
-  { path: '', component: ControllerComponent },
-  { path: 'present-view', component: PresentationViewComponent },
+  {
+    path: '',
+    title: 'Presentation Controller',
+    loadComponent: () =>
+      import('./components/controller.component').then((m) => m.ControllerComponent),
+  },
+  {
+    path: 'present-view',
+    title: 'Stage Display - Presenter',
+    loadComponent: () =>
+      import('./components/presentation-view/presentation-view.component').then(
+        (m) => m.PresentationViewComponent,
+      ),
+  },
   { path: '**', redirectTo: '' },
 ];

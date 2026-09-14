@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PresentationStateService } from '../../../services/presentation-state.service';
@@ -11,6 +11,7 @@ import { HistorySectionComponent } from '../../history-section/history-section.c
 @Component({
   selector: 'app-text-panel',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
@@ -24,7 +25,7 @@ import { HistorySectionComponent } from '../../history-section/history-section.c
         <div class="relative flex-1 min-w-0">
           <textarea
             #textArea
-            [(ngModel)]="textInput"
+            [ngModel]="textInput()"
             (ngModelChange)="onTextChange($event)"
             (keydown)="onKeyDown($event)"
             (blur)="onBlur()"
@@ -43,7 +44,7 @@ import { HistorySectionComponent } from '../../history-section/history-section.c
               >
                 Bible Books (Tab / Enter to select)
               </div>
-              @for (book of suggestions(); track book; let i = $index) {
+              @for (book of suggestions(); track book.id; let i = $index) {
                 <div
                   (mousedown)="selectSuggestion(book.name)"
                   [ngClass]="
@@ -94,6 +95,7 @@ export class TextPanelComponent {
   }
 
   onTextChange(text: string) {
+    this.textInput.set(text);
     this.state.activeContent.set({
       type: 'TEXT',
       text,

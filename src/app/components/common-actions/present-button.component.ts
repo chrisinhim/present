@@ -10,6 +10,17 @@ import { PresentationStateService } from '../../services/presentation-state.serv
   template: `
     <button
       (click)="togglePresent()"
+      [attr.aria-label]="
+        state.activeContent().type === 'TIMER'
+          ? state.isPresented()
+            ? 'Re-Present Timer (Enter)'
+            : 'Present Timer (Enter)'
+          : state.isPresented()
+            ? state.isPaused()
+              ? 'Resume Presentation (Space)'
+              : 'Pause Duration (Space)'
+            : 'Present Now (Enter)'
+      "
       [title]="
         state.activeContent().type === 'TIMER'
           ? state.isPresented()

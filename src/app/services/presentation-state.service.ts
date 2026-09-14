@@ -1,4 +1,4 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import {
   CaseTransform,
   ContainerStyle,
@@ -10,11 +10,15 @@ import {
   MediaFileItem,
   MediaScaleMode,
   PresentationBackground,
+  PresentationBroadcastMessage,
   PresentationState,
+  SyncPositionMessage,
+  SyncStateMessage,
   TabSettings,
   TextAlignment,
   TypographySettings,
   VerticalAlignment,
+  VideoActionMessage,
   AppThemeId,
   APP_THEMES,
 } from '../models/presentation.models';
@@ -98,6 +102,29 @@ const BUILT_IN_FONTS: string[] = [
 const SETTINGS_STORAGE_KEY = 'presentationSettings_v3';
 const FONTS_STORAGE_KEY = 'presentation_custom_fonts';
 const GEOMETRY_STORAGE_KEY = 'pres_geom';
+
+function sanitizeBlobUrl(url?: string): string {
+  return url && url.startsWith('blob:') ? '' : (url || '');
+}
+
+function sanitizeBackground(bg: PresentationBackground): PresentationBackground {
+  return {
+    ...bg,
+    mediaUrl: sanitizeBlobUrl(bg.mediaUrl),
+  };
+}
+
+function sanitizeTypography<T extends Partial<TypographySettings>>(typo: T): T {
+  return {
+    ...typo,
+    highlight: typo.highlight
+      ? {
+          ...typo.highlight,
+          mediaUrl: sanitizeBlobUrl(typo.highlight.mediaUrl),
+        }
+      : typo.highlight,
+  };
+}
 
 @Injectable({
   providedIn: 'root',
@@ -269,10 +296,33 @@ export class PresentationStateService {
         videoLoop: this.videoLoop(),
       };
 
+      const sanitizedTabSettings: Record<string, TabSettings> = {};
+      for (const [key, settings] of Object.entries(this.tabSettings())) {
+        sanitizedTabSettings[key] = {
+          ...settings,
+          background: sanitizeBackground(settings.background),
+          typography: sanitizeTypography(settings.typography),
+        };
+      }
+      sanitizedTabSettings[currentTab] = {
+        ...currentTabSettings,
+        background: sanitizeBackground(currentTabSettings.background),
+        typography: sanitizeTypography(currentTabSettings.typography),
+      };
+
+      const sanitizedHistory = this.history().map((item) => ({
+        ...item,
+        content: {
+          ...item.content,
+          mediaUrl: sanitizeBlobUrl(item.content.mediaUrl),
+        },
+        styles: item.styles ? sanitizeTypography(item.styles) : item.styles,
+      }));
+
       const stateToSave = {
         activeTab: currentTab,
-        typography: this.typography(),
-        background: this.background(),
+        typography: sanitizeTypography(this.typography()),
+        background: sanitizeBackground(this.background()),
         container: this.container(),
         entryAnimation: this.entryAnimation(),
         exitAnimation: this.exitAnimation(),
@@ -280,19 +330,35 @@ export class PresentationStateService {
         durationSeconds: this.durationSeconds(),
         mediaScaleMode: this.mediaScaleMode(),
         videoLoop: this.videoLoop(),
-        tabSettings: {
-          ...this.tabSettings(),
-          [currentTab]: currentTabSettings,
-        },
-        history: this.history(),
+        tabSettings: sanitizedTabSettings as Record<MainTabType, TabSettings>,
+        history: sanitizedHistory,
       };
       this.storage.setLocal(SETTINGS_STORAGE_KEY, stateToSave);
 
       // If presentation is actively displayed on screen, broadcast any setting changes in real-time immediately!
       if (this.isPresented()) {
-        this.broadcastSync();
+        untracked(() => {
+          this.broadcastSync();
+        });
       }
     });
+  }
+
+  getDefaultContentForTab(tab: MainTabType): PresentationState['activeContent'] {
+    switch (tab) {
+      case 'TEXT':
+        return { type: 'TEXT', text: '' };
+      case 'VERSE':
+        return { type: 'VERSE', text: '', verseRef: '', verseQuote: '' };
+      case 'TIMER':
+        return { type: 'TIMER', timerMode: 'time-now', timerClockFormat: '12', text: '' };
+      case 'LYRICS':
+        return { type: 'LYRICS', lyricsSongTitle: '', lyricsStanzaTitle: '', lyricsStanzaBody: '', text: '' };
+      case 'MEDIA':
+        return { type: 'MEDIA', mediaUrl: '' };
+      default:
+        return { type: 'TEXT', text: '' };
+    }
   }
 
   // --- Per-Tab Settings Switching ---
@@ -339,6 +405,21 @@ export class PresentationStateService {
       if (targetSettings.mediaScaleMode) this.mediaScaleMode.set(targetSettings.mediaScaleMode);
       if (typeof targetSettings.videoLoop === 'boolean') this.videoLoop.set(targetSettings.videoLoop);
     }
+
+    // 4. Clear presentation and active content from previous tab
+    this.isPresented.set(false);
+    this.isExiting.set(false);
+    this.isPaused.set(false);
+    this.remainingSeconds.set(0);
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+    this.videoPlaying.set(false);
+    this.videoCurrentTime.set(0);
+    this.activeContent.set(this.getDefaultContentForTab(newTab));
+
+    this.broadcastSync();
   }
 
   private initBroadcastChannel() {
@@ -368,25 +449,26 @@ export class PresentationStateService {
     
     // Restore per-tab settings if saved
     if (saved.tabSettings) {
-      const mergedTabSettings = { ...this.tabSettings(), ...saved.tabSettings };
-      this.tabSettings.set(mergedTabSettings);
+      const sanitizedSavedTabSettings: Record<string, TabSettings> = {};
+      for (const [key, s] of Object.entries(saved.tabSettings)) {
+        sanitizedSavedTabSettings[key] = {
+          ...s,
+          background: s.background ? sanitizeBackground(s.background) : { ...DEFAULT_BACKGROUND },
+          typography: s.typography ? sanitizeTypography(s.typography) : { ...DEFAULT_TYPOGRAPHY },
+        };
+      }
+      const mergedTabSettings = { ...this.tabSettings(), ...sanitizedSavedTabSettings };
+      this.tabSettings.set(mergedTabSettings as Record<MainTabType, TabSettings>);
     }
 
     if (saved.activeTab) this.activeTab.set(saved.activeTab);
     if (saved.typography) {
-      const typo = { ...DEFAULT_TYPOGRAPHY, ...saved.typography };
-      // If a saved highlight had a stale blob URL from a previous page session, reset mediaUrl until loaded
-      if (typo.highlight?.mediaUrl?.startsWith('blob:')) {
-        typo.highlight.mediaUrl = '';
-      }
+      const typo = sanitizeTypography({ ...DEFAULT_TYPOGRAPHY, ...saved.typography });
       this.typography.set(typo);
       this.ensureFontLoaded(saved.typography.fontFamily);
     }
     if (saved.background) {
-      const bg = { ...DEFAULT_BACKGROUND, ...saved.background };
-      if (bg.mediaUrl?.startsWith('blob:')) {
-        bg.mediaUrl = '';
-      }
+      const bg = sanitizeBackground({ ...DEFAULT_BACKGROUND, ...saved.background });
       this.background.set(bg);
     }
     if (saved.container) this.container.set({ ...DEFAULT_CONTAINER, ...saved.container });
@@ -394,7 +476,17 @@ export class PresentationStateService {
     if (saved.exitAnimation) this.exitAnimation.set(saved.exitAnimation);
     if (typeof saved.animationDurationMs === 'number') this.animationDurationMs.set(saved.animationDurationMs);
     if (typeof saved.durationSeconds === 'number') this.durationSeconds.set(saved.durationSeconds);
-    if (saved.history) this.history.set(saved.history);
+    if (saved.history) {
+      const sanitizedHistory = saved.history.map((item) => ({
+        ...item,
+        content: {
+          ...item.content,
+          mediaUrl: sanitizeBlobUrl(item.content?.mediaUrl),
+        },
+        styles: item.styles ? sanitizeTypography(item.styles) : item.styles,
+      }));
+      this.history.set(sanitizedHistory);
+    }
 
     const savedTheme = this.storage.getLocal<AppThemeId>('app_theme_preference', 'midnight-slate');
     if (savedTheme) this.appTheme.set(savedTheme);
@@ -524,6 +616,31 @@ export class PresentationStateService {
         });
       }
     }
+
+    // Re-link tabSettings so switching tabs restores valid live blob URLs
+    this.tabSettings.update((map) => {
+      const updated = { ...map };
+      for (const [key, tab] of Object.entries(updated)) {
+        if (tab.background?.mediaName) {
+          const match = mediaList.find((m) => m.name === tab.background.mediaName);
+          if (match) {
+            updated[key as MainTabType] = {
+              ...tab,
+              background: { ...tab.background, mediaUrl: match.dataUrl || '' },
+            };
+          }
+        }
+      }
+      return updated;
+    });
+
+    // Re-link activeContent if currently presenting media
+    if (this.activeContent().type === 'MEDIA') {
+      const bg = this.background();
+      if (bg.mediaUrl) {
+        this.activeContent.update((c) => ({ ...c, mediaUrl: bg.mediaUrl }));
+      }
+    }
   }
 
   async addMediaFile(file: File): Promise<MediaFileItem> {
@@ -546,8 +663,53 @@ export class PresentationStateService {
   }
 
   async removeMediaFile(id: string) {
+    const item = this.mediaFiles().find((m) => m.id === id);
+    if (!item) return;
+
+    // 1. Clear background if referencing this media
+    const currentBg = this.background();
+    if (currentBg.mediaUrl === item.dataUrl || currentBg.mediaName === item.name) {
+      this.background.update((b) => ({
+        ...b,
+        mediaUrl: '',
+        mediaName: undefined,
+        type: b.type === 'video' ? 'solid' : b.type,
+      }));
+    }
+
+    // 2. Clear activeContent if presenting this media
+    const content = this.activeContent();
+    if (content.mediaUrl === item.dataUrl || (content.type === 'MEDIA' && currentBg.mediaName === item.name)) {
+      this.activeContent.update((c) => ({
+        ...c,
+        mediaUrl: '',
+      }));
+      if (this.isPresented()) {
+        this.hide();
+      }
+    }
+
+    // 3. Clear from tabSettings dictionary
+    this.tabSettings.update((map) => {
+      const updated = { ...map };
+      for (const [key, tab] of Object.entries(updated)) {
+        if (tab.background?.mediaUrl === item.dataUrl || tab.background?.mediaName === item.name) {
+          updated[key as MainTabType] = {
+            ...tab,
+            background: { ...tab.background, mediaUrl: '', mediaName: undefined },
+          };
+        }
+      }
+      return updated;
+    });
+
+    // 4. Safe revocation of the in-memory object URL
+    if (item.dataUrl) {
+      URL.revokeObjectURL(item.dataUrl);
+    }
     await this.storage.deleteMedia(id);
     this.mediaFiles.update((list) => list.filter((m) => m.id !== id));
+    this.broadcastSync();
   }
 
   present(contentOverride?: Partial<PresentationState['activeContent']>) {
@@ -677,11 +839,30 @@ export class PresentationStateService {
 
   broadcastSync() {
     if (!this.broadcastChannel) return;
+    const mediaForUrl = (url: string, name?: string) =>
+      this.mediaFiles().find((item) => item.dataUrl === url || (!!name && item.name === name));
+    const backgroundMedia = mediaForUrl(this.background().mediaUrl, this.background().mediaName);
+    const highlightMedia = mediaForUrl(
+      this.typography().highlight.mediaUrl,
+      this.typography().highlight.mediaName,
+    );
+    const activeContentMedia = mediaForUrl(this.activeContent().mediaUrl || '');
+
+    const background = backgroundMedia
+      ? { ...this.background(), mediaUrl: '' }
+      : this.background();
+    const typography = highlightMedia
+      ? { ...this.typography(), highlight: { ...this.typography().highlight, mediaUrl: '' } }
+      : this.typography();
+    const activeContent = activeContentMedia
+      ? { ...this.activeContent(), mediaUrl: '' }
+      : this.activeContent();
+
     this.broadcastChannel.postMessage({
       type: 'SYNC_STATE',
       state: {
-        typography: this.typography(),
-        background: this.background(),
+        typography,
+        background,
         container: this.container(),
         entryAnimation: this.entryAnimation(),
         exitAnimation: this.exitAnimation(),
@@ -689,10 +870,15 @@ export class PresentationStateService {
         isPresented: this.isPresented(),
         isExiting: this.isExiting(),
         isPaused: this.isPaused(),
-        activeContent: this.activeContent(),
+        activeContent,
         durationSeconds: this.durationSeconds(),
         remainingSeconds: this.remainingSeconds(),
         customFonts: this.customFonts(),
+      },
+      media: {
+        backgroundBlob: backgroundMedia?.blob,
+        highlightBlob: highlightMedia?.blob,
+        activeContentBlob: activeContentMedia?.blob,
       },
     });
   }

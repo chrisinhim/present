@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PresentationStateService } from '../../../services/presentation-state.service';
@@ -17,6 +17,7 @@ interface SongFileItem {
 @Component({
   selector: 'app-lyrics-panel',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   template: `
     <div class="flex flex-col gap-4">
@@ -148,7 +149,7 @@ interface SongFileItem {
 
           <!-- Songs List -->
           <div class="flex flex-col gap-1 overflow-y-auto pr-1">
-            @for (song of songFiles(); track song; let idx = $index) {
+            @for (song of songFiles(); track song.id; let idx = $index) {
               <div
                 (click)="selectSong(song)"
                 [ngClass]="
@@ -257,7 +258,7 @@ interface SongFileItem {
 
           <!-- Paragraph Cards Grid / Vertical List -->
           <div class="flex flex-col gap-2.5 overflow-y-auto pr-1">
-            @for (stanza of selectedSong()?.stanzas; track stanza; let i = $index) {
+            @for (stanza of selectedSong()?.stanzas; track $index; let i = $index) {
               <div
                 (click)="presentStanza(stanza, i)"
                 [ngClass]="

@@ -13,6 +13,7 @@ import { EntryAnimation } from '../../../models/presentation.models';
       <button
         (click)="isOpen.set(!isOpen())"
         title="Entry Animation"
+        aria-label="Entry Animation"
         class="h-7 px-2 flex items-center gap-1 rounded hover:bg-slate-100 text-xs text-slate-700 transition-colors"
       >
         <span>↗</span>

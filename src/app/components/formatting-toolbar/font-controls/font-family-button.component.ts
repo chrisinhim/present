@@ -13,7 +13,7 @@ import { PresentationStateService } from '../../../services/presentation-state.s
       <select
         [ngModel]="state.typography().fontFamily"
         (ngModelChange)="onFontChange($event)"
-        class="h-7 bg-white border border-slate-300 rounded px-1.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-sky-500 cursor-pointer w-24 sm:w-28 truncate shadow-xs"
+        class="h-7 bg-white border border-slate-300 rounded px-2.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-sky-500 cursor-pointer w-24 sm:w-36 truncate shadow-xs"
       >
         @for (font of state.availableFontFamilies(); track font) {
           <option [value]="font">

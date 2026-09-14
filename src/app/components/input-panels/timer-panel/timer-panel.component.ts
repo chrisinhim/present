@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PresentationStateService } from '../../../services/presentation-state.service';
@@ -7,6 +7,7 @@ import { HistorySectionComponent } from '../../history-section/history-section.c
 @Component({
   selector: 'app-timer-panel',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, HistorySectionComponent],
   template: `
     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
