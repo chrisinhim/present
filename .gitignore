@@ -15,8 +15,7 @@ venv/
 
 # Angular & Build
 .angular/
-dist/
-/browser/
+requirement-docs
 *.js.map
 *.css.map
 ~$*.pptx
