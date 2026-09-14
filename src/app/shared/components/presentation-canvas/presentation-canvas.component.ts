@@ -36,9 +36,10 @@ import { StyleCompilerService } from '../../../core/styles/style-compiler.servic
       [ngStyle]="s.background"
     >
       <!-- BACKGROUND VIDEO (when background type is video) -->
-      @if (background().type === 'video' && background().mediaUrl) {
+      @if (background().type === 'video' && background().mediaUrl && !mediaVideoError()) {
         <video
           [src]="background().mediaUrl"
+          (error)="onMediaVideoError()"
           autoplay
           loop
           muted
@@ -82,9 +83,10 @@ import { StyleCompilerService } from '../../../core/styles/style-compiler.servic
               [ngStyle]="s.highlightContainer"
             >
               <!-- Highlight Video Layer -->
-              @if (typography().highlight.type === 'video' && typography().highlight.mediaUrl) {
+              @if (typography().highlight.type === 'video' && typography().highlight.mediaUrl && !mediaHighlightVideoError()) {
                 <video
                   [src]="typography().highlight.mediaUrl"
+                  (error)="onMediaHighlightVideoError()"
                   autoplay
                   loop
                   muted
@@ -179,12 +181,21 @@ export class PresentationCanvasComponent {
   readonly timerOverride = input<string>('');
 
   readonly mediaImageError = signal<boolean>(false);
+  readonly mediaVideoError = signal<boolean>(false);
+  readonly mediaHighlightVideoError = signal<boolean>(false);
 
   constructor() {
     effect(() => {
-      // Whenever background mediaUrl changes, reset image error state
+      // Whenever background mediaUrl changes, reset media error state
       this.background().mediaUrl;
       this.mediaImageError.set(false);
+      this.mediaVideoError.set(false);
+    });
+
+    effect(() => {
+      // Whenever highlight mediaUrl changes, reset highlight video error state
+      this.typography().highlight?.mediaUrl;
+      this.mediaHighlightVideoError.set(false);
     });
 
     effect(() => {
@@ -214,6 +225,14 @@ export class PresentationCanvasComponent {
 
   onMediaImageError() {
     this.mediaImageError.set(true);
+  }
+
+  onMediaVideoError() {
+    this.mediaVideoError.set(true);
+  }
+
+  onMediaHighlightVideoError() {
+    this.mediaHighlightVideoError.set(true);
   }
 
   readonly animDurationString = computed(() => `${this.animationDurationMs()}ms`);

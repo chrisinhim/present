@@ -68,13 +68,14 @@ import { MediaFileItem } from '../../../models/presentation.models';
             >
               <!-- THUMBNAIL PREVIEW -->
               <div
-                class="w-full h-20 bg-slate-950 rounded-lg overflow-hidden flex items-center justify-center"
+                class="w-full h-20 bg-slate-950 rounded-lg overflow-hidden flex items-center justify-center text-2xl"
               >
-                @if (item.type === 'image') {
-                  <img [src]="item.dataUrl" class="w-full h-full object-cover" alt="Thumbnail" />
-                }
-                @if (item.type === 'video') {
-                  <video [src]="item.dataUrl" muted class="w-full h-full object-cover"></video>
+                @if (failedThumbIds().has(item.id)) {
+                  <span>{{ item.type === 'video' ? '🎬' : '🖼️' }}</span>
+                } @else if (item.type === 'image') {
+                  <img [src]="item.dataUrl" (error)="onThumbError(item.id)" class="w-full h-full object-cover" alt="Thumbnail" />
+                } @else if (item.type === 'video') {
+                  <video [src]="item.dataUrl" (error)="onThumbError(item.id)" muted class="w-full h-full object-cover"></video>
                 }
               </div>
               <!-- DETAILS -->
@@ -227,6 +228,15 @@ export class MediaPanelComponent {
 
   readonly formattedCurrentTime = computed(() => this.formatTime(this.state.videoCurrentTime()));
   readonly formattedDuration = computed(() => this.formatTime(this.state.videoDuration()));
+  readonly failedThumbIds = signal<Set<string>>(new Set());
+
+  onThumbError(id: string) {
+    this.failedThumbIds.update((set) => {
+      const updated = new Set(set);
+      updated.add(id);
+      return updated;
+    });
+  }
 
   onDragOver(e: DragEvent) {
     e.preventDefault();
