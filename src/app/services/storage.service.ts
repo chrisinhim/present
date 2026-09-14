@@ -41,8 +41,21 @@ export class StorageService {
         }
       };
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        db.onversionchange = () => {
+          db.close();
+          this.dbPromise = null;
+        };
+        resolve(db);
+      };
+      request.onerror = () => {
+        this.dbPromise = null;
+        reject(request.error);
+      };
+      request.onblocked = () => {
+        console.warn('IndexedDB upgrade blocked. Please close other tabs of this application.');
+      };
     });
 
     return this.dbPromise;
@@ -51,13 +64,15 @@ export class StorageService {
   async saveMedia(id: string, name: string, type: 'image' | 'video', blob: Blob): Promise<void> {
     try {
       const db = await this.initDB();
-      return new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const tx = db.transaction(this.STORE_NAME, 'readwrite');
         const store = tx.objectStore(this.STORE_NAME);
         const item = { id, name, type, blob, lastModified: Date.now() };
-        const req = store.put(item);
+        // Support both modern stores with keyPath 'id' and legacy stores created with out-of-line keys
+        const req = store.keyPath ? store.put(item) : store.put(item, id);
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
+        tx.onerror = () => reject(tx.error);
       });
     } catch (e) {
       console.warn('Failed to save to IndexedDB', e);
@@ -67,12 +82,42 @@ export class StorageService {
   async getAllMedia(): Promise<{ id: string; name: string; type: 'image' | 'video'; blob: Blob }[]> {
     try {
       const db = await this.initDB();
-      return new Promise((resolve, reject) => {
+      return await new Promise((resolve, reject) => {
         const tx = db.transaction(this.STORE_NAME, 'readonly');
         const store = tx.objectStore(this.STORE_NAME);
         const req = store.getAll();
-        req.onsuccess = () => resolve(req.result || []);
+        req.onsuccess = () => {
+          const rawItems = req.result || [];
+          const normalized = rawItems
+            .map((item: any, index: number) => {
+              if (!item) return null;
+              // Handle legacy format where raw Blob/File was stored directly
+              if (item instanceof Blob) {
+                const isVideo = item.type?.startsWith('video');
+                return {
+                  id: (item as any).name ? `legacy_${(item as any).name}` : `legacy_media_${index}`,
+                  name: (item as any).name || (isVideo ? 'Restored Video' : 'Restored Image'),
+                  type: isVideo ? ('video' as const) : ('image' as const),
+                  blob: item,
+                };
+              }
+              // Standard format with { id, name, type, blob }
+              if (item.blob instanceof Blob) {
+                return {
+                  id: item.id || `media_${index}`,
+                  name: item.name || 'Untitled Media',
+                  type: item.type === 'video' ? ('video' as const) : ('image' as const),
+                  blob: item.blob,
+                };
+              }
+              return null;
+            })
+            .filter((item): item is { id: string; name: string; type: 'image' | 'video'; blob: Blob } => item !== null);
+
+          resolve(normalized);
+        };
         req.onerror = () => reject(req.error);
+        tx.onerror = () => reject(tx.error);
       });
     } catch (e) {
       console.warn('Failed to load from IndexedDB', e);
@@ -83,12 +128,13 @@ export class StorageService {
   async deleteMedia(id: string): Promise<void> {
     try {
       const db = await this.initDB();
-      return new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const tx = db.transaction(this.STORE_NAME, 'readwrite');
         const store = tx.objectStore(this.STORE_NAME);
         const req = store.delete(id);
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
+        tx.onerror = () => reject(tx.error);
       });
     } catch (e) {
       console.warn('Failed to delete from IndexedDB', e);

@@ -243,13 +243,18 @@ export class MediaPanelComponent {
     const input = e.target as HTMLInputElement;
     if (input.files) {
       this.handleFiles(input.files);
+      input.value = '';
     }
   }
 
   private async handleFiles(files: FileList) {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      await this.state.addMediaFile(file);
+      try {
+        await this.state.addMediaFile(file);
+      } catch (err) {
+        console.error('Failed to add media file:', file.name, err);
+      }
     }
   }
 
