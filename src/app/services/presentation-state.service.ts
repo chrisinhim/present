@@ -592,33 +592,62 @@ export class PresentationStateService {
 
   private async loadSavedMedia() {
     const items = await this.storage.getAllMedia();
-    const mediaList: MediaFileItem[] = items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      type: item.type,
-      blob: item.blob,
-      dataUrl: URL.createObjectURL(item.blob),
-      size: item.blob.size,
-      lastModified: Date.now(),
-    }));
-    this.mediaFiles.set(mediaList);
+    const validMediaList: MediaFileItem[] = [];
+
+    for (const item of items) {
+      if (!item.blob || item.blob.size === 0) {
+        this.storage.deleteMedia(item.id).catch(() => {});
+        continue;
+      }
+
+      // Verify that the blob is valid and readable (backing file reference is intact)
+      try {
+        const slice = item.blob.slice(0, 1);
+        await slice.arrayBuffer();
+
+        validMediaList.push({
+          id: item.id,
+          name: item.name,
+          type: item.type,
+          blob: item.blob,
+          dataUrl: URL.createObjectURL(item.blob),
+          size: item.blob.size,
+          lastModified: Date.now(),
+        });
+      } catch (err) {
+        console.warn(`Removing unreadable or orphaned media item from database: ${item.name}`);
+        this.storage.deleteMedia(item.id).catch(() => {});
+      }
+    }
+
+    this.mediaFiles.set(validMediaList);
 
     // Re-link active background or highlight if matching media was previously selected
     const currentBg = this.background();
     if (currentBg.mediaName) {
-      const match = mediaList.find((m) => m.name === currentBg.mediaName);
+      const match = validMediaList.find((m) => m.name === currentBg.mediaName);
       if (match) {
         this.background.update((b) => ({ ...b, mediaUrl: match.dataUrl || '' }));
+      } else {
+        if (currentBg.type === 'video' || currentBg.type === 'picture') {
+          this.background.update((b) => ({ ...b, type: 'solid', mediaUrl: '', mediaName: undefined }));
+        }
       }
     }
 
     const currentHl = this.typography().highlight;
     if (currentHl?.mediaName) {
-      const match = mediaList.find((m) => m.name === currentHl.mediaName);
+      const match = validMediaList.find((m) => m.name === currentHl.mediaName);
       if (match) {
         this.updateTypography({
           highlight: { ...currentHl, mediaUrl: match.dataUrl || '' },
         });
+      } else {
+        if (currentHl.type === 'video' || currentHl.type === 'picture') {
+          this.updateTypography({
+            highlight: { ...currentHl, type: 'none', mediaUrl: '', mediaName: undefined },
+          });
+        }
       }
     }
 
@@ -627,12 +656,19 @@ export class PresentationStateService {
       const updated = { ...map };
       for (const [key, tab] of Object.entries(updated)) {
         if (tab.background?.mediaName) {
-          const match = mediaList.find((m) => m.name === tab.background.mediaName);
+          const match = validMediaList.find((m) => m.name === tab.background.mediaName);
           if (match) {
             updated[key as MainTabType] = {
               ...tab,
               background: { ...tab.background, mediaUrl: match.dataUrl || '' },
             };
+          } else {
+            if (tab.background.type === 'video' || tab.background.type === 'picture') {
+              updated[key as MainTabType] = {
+                ...tab,
+                background: { ...tab.background, type: 'solid', mediaUrl: '', mediaName: undefined },
+              };
+            }
           }
         }
       }
@@ -644,6 +680,8 @@ export class PresentationStateService {
       const bg = this.background();
       if (bg.mediaUrl) {
         this.activeContent.update((c) => ({ ...c, mediaUrl: bg.mediaUrl }));
+      } else {
+        this.activeContent.update((c) => ({ ...c, mediaUrl: '' }));
       }
     }
   }
@@ -651,8 +689,18 @@ export class PresentationStateService {
   async addMediaFile(file: File): Promise<MediaFileItem> {
     const id = 'media_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     const type: 'image' | 'video' = file.type.startsWith('video') ? 'video' : 'image';
+
+    // Store as an independent detached Blob directly in browser storage
+    let persistentBlob: Blob;
     try {
-      await this.storage.saveMedia(id, file.name, type, file);
+      const buffer = await file.arrayBuffer();
+      persistentBlob = new Blob([buffer], { type: file.type });
+    } catch {
+      persistentBlob = file.slice(0, file.size, file.type);
+    }
+
+    try {
+      await this.storage.saveMedia(id, file.name, type, persistentBlob);
     } catch (e) {
       console.warn('Could not persist media to IndexedDB:', e);
     }
@@ -661,9 +709,9 @@ export class PresentationStateService {
       id,
       name: file.name,
       type,
-      blob: file,
-      dataUrl: URL.createObjectURL(file),
-      size: file.size,
+      blob: persistentBlob,
+      dataUrl: URL.createObjectURL(persistentBlob),
+      size: persistentBlob.size,
       lastModified: Date.now(),
     };
 
@@ -857,15 +905,27 @@ export class PresentationStateService {
     );
     const activeContentMedia = mediaForUrl(this.activeContent().mediaUrl || '');
 
+    const sanitizeBroadcastMediaUrl = (url?: string) =>
+      url && url.startsWith('blob:') ? '' : (url || '');
+
     const background = backgroundMedia
       ? { ...this.background(), mediaUrl: '' }
-      : this.background();
+      : { ...this.background(), mediaUrl: sanitizeBroadcastMediaUrl(this.background().mediaUrl) };
     const typography = highlightMedia
       ? { ...this.typography(), highlight: { ...this.typography().highlight, mediaUrl: '' } }
-      : this.typography();
+      : {
+          ...this.typography(),
+          highlight: {
+            ...this.typography().highlight,
+            mediaUrl: sanitizeBroadcastMediaUrl(this.typography().highlight.mediaUrl),
+          },
+        };
     const activeContent = activeContentMedia
       ? { ...this.activeContent(), mediaUrl: '' }
-      : this.activeContent();
+      : {
+          ...this.activeContent(),
+          mediaUrl: sanitizeBroadcastMediaUrl(this.activeContent().mediaUrl),
+        };
 
     this.broadcastChannel.postMessage({
       type: 'SYNC_STATE',

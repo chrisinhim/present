@@ -184,19 +184,20 @@ export class PresentationViewComponent implements OnInit, OnDestroy {
           const media = event.data.media || {};
           if (s.typography) {
             const highlightUrl = this.replaceObjectUrl('highlight', media.highlightBlob);
+            const safeHighlightUrl = highlightUrl || (s.typography.highlight?.mediaUrl?.startsWith('blob:') ? '' : s.typography.highlight?.mediaUrl || '');
             this.typography.set({
               ...s.typography,
-              highlight: highlightUrl
-                ? { ...s.typography.highlight, mediaUrl: highlightUrl }
-                : s.typography.highlight,
+              highlight: {
+                ...s.typography.highlight,
+                mediaUrl: safeHighlightUrl,
+              },
             });
             this.ensureFont(s.typography.fontFamily, s.customFonts);
           }
           if (s.background) {
             const backgroundUrl = this.replaceObjectUrl('background', media.backgroundBlob);
-            this.background.set(
-              backgroundUrl ? { ...s.background, mediaUrl: backgroundUrl } : s.background,
-            );
+            const safeBackgroundUrl = backgroundUrl || (s.background.mediaUrl?.startsWith('blob:') ? '' : s.background.mediaUrl || '');
+            this.background.set({ ...s.background, mediaUrl: safeBackgroundUrl });
           }
           if (s.container) this.container.set(s.container);
           if (s.entryAnimation) this.entryAnimation.set(s.entryAnimation);
@@ -226,9 +227,8 @@ export class PresentationViewComponent implements OnInit, OnDestroy {
           if (typeof s.isPaused === 'boolean') this.isPaused.set(s.isPaused);
           if (s.activeContent) {
             const activeContentUrl = this.replaceObjectUrl('activeContent', media.activeContentBlob);
-            this.activeContent.set(
-              activeContentUrl ? { ...s.activeContent, mediaUrl: activeContentUrl } : s.activeContent,
-            );
+            const safeActiveUrl = activeContentUrl || (s.activeContent.mediaUrl?.startsWith('blob:') ? '' : s.activeContent.mediaUrl || '');
+            this.activeContent.set({ ...s.activeContent, mediaUrl: safeActiveUrl });
           }
           if (s.customFonts) this.syncCustomFonts(s.customFonts);
         } else if (event.data?.type === 'SYNC_POSITION' && event.data.position) {
