@@ -1057,6 +1057,13 @@ export class PresentationStateService {
     }
   }
 
+  updateContainer(partial: Partial<ContainerStyle>) {
+    this.container.update((prev) => ({ ...prev, ...partial }));
+    if (this.isPresented()) {
+      this.broadcastSync();
+    }
+  }
+
   broadcastPositionUpdate() {
     if (!this.broadcastChannel) return;
     const t = this.typography();

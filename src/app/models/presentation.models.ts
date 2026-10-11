@@ -254,6 +254,7 @@ export interface HighlightSettings {
   opacity?: number;
   padding?: number;
   borderRadius?: number;
+  fullWidth?: boolean;
 }
 
 export interface TypographySettings {

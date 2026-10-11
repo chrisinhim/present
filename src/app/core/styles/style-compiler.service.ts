@@ -16,6 +16,25 @@ export interface CompiledCanvasStyles {
   exitAnimationClass: string;
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  if (!hex) return `rgba(250, 204, 21, ${alpha})`;
+  if (hex.startsWith('rgba') || hex.startsWith('rgb')) return hex;
+  const clean = hex.replace('#', '');
+  if (clean.length === 3) {
+    const r = parseInt(clean[0] + clean[0], 16);
+    const g = parseInt(clean[1] + clean[1], 16);
+    const b = parseInt(clean[2] + clean[2], 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  if (clean.length >= 6) {
+    const r = parseInt(clean.substring(0, 2), 16);
+    const g = parseInt(clean.substring(2, 4), 16);
+    const b = parseInt(clean.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return hex;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -100,14 +119,25 @@ export class StyleCompilerService {
     const hl = typo.highlight;
     const highlightContainer: Record<string, string | number> = {};
     if (hl && hl.type !== 'none') {
-      highlightContainer['padding'] = `${(hl.padding || 8) * scale}px`;
-      highlightContainer['borderRadius'] = `${(hl.borderRadius || 8) * scale}px`;
-      highlightContainer['opacity'] = hl.opacity ?? 1;
+      highlightContainer['padding'] = `${(hl.padding ?? 8) * scale}px`;
+      highlightContainer['borderRadius'] = `${(hl.borderRadius ?? 8) * scale}px`;
+      highlightContainer['overflow'] = 'hidden';
+      highlightContainer['backgroundRepeat'] = 'no-repeat';
 
-      if (hl.type === 'solid' && hl.color) {
-        highlightContainer['backgroundColor'] = hl.color;
-      } else if (hl.type === 'gradient' && hl.gradient) {
-        highlightContainer['background'] = hl.gradient;
+      if (hl.fullWidth) {
+        highlightContainer['display'] = 'block';
+        highlightContainer['width'] = '100%';
+        highlightContainer['boxSizing'] = 'border-box';
+      } else {
+        highlightContainer['display'] = 'inline-block';
+      }
+
+      const opacity = typeof hl.opacity === 'number' ? hl.opacity : 1;
+
+      if (hl.type === 'solid') {
+        highlightContainer['backgroundColor'] = hexToRgba(hl.color || '#FACC15', opacity);
+      } else if (hl.type === 'gradient') {
+        highlightContainer['background'] = hl.gradient || 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)';
       } else if (hl.type === 'picture' && hl.mediaUrl) {
         highlightContainer['backgroundImage'] = `url("${hl.mediaUrl}")`;
         highlightContainer['backgroundSize'] = 'cover';

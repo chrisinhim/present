@@ -79,7 +79,8 @@ import { StyleCompilerService } from '../../../core/styles/style-compiler.servic
           >
             <!-- HIGHLIGHT CONTAINER WRAPPER -->
             <div
-              class="relative inline-block"
+              class="relative"
+              [ngClass]="typography().highlight.fullWidth ? 'block w-full' : 'inline-block'"
               [ngStyle]="s.highlightContainer"
             >
               <!-- Highlight Video Layer -->
@@ -91,7 +92,8 @@ import { StyleCompilerService } from '../../../core/styles/style-compiler.servic
                   loop
                   muted
                   playsinline
-                  class="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+                  [style.opacity]="typography().highlight.opacity ?? 1"
+                  class="absolute inset-0 w-full h-full object-cover pointer-events-none z-0 rounded-[inherit]"
                 ></video>
               }
 
