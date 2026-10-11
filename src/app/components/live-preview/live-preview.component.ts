@@ -33,8 +33,8 @@ import { OnAirBadgeComponent } from './on-air-badge.component';
         [showAlways]="true"
         [isPresented]="state.isPresented()"
         [isExiting]="state.isExiting()"
-        [entryAnimation]="state.entryAnimation()"
-        [exitAnimation]="state.exitAnimation()"
+        [entryAnimation]="'none'"
+        [exitAnimation]="'none'"
         [animationDurationMs]="state.animationDurationMs()"
         [placeholderText]="'Preview Text'"
       />

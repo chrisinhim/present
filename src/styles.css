@@ -140,33 +140,89 @@
 }
 
 /* Entry CSS Utility Classes */
-.animate-fade-in, .anim-enter-fade-in { animation: fadeIn var(--anim-duration, 0.4s) ease-out forwards; }
-.animate-slide-top, .anim-enter-slide-top { animation: slideDown var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-slide-bottom, .anim-enter-slide-bottom { animation: slideUp var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-slide-left, .anim-enter-slide-left { animation: slideRightIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-slide-right, .anim-enter-slide-right { animation: slideLeftIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-zoom-in, .anim-enter-zoom-in { animation: zoomIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-zoom-in-bounce, .anim-enter-zoom-in-bounce { animation: zoomInBounce var(--anim-duration, 0.5s) cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-.animate-flip-x, .anim-enter-flip-x { animation: flipXIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-flip-y, .anim-enter-flip-y { animation: flipYIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-blur-in, .anim-enter-blur-in { animation: blurIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-rotate-in, .anim-enter-rotate-in { animation: rotateIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-exp-h, .anim-enter-exp-h { animation: expH var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-exp-v, .anim-enter-exp-v { animation: expV var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-wipe-right, .anim-enter-wipe-right { animation: wipeRight var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-fade-in, .anim-enter-fade-in {
+  opacity: 0;
+  animation: fadeIn var(--anim-duration, 0.4s) ease-out both;
+}
+.animate-slide-top, .anim-enter-slide-top {
+  opacity: 0;
+  transform: translateY(-50px);
+  animation: slideDown var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-slide-bottom, .anim-enter-slide-bottom {
+  opacity: 0;
+  transform: translateY(50px);
+  animation: slideUp var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-slide-left, .anim-enter-slide-left {
+  opacity: 0;
+  transform: translateX(-60px);
+  animation: slideRightIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-slide-right, .anim-enter-slide-right {
+  opacity: 0;
+  transform: translateX(60px);
+  animation: slideLeftIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-zoom-in, .anim-enter-zoom-in {
+  opacity: 0;
+  transform: scale(0.65);
+  animation: zoomIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-zoom-in-bounce, .anim-enter-zoom-in-bounce {
+  opacity: 0;
+  transform: scale(0.3);
+  animation: zoomInBounce var(--anim-duration, 0.5s) cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.animate-flip-x, .anim-enter-flip-x {
+  opacity: 0;
+  transform: perspective(600px) rotateX(90deg);
+  animation: flipXIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-flip-y, .anim-enter-flip-y {
+  opacity: 0;
+  transform: perspective(600px) rotateY(90deg);
+  animation: flipYIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-blur-in, .anim-enter-blur-in {
+  opacity: 0;
+  filter: blur(16px);
+  transform: scale(0.95);
+  animation: blurIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-rotate-in, .anim-enter-rotate-in {
+  opacity: 0;
+  transform: rotate(-15deg) scale(0.85);
+  animation: rotateIn var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-exp-h, .anim-enter-exp-h {
+  opacity: 0;
+  transform: scaleX(0);
+  animation: expH var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-exp-v, .anim-enter-exp-v {
+  opacity: 0;
+  transform: scaleY(0);
+  animation: expV var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-wipe-right, .anim-enter-wipe-right {
+  opacity: 0.5;
+  clip-path: inset(0 100% 0 0);
+  animation: wipeRight var(--anim-duration, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
 
 /* Exit CSS Utility Classes */
-.animate-fade-out, .anim-exit-fade-out { animation: fadeOut var(--anim-duration, 0.4s) ease-in forwards; }
-.anim-exit-slide-bottom { animation: slideOutBottom var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) forwards; }
-.anim-exit-slide-top { animation: slideOutTop var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) forwards; }
-.anim-exit-slide-left { animation: slideOutLeft var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) forwards; }
-.anim-exit-slide-right { animation: slideOutRight var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) forwards; }
-.animate-zoom-out, .anim-exit-zoom-out { animation: zoomOut var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) forwards; }
-.animate-flip-x-out, .anim-exit-flip-x-out { animation: flipXOut var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) forwards; }
-.animate-flip-y-out, .anim-exit-flip-y-out { animation: flipYOut var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) forwards; }
-.animate-blur-out, .anim-exit-blur-out { animation: blurOut var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) forwards; }
-.animate-rotate-out, .anim-exit-rotate-out { animation: rotateOut var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) forwards; }
-.animate-con-h, .anim-exit-con-h { animation: conH var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) forwards; }
-.animate-con-v, .anim-exit-con-v { animation: conV var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) forwards; }
-.animate-wipe-left, .anim-exit-wipe-left { animation: wipeLeft var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) forwards; }
+.animate-fade-out, .anim-exit-fade-out { animation: fadeOut var(--anim-duration, 0.4s) ease-in both; }
+.anim-exit-slide-bottom { animation: slideOutBottom var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) both; }
+.anim-exit-slide-top { animation: slideOutTop var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) both; }
+.anim-exit-slide-left { animation: slideOutLeft var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) both; }
+.anim-exit-slide-right { animation: slideOutRight var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) both; }
+.animate-zoom-out, .anim-exit-zoom-out { animation: zoomOut var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) both; }
+.animate-flip-x-out, .anim-exit-flip-x-out { animation: flipXOut var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) both; }
+.animate-flip-y-out, .anim-exit-flip-y-out { animation: flipYOut var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) both; }
+.animate-blur-out, .anim-exit-blur-out { animation: blurOut var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) both; }
+.animate-rotate-out, .anim-exit-rotate-out { animation: rotateOut var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) both; }
+.animate-con-h, .anim-exit-con-h { animation: conH var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) both; }
+.animate-con-v, .anim-exit-con-v { animation: conV var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) both; }
+.animate-wipe-left, .anim-exit-wipe-left { animation: wipeLeft var(--anim-duration, 0.4s) cubic-bezier(0.7, 0, 0.84, 0) both; }
 
