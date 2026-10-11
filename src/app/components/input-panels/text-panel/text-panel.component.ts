@@ -21,7 +21,7 @@ import { HistorySectionComponent } from '../../history-section/history-section.c
   template: `
     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
       <!-- LEFT: INPUT & PRESENT/DURATION CONTROLS -->
-      <div class="md:col-span-7 flex items-start gap-2.5">
+      <div class="md:col-span-7 flex items-center gap-2">
         <div class="relative flex-1 min-w-0">
           <textarea
             #textArea
@@ -30,8 +30,8 @@ import { HistorySectionComponent } from '../../history-section/history-section.c
             (keydown)="onKeyDown($event)"
             (blur)="onBlur()"
             placeholder="Write any text ..."
-            rows="2"
-            class="w-full bg-white border border-slate-200 rounded-md p-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-[#13324b] focus:ring-1 focus:ring-[#13324b] focus:outline-none resize-none leading-normal transition-colors"
+            rows="1"
+            class="w-full h-9 min-h-[36px] bg-white border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-[#13324b] focus:ring-1 focus:ring-[#13324b] focus:outline-none resize-none leading-normal transition-colors box-border"
           ></textarea>
 
           <!-- AUTOCOMPLETE DROPDOWN OVERLAY -->
