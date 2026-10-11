@@ -10,7 +10,7 @@ import { PresentButtonComponent } from './present-button.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, PresentButtonComponent],
   template: `
-    <div class="flex items-center gap-2 shrink-0">
+    <div class="flex items-center gap-2 shrink-0 h-9">
       <!-- Play / Pause Present Button -->
       <app-present-button />
 

@@ -32,7 +32,7 @@ import { PresentationStateService } from '../../services/presentation-state.serv
               : 'Pause Duration (Space)'
             : 'Present Now (Enter)'
       "
-      class="w-9 h-9 rounded bg-[#13324b] hover:bg-[#0e2437] text-white flex items-center justify-center text-sm font-bold shadow-xs transition-colors cursor-pointer shrink-0"
+      class="w-9 h-9 rounded-md bg-[#13324b] hover:bg-[#0e2437] text-white flex items-center justify-center text-sm font-bold shadow-xs transition-colors cursor-pointer shrink-0"
     >
       @if (state.isPresented() && !state.isPaused()) {
         <span>‖</span>
