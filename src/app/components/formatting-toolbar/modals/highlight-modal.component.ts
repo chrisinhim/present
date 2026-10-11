@@ -24,8 +24,8 @@ import { HighlightType } from '../../../models/presentation.models';
         class="flex items-center justify-between border-b border-slate-800 pb-2 cursor-grab active:cursor-grabbing"
       >
         <div class="flex items-center gap-2">
-          <span class="text-lg" aria-hidden="true">🖍️</span>
-          <h3 id="highlight-modal-title" class="text-sm font-bold tracking-wide">Text Highlight Options</h3>
+          <span class="text-lg" aria-hidden="true">🔲</span>
+          <h3 id="highlight-modal-title" class="text-sm font-bold tracking-wide">Text Background Options</h3>
         </div>
         <div class="flex items-center gap-1">
           <span class="text-[10px] text-slate-500 font-mono">⠿ drag</span>
@@ -35,53 +35,85 @@ import { HighlightType } from '../../../models/presentation.models';
         </div>
       </div>
 
-      <!-- Mode Selector Tabs (Solid, Gradient, Picture, Video) -->
-      <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto">
+      <!-- Mode Selector Tabs (None, Solid, Gradient, Picture, Video) -->
+      <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto gap-0.5">
         <button
+          type="button"
+          (click)="setHighlightType('none')"
+          [ngClass]="
+            highlightTab() === 'none'
+              ? 'bg-rose-600 text-white font-bold'
+              : 'text-slate-400 hover:text-white'
+          "
+          class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5 text-center"
+        >
+          None
+        </button>
+        <button
+          type="button"
           (click)="setHighlightType('solid')"
           [ngClass]="
             highlightTab() === 'solid'
               ? 'bg-sky-600 text-white font-bold'
               : 'text-slate-400 hover:text-white'
           "
-          class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5"
+          class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5 text-center"
         >
           Solid
         </button>
         <button
+          type="button"
           (click)="setHighlightType('gradient')"
           [ngClass]="
             highlightTab() === 'gradient'
               ? 'bg-sky-600 text-white font-bold'
               : 'text-slate-400 hover:text-white'
           "
-          class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5"
+          class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5 text-center"
         >
           Gradient
         </button>
         <button
+          type="button"
           (click)="setHighlightType('picture')"
           [ngClass]="
             highlightTab() === 'picture'
               ? 'bg-sky-600 text-white font-bold'
               : 'text-slate-400 hover:text-white'
           "
-          class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5"
+          class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5 text-center"
         >
           Picture
         </button>
         <button
+          type="button"
           (click)="setHighlightType('video')"
           [ngClass]="
             highlightTab() === 'video'
               ? 'bg-sky-600 text-white font-bold'
               : 'text-slate-400 hover:text-white'
           "
-          class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5"
+          class="flex-1 py-1 text-xs rounded-lg transition-colors whitespace-nowrap px-1.5 text-center"
         >
           Video
         </button>
       </div>
+
+      <!-- TAB 0: NONE (OFF) -->
+      @if (highlightTab() === 'none') {
+        <div class="flex flex-col items-center justify-center p-4 bg-slate-950/60 rounded-xl border border-slate-800 text-center gap-2">
+          <span class="text-2xl" aria-hidden="true">🚫</span>
+          <p class="text-xs text-slate-300 font-medium">Text background is currently off</p>
+          <p class="text-[11px] text-slate-500">Choose Solid, Gradient, Picture, or Video above to enable a background behind the text.</p>
+          <button
+            type="button"
+            (click)="setHighlightType('solid')"
+            class="mt-1 px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-lg transition-colors"
+          >
+            Enable Solid Background
+          </button>
+        </div>
+      }
 
       <!-- TAB 1: SOLID COLOR HIGHLIGHT -->
       @if (highlightTab() === 'solid') {
@@ -113,6 +145,7 @@ import { HighlightType } from '../../../models/presentation.models';
                 track col
               ) {
                 <button
+                  type="button"
                   (click)="updateHighlightSolid(col)"
                   [style.background-color]="col"
                   class="w-5 h-5 rounded-full border border-slate-700 hover:scale-110 transition-transform"
@@ -130,6 +163,7 @@ import { HighlightType } from '../../../models/presentation.models';
           <div class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto p-0.5">
             @for (grad of popularGradients; track grad) {
               <button
+                type="button"
                 (click)="updateHighlightGradient(grad)"
                 [style.background-image]="grad"
                 [ngClass]="
@@ -202,9 +236,31 @@ import { HighlightType } from '../../../models/presentation.models';
         </div>
       }
 
-      <!-- PADDING & CORNER RADIUS ADJUSTMENTS -->
+      <!-- BACKGROUND SHAPE & SIZING ADJUSTMENTS -->
       @if (highlightTab() !== 'none') {
-        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+        <div class="flex items-center justify-between text-xs text-slate-300 pt-2 border-t border-slate-800">
+          <span class="text-slate-400">Background Shape:</span>
+          <div class="flex bg-slate-950 p-0.5 rounded-lg border border-slate-800 gap-1">
+            <button
+              type="button"
+              (click)="updateHighlightFullWidth(false)"
+              [ngClass]="!state.typography().highlight.fullWidth ? 'bg-sky-600 text-white font-semibold' : 'text-slate-400 hover:text-white'"
+              class="px-2 py-0.5 rounded text-[11px] transition-colors"
+            >
+              Fitted (Line)
+            </button>
+            <button
+              type="button"
+              (click)="updateHighlightFullWidth(true)"
+              [ngClass]="state.typography().highlight.fullWidth ? 'bg-sky-600 text-white font-semibold' : 'text-slate-400 hover:text-white'"
+              class="px-2 py-0.5 rounded text-[11px] transition-colors"
+            >
+              Banner Box
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800">
           <div class="flex flex-col gap-1">
             <div class="flex justify-between text-[10px] text-slate-400">
               <span>Padding</span>
@@ -233,18 +289,35 @@ import { HighlightType } from '../../../models/presentation.models';
               class="accent-sky-500 h-1.5"
             />
           </div>
+          <div class="flex flex-col gap-1">
+            <div class="flex justify-between text-[10px] text-slate-400">
+              <span>Opacity</span>
+              <span>{{ Math.round((state.typography().highlight.opacity ?? 1) * 100) }}%</span>
+            </div>
+            <input
+              type="range"
+              min="0.1"
+              max="1"
+              step="0.05"
+              [ngModel]="state.typography().highlight.opacity ?? 1"
+              (ngModelChange)="updateHighlightOpacity($event)"
+              class="accent-sky-500 h-1.5"
+            />
+          </div>
         </div>
       }
 
       <!-- Bottom Actions -->
       <div class="flex items-center justify-between pt-1 border-t border-slate-800/80">
         <button
+          type="button"
           (click)="clearHighlight(); close.emit()"
           class="px-2.5 py-1 text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 rounded-lg text-xs font-semibold"
         >
           Clear
         </button>
         <button
+          type="button"
           (click)="close.emit()"
           class="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition-colors"
         >
@@ -257,8 +330,9 @@ import { HighlightType } from '../../../models/presentation.models';
 export class HighlightModalComponent {
   readonly state = inject(PresentationStateService);
   readonly close = output<void>();
+  readonly Math = Math;
 
-  highlightTab = signal<HighlightType>('solid');
+  highlightTab = signal<HighlightType>('none');
   highlightModalPos = signal<{ x: number; y: number }>({ x: 200, y: 120 });
   private isDraggingModal = false;
   private dragStartOffset = { x: 0, y: 0 };
@@ -276,9 +350,7 @@ export class HighlightModalComponent {
 
   constructor() {
     const hl = this.state.typography().highlight;
-    if (hl && hl.type !== 'none') {
-      this.highlightTab.set(hl.type);
-    }
+    this.highlightTab.set(hl?.type || 'none');
   }
 
   startDragHighlightModal(e: MouseEvent) {
@@ -305,14 +377,23 @@ export class HighlightModalComponent {
 
   setHighlightType(type: HighlightType) {
     this.highlightTab.set(type);
-    const prev = this.state.typography().highlight;
+    if (type === 'none') {
+      this.clearHighlight();
+      return;
+    }
+    const prev = this.state.typography().highlight || {};
     this.state.updateTypography({
       highlight: {
         ...prev,
         type,
         color: prev.color || '#FACC15',
         gradient: prev.gradient || this.popularGradients[0],
+        padding: prev.padding ?? 8,
+        borderRadius: prev.borderRadius ?? 8,
+        opacity: prev.opacity ?? 1,
+        fullWidth: prev.fullWidth ?? false,
       },
+      highlightColor: type === 'solid' ? (prev.color || '#FACC15') : '',
     });
   }
 
@@ -329,21 +410,33 @@ export class HighlightModalComponent {
   }
 
   updateHighlightSolid(color: string) {
+    this.highlightTab.set('solid');
     this.state.updateTypography({
       highlight: {
         ...this.state.typography().highlight,
         type: 'solid',
         color,
       },
+      highlightColor: color,
     });
   }
 
   updateHighlightGradient(gradient: string) {
+    this.highlightTab.set('gradient');
     this.state.updateTypography({
       highlight: {
         ...this.state.typography().highlight,
         type: 'gradient',
         gradient,
+      },
+    });
+  }
+
+  updateHighlightFullWidth(fullWidth: boolean) {
+    this.state.updateTypography({
+      highlight: {
+        ...this.state.typography().highlight,
+        fullWidth,
       },
     });
   }
@@ -366,12 +459,22 @@ export class HighlightModalComponent {
     });
   }
 
+  updateHighlightOpacity(opacity: number) {
+    this.state.updateTypography({
+      highlight: {
+        ...this.state.typography().highlight,
+        opacity: Number(opacity) || 1,
+      },
+    });
+  }
+
   async onHighlightMediaSelected(e: Event, mode: 'picture' | 'video') {
     const input = e.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
     const file = input.files[0];
     try {
       const mediaItem = await this.state.addMediaFile(file);
+      this.highlightTab.set(mode);
       this.state.updateTypography({
         highlight: {
           ...this.state.typography().highlight,
@@ -388,6 +491,7 @@ export class HighlightModalComponent {
   }
 
   clearHighlight() {
+    this.highlightTab.set('none');
     this.state.updateTypography({
       highlight: {
         type: 'none',
@@ -395,6 +499,10 @@ export class HighlightModalComponent {
         gradient: '',
         mediaUrl: '',
         mediaName: '',
+        padding: 8,
+        borderRadius: 8,
+        opacity: 1,
+        fullWidth: false,
       },
       highlightColor: '',
     });
