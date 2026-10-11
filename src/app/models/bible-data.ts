@@ -89,16 +89,16 @@ export const BIBLE_BOOKS: BibleBook[] = [
 ];
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  Law: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300',
-  History: 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300',
-  Poetry: 'bg-indigo-100 text-indigo-900 border-indigo-300 dark:bg-indigo-950/50 dark:text-indigo-300',
-  'Major Prophets': 'bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-950/50 dark:text-purple-300',
-  'Minor Prophets': 'bg-pink-100 text-pink-900 border-pink-300 dark:bg-pink-950/50 dark:text-pink-300',
-  Gospels: 'bg-sky-100 text-sky-900 border-sky-300 dark:bg-sky-950/50 dark:text-sky-300',
-  Acts: 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950/50 dark:text-blue-300',
-  Pauline: 'bg-violet-100 text-violet-900 border-violet-300 dark:bg-violet-950/50 dark:text-violet-300',
-  General: 'bg-teal-100 text-teal-900 border-teal-300 dark:bg-teal-950/50 dark:text-teal-300',
-  Prophecy: 'bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950/50 dark:text-rose-300',
+  Law:              'bg-amber-100   text-amber-900    border-amber-300    dark:bg-amber-950/50    dark:text-amber-300',
+  History:          'bg-emerald-100 text-emerald-900  border-emerald-300  dark:bg-emerald-950/50  dark:text-emerald-300',
+  Poetry:           'bg-indigo-100  text-indigo-900   border-indigo-300   dark:bg-indigo-950/50   dark:text-indigo-300',
+  'Major Prophets': 'bg-purple-100  text-purple-900   border-purple-300   dark:bg-purple-950/50   dark:text-purple-300',
+  'Minor Prophets': 'bg-pink-100    text-pink-900     border-pink-300     dark:bg-pink-950/50     dark:text-pink-300',
+  Gospels:          'bg-sky-100     text-sky-900      border-sky-300      dark:bg-sky-950/50      dark:text-sky-300',
+  Acts:             'bg-blue-100    text-blue-900     border-blue-300     dark:bg-blue-950/50     dark:text-blue-300',
+  Pauline:          'bg-violet-100  text-violet-900   border-violet-300   dark:bg-violet-950/50   dark:text-violet-300',
+  General:          'bg-teal-100    text-teal-900     border-teal-300     dark:bg-teal-950/50     dark:text-teal-300',
+  Prophecy:         'bg-rose-100    text-rose-900     border-rose-300     dark:bg-rose-950/50     dark:text-rose-300',
 };
 
 // Accurate canonical verse counts for every chapter of all 66 books of the Bible

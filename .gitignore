@@ -19,3 +19,4 @@ requirement-docs
 *.js.map
 *.css.map
 ~$*.pptx
+docs/files.md
